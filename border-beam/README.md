@@ -10,8 +10,9 @@
 | `beam.js` | контролер `BorderBeam`: вмикає і вимикає ефект, тригери, пауза |
 | `demo.html` | приклад підключення |
 | `figma-shader-prompt.md` | промпт для Figma Agent, що будує той самий ефект як shader fill |
+| `playground.js` | опис для плейграунду: контроли, пресети, сніпет. На сайт не потрібен |
 
-Плейграунд спільний з рештою блоків: `../index.html`, вкладка «Border beam». Збирається одним скриптом: `python3 build-playground.py` з кореня.
+На сайт беруть `beam.css` + `beam.js`. Плейграунд: `../index.html`, вкладка «Border beam».
 
 ## Підключення
 
