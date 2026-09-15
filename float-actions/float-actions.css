@@ -264,7 +264,7 @@
 .fa__bubble {
   position: absolute;
   right: calc(100% + 14px);
-  bottom: 0;
+  top: 50%;
   width: max-content;
   max-width: min(260px, calc(100cqw - var(--fa-size) - var(--fa-right) - 40px));
   padding: 10px 14px;
@@ -275,57 +275,62 @@
   line-height: 20px;
   box-shadow: 0 0 0 1px rgba(13, 28, 20, .1), 0 4px 8px -3px rgba(12, 24, 48, .15), 0 12px 24px -8px rgba(12, 24, 48, .2);
   opacity: 0;
-  transform: translate(8px, 4px) scale(.9);
-  transform-origin: bottom right;
+  /* centred on the button; the -50% stays in every state so only x and scale animate */
+  transform: translate(8px, -50%) scale(.9);
+  transform-origin: right center;
   transition: opacity 160ms var(--fa-ease-inout), transform 200ms var(--fa-ease-inout);
   pointer-events: none;
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
-/* tail toward the button, bottom right */
+/* tail toward the button, middle of the right edge */
 .fa__bubble::after {
   content: "";
   position: absolute;
+  top: 50%;
   right: -5px;
-  bottom: 18px;
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
+  width: 9px;
+  height: 9px;
+  margin-top: -5px;
+  border-top: 1px solid rgba(13, 28, 20, .1);
+  border-right: 1px solid rgba(13, 28, 20, .1);
+  border-top-right-radius: 2px;
   background: #fff;
-  box-shadow: 1px -1px 0 0 rgba(13, 28, 20, .1);
   transform: rotate(45deg);
 }
 .fa__item.has-bubble .fa__bubble {
   opacity: 1;
-  transform: translate(0, 0) scale(1);
+  transform: translate(0, -50%) scale(1);
   pointer-events: auto;
   transition: opacity 200ms var(--fa-ease-inout), transform 480ms cubic-bezier(.34, 1.4, .64, 1);
 }
 .fa.is-open .fa__bubble,
 .fa.is-folded .fa__bubble,
-.fa.is-away .fa__bubble { opacity: 0; transform: translate(8px, 4px) scale(.9); pointer-events: none; }
+.fa.is-away .fa__bubble { opacity: 0; transform: translate(8px, -50%) scale(.9); pointer-events: none; }
 
 .fa__bubble-x {
   position: absolute;
-  top: -8px;
-  left: -8px;
-  width: 22px;
-  height: 22px;
+  top: -7px;
+  left: -7px;
+  width: 20px;
+  height: 20px;
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: #1e201f;
-  color: #fff;
+  background: #fff;
+  color: rgba(0, 0, 0, .7);
+  box-shadow: 0 0 0 1px rgba(13, 28, 20, .12), 0 2px 4px -1px rgba(12, 24, 48, .2);
   cursor: pointer;
   touch-action: manipulation;
   display: grid;
   place-items: center;
   opacity: 0;
   transform: scale(.6);
-  transition: opacity 120ms var(--fa-ease-inout), transform 200ms var(--fa-ease);
+  transition: opacity 120ms var(--fa-ease-inout), transform 200ms var(--fa-ease), background-color 120ms;
 }
-.fa__bubble-x svg { width: 10px; height: 10px; }
+.fa__bubble-x:hover { background: #1e201f; color: #fff; }
+.fa__bubble-x svg { width: 9px; height: 9px; }
 @media (hover: hover) {
   .fa__bubble:hover .fa__bubble-x { opacity: 1; transform: scale(1); }
 }
