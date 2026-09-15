@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Float actions demo</title>
+<link rel="stylesheet" href="float-actions.css">
+<style>
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; }
+  main { min-height: 240vh; padding: 48px 24px; }
+  footer { height: 60vh; background: #f4f5f5; border-top: 1px solid #e4e4e4; }
+</style>
+</head>
+<body>
+<main><p>Скроль униз, наводь на кнопки, клікай.</p></main>
+<footer data-fa-avoid></footer>
+
+<script src="float-actions.js"></script>
+<script>
+  // stand-in for a third-party widget loaded on demand
+  const widgets = {};
+  function loadWidget(id) {
+    return new Promise(resolve => setTimeout(() => resolve({
+      open() { console.log(id, 'open'); },
+      close() { console.log(id, 'close'); },
+    }), 800));
+  }
+
+  new FloatActions(document.body, {
+    actions: [
+      { id: 'support', icon: 'chat', label: 'Chat with us' },
+      { id: 'ringostat', icon: 'phone', label: 'Request a call' },
+    ],
+    onAction(id, fa) {
+      fa.loading(id);
+      loadWidget(id).then(w => { widgets[id] = w; w.open(); fa.active(id); });
+    },
+    onClose(id, fa) {
+      widgets[id].close();
+      fa.idle(id);
+    },
+    nudgeMessage: 'Hi! Need help choosing a plan?',
+  });
+</script>
+</body>
+</html>

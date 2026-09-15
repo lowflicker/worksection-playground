@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Short answer demo</title>
+<link rel="stylesheet" href="short-answer.css">
+<style>
+  body { margin: 0; background: #fff; }
+  main { min-height: 100vh; display: flex; align-items: center; }
+</style>
+</head>
+<body>
+<main>
+  <section id="answer" aria-label="Short answer"></section>
+</main>
+
+<script src="short-answer.js"></script>
+<script>
+  new ShortAnswer('#answer', {
+    verdict: {
+      title: 'Short answer',
+      text: 'Trello can be a convenient place to start with boards. Worksection is worth a look when a team of 10+ wants to manage tasks, deadlines, time, clients and reports in one space.',
+    },
+    options: [
+      {
+        name: 'Trello, If all you need is a simple board',
+        text: 'Trello may be enough for a small team or a straightforward task list.',
+        logo: 'trello',
+        tone: 'neutral',
+      },
+      {
+        name: 'Worksection, If you need the full process',
+        text: 'Worksection adds Gantt charts, time tracking, reports, chats, roles, client access, AI and live support in Ukrainian.',
+        logo: 'worksection',
+        tone: 'accent',
+        cta: { label: 'Get started Free', href: 'https://worksection.com/signup' },
+      },
+    ],
+  });
+</script>
+</body>
+</html>

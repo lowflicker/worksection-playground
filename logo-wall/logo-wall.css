@@ -1,0 +1,183 @@
+/* ==========================================================================
+   Logo wall
+   Rows of client logos that swap through blur, left-to-right wave,
+   smooth re-layout between breakpoints.
+
+   Markup (created by LogoWall in logo-wall.js):
+     <section class="logo-wall">
+       <div class="logo-wall__inner">
+         <div class="logo-wall__grid">
+           <div class="logo-wall__slot"><div class="logo-wall__layer" style="--lw-w: 136"><svg>…</svg></div></div>
+           …
+   ========================================================================== */
+
+.logo-wall {
+  /* motion tokens, overridden from JS options */
+  --lw-dur: 900ms;
+  --lw-ease: cubic-bezier(.65, 0, .35, 1);
+  --lw-blur: 12px;
+  --lw-scale: .96;
+  --lw-x-in: -12px;
+  --lw-y-in: 0px;
+  --lw-x-out: 12px;
+  --lw-y-out: 0px;
+  --lw-layout-dur: 600ms;
+  --lw-layout-ease: cubic-bezier(.22, 1, .36, 1);
+  --lw-color: #8a8a8a;
+
+  /* column count per breakpoint, overridden from JS options */
+  --lw-cols-desktop: 5;
+  --lw-cols-tablet: 4;
+  --lw-cols-mobile: 3;
+  --lw-cols-small: 2;
+
+  /* the block adapts to its own width, not the viewport */
+  container-type: inline-size;
+  width: 100%;
+}
+
+/* --- responsive tokens (desktop first) --------------------------------- */
+
+.logo-wall__inner {
+  --lw-cols: var(--lw-cols-desktop);
+  --lw-slot-h: 64px;
+  --lw-logo-scale: 1;
+
+  max-width: 1264px;
+  margin: 0 auto;
+  padding: 40px 120px;
+  transition: padding var(--lw-layout-dur) var(--lw-layout-ease);
+}
+
+@container (max-width: 959px) {
+  .logo-wall__inner {
+    --lw-cols: var(--lw-cols-tablet);
+    --lw-slot-h: 56px;
+    --lw-logo-scale: .88;
+    padding: 32px 48px;
+  }
+}
+
+@container (max-width: 599px) {
+  .logo-wall__inner {
+    --lw-cols: var(--lw-cols-mobile);
+    --lw-slot-h: 48px;
+    --lw-logo-scale: .74;
+    padding: 24px 16px;
+  }
+}
+
+@container (max-width: 359px) {
+  .logo-wall__inner {
+    --lw-cols: var(--lw-cols-small);
+    --lw-slot-h: 48px;
+    --lw-logo-scale: .8;
+    padding: 20px 12px;
+  }
+}
+
+/* --- grid ----------------------------------------------------------------
+   JS sets --lw-cols-js after measuring slot positions, so the reflow can be
+   animated (FLIP). --lw-cols from the container query is the target value. */
+
+.logo-wall__grid {
+  display: grid;
+  grid-template-columns: repeat(var(--lw-cols-js, var(--lw-cols)), minmax(0, 1fr));
+  position: relative;
+  max-width: 1024px;
+  margin: 0 auto;
+  /* keep the height while logos load, no layout shift */
+  min-height: calc(var(--lw-rows, 2) * var(--lw-slot-h));
+}
+
+.logo-wall__slot {
+  position: relative;
+  min-width: 0;
+  height: var(--lw-slot-h);
+  overflow: hidden;
+  transition: height var(--lw-layout-dur) var(--lw-layout-ease);
+}
+
+/* survivors of a re-layout slide from the old cell to the new one */
+.logo-wall__slot.is-moving {
+  transition:
+    transform var(--lw-layout-dur) var(--lw-layout-ease),
+    height var(--lw-layout-dur) var(--lw-layout-ease);
+}
+
+/* slots that no longer fit: pinned at the old spot, dissolve through blur */
+.logo-wall__slot.is-leaving {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  filter: blur(var(--lw-blur));
+  transform: scale(var(--lw-scale));
+  transition:
+    opacity var(--lw-layout-dur) var(--lw-layout-ease),
+    filter var(--lw-layout-dur) var(--lw-layout-ease),
+    transform var(--lw-layout-dur) var(--lw-layout-ease);
+}
+
+/* --- logo layers ---------------------------------------------------------
+   A slot holds one layer; during a swap it briefly holds two. */
+
+.logo-wall__layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lw-color);
+  opacity: 1;
+  filter: blur(0);
+  transform: translate(0, 0) scale(1);
+  transition:
+    opacity var(--lw-dur) var(--lw-ease),
+    filter var(--lw-dur) var(--lw-ease),
+    transform var(--lw-dur) var(--lw-ease);
+}
+
+/* promoted to its own compositor layer only while a swap is running */
+.logo-wall__layer.is-animating {
+  will-change: opacity, filter, transform;
+}
+
+/* incoming logo starts here */
+.logo-wall__layer.is-enter {
+  opacity: 0;
+  filter: blur(var(--lw-blur));
+  transform: translate(var(--lw-x-in), var(--lw-y-in)) scale(var(--lw-scale));
+}
+
+/* outgoing logo ends here */
+.logo-wall__layer.is-exit {
+  opacity: 0;
+  filter: blur(var(--lw-blur));
+  transform: translate(var(--lw-x-out), var(--lw-y-out)) scale(var(--lw-scale));
+}
+
+/* each logo keeps its Figma width via --lw-w, scaled per breakpoint */
+.logo-wall__layer svg {
+  display: block;
+  width: calc(var(--lw-w) * 1px * var(--lw-logo-scale));
+  height: auto;
+  max-width: 86%;
+  transition: width var(--lw-layout-dur) var(--lw-layout-ease);
+}
+
+/* --- accessibility ------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-wall__inner,
+  .logo-wall__slot,
+  .logo-wall__layer,
+  .logo-wall__layer svg {
+    transition-duration: 0ms;
+  }
+  .logo-wall__layer.is-enter,
+  .logo-wall__layer.is-exit,
+  .logo-wall__slot.is-leaving {
+    filter: none;
+    transform: none;
+  }
+}

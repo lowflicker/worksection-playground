@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logo wall demo</title>
+<link rel="stylesheet" href="logo-wall.css">
+<style>
+  body { margin: 0; background: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; }
+  main { min-height: 100vh; display: flex; align-items: center; }
+</style>
+</head>
+<body>
+<main>
+  <section id="clients" aria-label="Our clients"></section>
+</main>
+
+<script src="logo-wall.js"></script>
+<script>
+  new LogoWall('#clients', {
+    logos: [
+      'logos/synevo.svg', 'logos/klo.svg', 'logos/varus.svg', 'logos/comfy.svg', 'logos/brain-tank.svg',
+      'logos/knygarnya.svg', 'logos/dominos.svg', 'logos/hotline-finance.svg', 'logos/mon.svg', 'logos/tet.svg',
+      'logos/vml.svg', 'logos/mcdonalds.svg', 'logos/atl.svg', 'logos/skelar.svg', 'logos/1plus1.svg',
+      'logos/suspilne.svg', 'logos/tez-tour.svg', 'logos/ukrainer.svg', 'logos/publicis-groupe.svg',
+      'logos/roman-ua.svg', 'logos/stb.svg', 'logos/as.svg', 'logos/ibis.svg', 'logos/orner.svg',
+    ],
+    rows: 2,
+    columns: { desktop: 5, tablet: 4, mobile: 3, small: 2 },
+    mode: 'wave',
+    waveOrder: 'diagonal',
+    interval: 3500,
+    stagger: 120,
+    duration: 900,
+    easing: 'cubic-bezier(.65, 0, .35, 1)',
+    blur: 12,
+    scale: 0.96,
+    enter: { x: -12, y: 0 },
+    exit: { x: 12, y: 0 },
+    layoutDuration: 600,
+    color: '#8a8a8a',
+  });
+</script>
+</body>
+</html>

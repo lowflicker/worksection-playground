@@ -1,0 +1,339 @@
+/* ==========================================================================
+   Float actions
+   Support and callback buttons floating over the site. They pop in after
+   the page settles, stack into one while the visitor scrolls down, show a
+   label on hover, nudge once when nobody interacts, and ride up over the
+   footer so they never cover it. A click hands over to a third-party
+   widget; the button shows `loading` while it loads and `active` while it
+   is open (icon turns into a cross, the other buttons step aside).
+
+   Motion system
+     hover / press      200ms  in-out-cubic
+     icon morph         260ms  out-quint
+     stack fold         480ms  out-quint
+     enter              560ms  back-out (JS, Web Animations)
+
+   Markup (created by FloatActions in float-actions.js):
+     <div class="fa">
+       <div class="fa__stack">
+         <div class="fa__item" data-id="support">
+           <div class="fa__bubble">…<button class="fa__bubble-x"></div>
+           <span class="fa__label">Chat with us</span>
+           <button class="fa__btn">
+             <svg class="fa__icon fa__icon--main">…<svg class="fa__icon fa__icon--close">…<span class="fa__spin">
+           </button>
+         </div>
+         …
+   ========================================================================== */
+
+.fa {
+  /* tokens, overridden from JS options */
+  --fa-size: 56px;
+  --fa-gap: 8px;
+  --fa-right: 24px;
+  --fa-bottom: 24px;
+  --fa-color: #4a83f4;
+  --fa-color-rgb: 74, 131, 244;
+  --fa-ink: #fff;
+  --fa-hover-scale: 1.05;
+  --fa-peek: 6px;
+  --fa-label-delay: 80ms;
+  --fa-ease: cubic-bezier(.22, 1, .36, 1);
+  --fa-ease-inout: cubic-bezier(.65, 0, .35, 1);
+  --fa-lift: 0px;
+  --fa-shadow:
+    0 1px 3px -1px rgba(12, 24, 48, .2),
+    0 4px 8px -3px rgba(12, 24, 48, .2),
+    0 8px 14px -6px rgba(12, 24, 48, .2);
+  --fa-shadow-up:
+    0 1px 3px -1px rgba(12, 24, 48, .2),
+    0 6px 12px -4px rgba(12, 24, 48, .22),
+    0 14px 24px -8px rgba(12, 24, 48, .26);
+
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+  /* the bubble sizes against the layer, not the page */
+  container-type: size;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: rgba(0, 0, 0, .93);
+}
+/* mounted inside a scrolling frame (playground) instead of the window */
+.fa--absolute { position: absolute; }
+
+.fa__stack {
+  position: absolute;
+  right: var(--fa-right);
+  bottom: calc(var(--fa-bottom) + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--fa-gap);
+  /* tracks the footer edge on every scroll frame, so no transition here */
+  transform: translateY(calc(var(--fa-lift) * -1));
+}
+
+/* --- item ------------------------------------------------------------------ */
+
+.fa__item {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  transition:
+    transform 480ms var(--fa-ease),
+    opacity 320ms var(--fa-ease-inout),
+    filter 480ms var(--fa-ease);
+}
+/* the bottom button is the anchor, everything tucks behind it */
+.fa__item:last-child { z-index: 2; }
+
+/* before enter, and while the enter animation runs */
+.fa.is-hidden .fa__item { opacity: 0; pointer-events: none; }
+.fa.is-entering .fa__item { transition: none; }
+
+/* scrolling down: upper buttons slide behind the anchor and peek out on top */
+.fa.is-folded .fa__item.is-tucked {
+  z-index: 0;
+  transform: translateY(calc(var(--fa-size) + var(--fa-gap) - var(--fa-peek))) scale(.86);
+  filter: brightness(.82);
+  pointer-events: none;
+}
+/* a widget is open: the other buttons step aside (hideOthers: 'others') */
+.fa.is-open.hide-others .fa__item:not(.is-active),
+/* or every button goes away, the widget has its own close (hideOthers: 'all') */
+.fa.is-open.hide-all .fa__item {
+  opacity: 0;
+  transform: translateY(12px) scale(.8);
+  pointer-events: none;
+}
+/* an avoided element is in view and avoidMode is 'hide' */
+.fa.is-away .fa__item {
+  opacity: 0;
+  transform: translateY(16px) scale(.6);
+  pointer-events: none;
+}
+
+/* --- button ---------------------------------------------------------------- */
+
+.fa__btn {
+  position: relative;
+  width: var(--fa-size);
+  height: var(--fa-size);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fa-color);
+  color: var(--fa-ink);
+  box-shadow: var(--fa-shadow);
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transform: scale(1);
+  transition:
+    transform 200ms var(--fa-ease-inout),
+    box-shadow 200ms var(--fa-ease-inout);
+}
+@media (hover: hover) {
+  .fa__btn:hover { transform: scale(var(--fa-hover-scale)); box-shadow: var(--fa-shadow-up); }
+}
+.fa__btn:active { transform: scale(.96); box-shadow: var(--fa-shadow); transition-duration: 80ms; }
+.fa__btn:focus-visible { outline: 0; box-shadow: var(--fa-shadow), 0 0 0 3px #fff, 0 0 0 5px var(--fa-color); }
+
+/* the nudge: one soft bounce */
+.fa__btn.is-nudging { animation: fa-pop 520ms var(--fa-ease-inout); }
+@keyframes fa-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.1); }
+  70% { transform: scale(.97); }
+  100% { transform: scale(1); }
+}
+
+.fa__icon {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 50%;
+  height: 50%;
+  transition: transform 260ms var(--fa-ease), opacity 160ms var(--fa-ease-inout);
+}
+.fa__icon--close { opacity: 0; transform: rotate(-90deg) scale(.5); }
+.is-active .fa__icon--main { opacity: 0; transform: rotate(90deg) scale(.5); }
+.is-active .fa__icon--close { opacity: 1; transform: rotate(0) scale(1); }
+
+/* loading: icon dims, an arc spins around the rim */
+.fa__spin {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .25);
+  border-top-color: #fff;
+  opacity: 0;
+  transition: opacity 160ms var(--fa-ease-inout);
+  pointer-events: none;
+}
+.fa__btn.is-loading .fa__spin { opacity: 1; animation: fa-spin 800ms linear infinite; }
+.fa__btn.is-loading .fa__icon--main { opacity: .4; transform: scale(.85); }
+.fa__btn.is-loading { cursor: progress; }
+@keyframes fa-spin { to { transform: rotate(360deg); } }
+
+/* icon micro-motion on hover */
+@media (hover: hover) {
+  .fa__btn:hover .fa__icon--chat { transform: translateY(-1px); }
+  .fa__btn:hover .fa__icon--phone { animation: fa-ring 600ms var(--fa-ease-inout) 1; }
+}
+@keyframes fa-ring {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(-14deg); }
+  40% { transform: rotate(12deg); }
+  60% { transform: rotate(-8deg); }
+  80% { transform: rotate(5deg); }
+}
+
+/* ripple rings for the nudge */
+.fa__btn::before,
+.fa__btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--fa-color);
+  opacity: 0;
+  pointer-events: none;
+}
+.fa__btn.is-ringing::before { animation: fa-ripple 1400ms var(--fa-ease) 2; }
+.fa__btn.is-ringing::after { animation: fa-ripple 1400ms var(--fa-ease) 2 300ms; }
+@keyframes fa-ripple {
+  0% { transform: scale(1); opacity: .55; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+/* --- label (tooltip) ------------------------------------------------------- */
+
+.fa__label {
+  position: absolute;
+  right: calc(100% + 14px);
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #1e201f;
+  color: #fff;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(6px);
+  transition: opacity 120ms var(--fa-ease-inout), transform 120ms var(--fa-ease-inout);
+  pointer-events: none;
+}
+/* tail toward the button */
+.fa__label::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: inherit;
+  transform: translateY(-50%) rotate(45deg);
+}
+@media (hover: hover) {
+  .fa__item:hover .fa__label {
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 160ms var(--fa-ease-inout) var(--fa-label-delay), transform 240ms var(--fa-ease) var(--fa-label-delay);
+  }
+}
+.fa__item:focus-within .fa__label { opacity: 1; transform: translateX(0); }
+.fa.is-open .fa__label,
+.fa.is-folded .fa__label,
+.fa.no-labels .fa__label,
+.fa.is-compact .fa__label,
+.fa__item.has-bubble .fa__label { opacity: 0; transform: translateX(6px); transition-delay: 0s; }
+
+/* --- proactive bubble ------------------------------------------------------ */
+
+.fa__bubble {
+  position: absolute;
+  right: calc(100% + 14px);
+  bottom: 0;
+  width: max-content;
+  max-width: min(260px, calc(100cqw - var(--fa-size) - var(--fa-right) - 40px));
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: #fff;
+  color: rgba(0, 0, 0, .93);
+  font-size: 14px;
+  line-height: 20px;
+  box-shadow: 0 0 0 1px rgba(13, 28, 20, .1), 0 4px 8px -3px rgba(12, 24, 48, .15), 0 12px 24px -8px rgba(12, 24, 48, .2);
+  opacity: 0;
+  transform: translate(8px, 4px) scale(.9);
+  transform-origin: bottom right;
+  transition: opacity 160ms var(--fa-ease-inout), transform 200ms var(--fa-ease-inout);
+  pointer-events: none;
+  cursor: pointer;
+}
+/* tail toward the button, bottom right */
+.fa__bubble::after {
+  content: "";
+  position: absolute;
+  right: -5px;
+  bottom: 18px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 1px -1px 0 0 rgba(13, 28, 20, .1);
+  transform: rotate(45deg);
+}
+.fa__item.has-bubble .fa__bubble {
+  opacity: 1;
+  transform: translate(0, 0) scale(1);
+  pointer-events: auto;
+  transition: opacity 200ms var(--fa-ease-inout), transform 480ms cubic-bezier(.34, 1.4, .64, 1);
+}
+.fa.is-open .fa__bubble,
+.fa.is-folded .fa__bubble,
+.fa.is-away .fa__bubble { opacity: 0; transform: translate(8px, 4px) scale(.9); pointer-events: none; }
+
+.fa__bubble-x {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #1e201f;
+  color: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: scale(.6);
+  transition: opacity 120ms var(--fa-ease-inout), transform 200ms var(--fa-ease);
+}
+.fa__bubble-x svg { width: 10px; height: 10px; }
+@media (hover: hover) {
+  .fa__bubble:hover .fa__bubble-x { opacity: 1; transform: scale(1); }
+}
+@media (hover: none) {
+  .fa__bubble-x { opacity: 1; transform: scale(1); }
+}
+
+/* --- compact (set by JS under `compactBelow`) ------------------------------ */
+
+.fa.is-compact { --fa-size: 48px; --fa-right: 16px; --fa-bottom: 16px; }
+.fa.is-compact .fa__bubble { max-width: calc(100cqw - var(--fa-size) - var(--fa-right) - 28px); }
+
+/* --- accessibility --------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .fa__stack, .fa__item, .fa__btn, .fa__icon, .fa__label, .fa__bubble, .fa__bubble-x, .fa__spin { transition-duration: 0ms; }
+  .fa__btn.is-ringing::before, .fa__btn.is-ringing::after, .fa__btn.is-nudging, .fa__btn:hover .fa__icon--phone { animation: none; }
+}
