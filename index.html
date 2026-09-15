@@ -855,8 +855,37 @@
     position: relative; z-index: 0; isolation: isolate;
   }
   .stage-hint { color: var(--muted); font-size: 12px; text-align: center; }
-  .frame { width: 100%; max-width: var(--frame-w, 100%); margin: 0 auto; transition: max-width var(--lw-layout-dur, 600ms) var(--lw-layout-ease, ease); }
-  .frame.is-fixed { outline: 1px dashed #c9c9c9; outline-offset: 6px; }
+  .frame { width: 100%; }
+
+  /* --- resizable canvas frame: drag the edges, hover a grip for presets --- */
+  .rz { position: relative; width: 100%; max-width: var(--frame-w, 100%); margin: 0 auto; transition: max-width 600ms cubic-bezier(.22, 1, .36, 1); }
+  .rz.is-dragging { transition: none; }
+  .rz.is-fixed { outline: 1px dashed #c9c9c9; outline-offset: 6px; }
+  .rz__handle { position: absolute; top: 0; bottom: 0; width: 22px; cursor: ew-resize; touch-action: none; z-index: 5; outline: 0; }
+  .rz__handle--l { left: -11px; } .rz__handle--r { right: -11px; }
+  .rz__grip {
+    position: absolute; top: 50%; left: 50%; width: 4px; height: 44px; border-radius: 2px; background: #a0a6a4;
+    transform: translate(-50%, -50%); opacity: 0; transition: opacity 160ms, background 160ms, height 160ms;
+  }
+  .rz:hover .rz__grip { opacity: .55; }
+  .rz__handle:hover .rz__grip, .rz__handle:focus-visible .rz__grip, .rz.is-dragging .rz__grip { opacity: 1; height: 56px; background: var(--text); }
+  .rz__menu {
+    position: absolute; top: 50%; display: flex; flex-direction: column; gap: 3px; padding: 5px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 24px -12px rgba(0, 0, 0, .3);
+    transform: translateY(-50%) scale(.96); opacity: 0; pointer-events: none; transition: opacity 120ms, transform 160ms cubic-bezier(.22, 1, .36, 1);
+  }
+  .rz__handle--r .rz__menu { right: 20px; transform-origin: right center; }
+  .rz__handle--l .rz__menu { left: 20px; transform-origin: left center; }
+  .rz__handle:hover .rz__menu, .rz__handle:focus-within .rz__menu, .rz__menu:hover { opacity: 1; pointer-events: auto; transform: translateY(-50%) scale(1); }
+  .rz__menu button { padding: 4px 9px; font-size: 12px; min-height: 0; white-space: nowrap; text-align: left; }
+  .rz__menu button.is-active { background: var(--text); color: #fff; border-color: var(--text); }
+  .rz__badge {
+    position: absolute; top: -30px; left: 50%; transform: translateX(-50%); padding: 3px 8px; border-radius: 6px;
+    background: var(--text); color: #fff; font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap;
+    opacity: 0; transition: opacity 120ms; pointer-events: none;
+  }
+  .rz:hover .rz__badge, .rz.is-dragging .rz__badge, .rz:focus-within .rz__badge { opacity: 1; }
+  @media (max-width: 980px) { .rz__handle, .rz__badge { display: none; } }
 
   .panel {
     background: var(--panel); border-left: 1px solid var(--line);
@@ -957,10 +986,9 @@
   .stage--fab { padding: 24px; gap: 16px; justify-content: flex-start; }
   .browser {
     position: relative; display: flex; flex-direction: column;
-    width: 100%; max-width: var(--frame-w, 100%); height: calc(100vh - 44px - 48px - 28px); margin: 0 auto;
+    width: 100%; height: calc(100vh - 44px - 48px - 28px);
     border-radius: 12px; background: #fff; overflow: hidden;
     box-shadow: 0 0 0 1px #e4e4e4, 0 16px 40px -16px rgba(0,0,0,.18);
-    transition: max-width 600ms cubic-bezier(.22, 1, .36, 1);
   }
   .browser__bar { flex: none; display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; background: #f4f5f5; border-bottom: 1px solid #e4e4e4; }
   .browser__dot { width: 10px; height: 10px; border-radius: 50%; background: #dddfde; }
@@ -1163,14 +1191,7 @@
 
     <div class="group">
       <h2>Адаптив</h2>
-      <div class="presets" style="margin-bottom:12px">
-        <button data-frame="0" class="primary">Auto</button>
-        <button data-frame="1440">1440</button>
-        <button data-frame="1024">1024</button>
-        <button data-frame="768">768</button>
-        <button data-frame="390">390</button>
-        <button data-frame="320">320</button>
-      </div>
+      <p class="files" style="margin:0 0 10px">Ширину рамки тягни за краї прямо на канвасі, пресети на тягачку.</p>
       <div class="field inline"><label for="rows">Рядів</label>
         <select id="rows"><option>1</option><option>2</option><option>3</option></select></div>
       <div class="field inline"><label for="colsDesktop">Колонок, desktop (≥ 960)</label>
@@ -1312,14 +1333,7 @@
 
     <div class="group">
       <h2>Адаптив</h2>
-      <div class="presets" style="margin-bottom:12px">
-        <button data-sa-frame="0" class="primary">Auto</button>
-        <button data-sa-frame="1440">1440</button>
-        <button data-sa-frame="1024">1024</button>
-        <button data-sa-frame="768">768</button>
-        <button data-sa-frame="390">390</button>
-        <button data-sa-frame="320">320</button>
-      </div>
+      <p class="files" style="margin:0 0 10px">Ширину рамки тягни за краї прямо на канвасі, пресети на тягачку.</p>
       <div class="field"><label for="sa-stackBelow">Стек під ширину контейнера</label><output id="sa-stackBelow-out"></output>
         <input type="range" id="sa-stackBelow" min="320" max="1024" step="10"></div>
       <div class="status" id="sa-bp"></div>
@@ -1473,14 +1487,7 @@
 
     <div class="group">
       <h2>Адаптив</h2>
-      <div class="presets" style="margin-bottom:12px">
-        <button data-fa-frame="0" class="primary">Auto</button>
-        <button data-fa-frame="1440">1440</button>
-        <button data-fa-frame="1024">1024</button>
-        <button data-fa-frame="768">768</button>
-        <button data-fa-frame="390">390</button>
-        <button data-fa-frame="320">320</button>
-      </div>
+      <p class="files" style="margin:0 0 10px">Ширину рамки тягни за краї прямо на канвасі, пресети на тягачку.</p>
       <div class="field"><label for="fa-compactBelow">Компактний режим під ширину</label><output id="fa-compactBelow-out"></output>
         <input type="range" id="fa-compactBelow" min="320" max="1024" step="10"></div>
       <div class="status" id="fa-bp"></div>
@@ -2965,6 +2972,73 @@ window.LOGO_FILES = {
 <script>
 /* ---------- playground UI ---------- */
 const $ = (id) => document.getElementById(id);
+
+/* ---------- resizable canvas frame ----------
+   Wraps a demo frame: drag either edge (symmetric, the frame stays centered),
+   hover a grip for width presets, a badge above shows the current width. */
+const FRAME_PRESETS = [0, 1440, 1024, 768, 390, 320];
+function makeResizable(frameEl, getW, setW) {
+  const rz = document.createElement('div');
+  rz.className = 'rz';
+  frameEl.parentNode.insertBefore(rz, frameEl);
+  rz.append(frameEl);
+  const badge = document.createElement('div');
+  badge.className = 'rz__badge';
+  rz.append(badge);
+  const maxW = () => {
+    const st = getComputedStyle(rz.parentNode);
+    return rz.parentNode.clientWidth - parseFloat(st.paddingLeft) - parseFloat(st.paddingRight);
+  };
+  let raf = 0;
+  const apply = (w) => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => setW(w)); };
+
+  ['l', 'r'].forEach(side => {
+    const h = document.createElement('div');
+    h.className = `rz__handle rz__handle--${side}`;
+    h.tabIndex = 0;
+    h.setAttribute('role', 'slider');
+    h.setAttribute('aria-label', 'Ширина рамки, стрілки вліво і вправо');
+    h.innerHTML = `<span class="rz__grip"></span><div class="rz__menu">${FRAME_PRESETS.map(w => `<button type="button" data-w="${w}">${w || 'Auto'}</button>`).join('')}</div>`;
+    rz.append(h);
+    h.querySelectorAll('[data-w]').forEach(b => b.addEventListener('click', () => setW(+b.dataset.w)));
+
+    let sx = 0, sw = 0, on = false;
+    h.addEventListener('pointerdown', e => {
+      if (e.target.closest('button')) return;
+      on = true; sx = e.clientX; sw = rz.offsetWidth;
+      try { h.setPointerCapture(e.pointerId); } catch (err) {}
+      rz.classList.add('is-dragging');
+    });
+    h.addEventListener('pointermove', e => {
+      if (!on) return;
+      const dx = side === 'r' ? e.clientX - sx : sx - e.clientX;
+      const max = maxW();
+      const w = Math.round(Math.min(Math.max(sw + dx * 2, 280), max));
+      apply(w >= max - 1 ? 0 : w);
+    });
+    const end = () => { if (!on) return; on = false; rz.classList.remove('is-dragging'); };
+    h.addEventListener('pointerup', end);
+    h.addEventListener('pointercancel', end);
+    h.addEventListener('keydown', e => {
+      const d = e.key === 'ArrowLeft' ? -10 : e.key === 'ArrowRight' ? 10 : 0;
+      if (!d) return;
+      e.preventDefault();
+      const cur = getW() || rz.offsetWidth;
+      const w = Math.max(280, cur + (side === 'r' ? d : -d));
+      setW(w >= maxW() ? 0 : w);
+    });
+  });
+
+  rz.sync = () => {
+    const w = getW();
+    rz.style.setProperty('--frame-w', w ? w + 'px' : '100%');
+    rz.classList.toggle('is-fixed', !!w);
+    badge.textContent = w ? `${w} px` : `${rz.offsetWidth} px · auto`;
+    rz.querySelectorAll('[data-w]').forEach(b => b.classList.toggle('is-active', +b.dataset.w === w));
+  };
+  new ResizeObserver(() => { if (!getW()) rz.sync(); }).observe(rz);
+  return rz;
+}
 const stage = $('stage');
 const frame = $('frame');
 const wallEl = $('wall');
@@ -2991,6 +3065,7 @@ const BASE = Object.assign({}, LogoWall.defaults, PRESETS.wave, {
 
 const ui = { frame: 0, bg: '#f5f5f5', tab: 'html' };
 const wall = new LogoWall(wallEl, BASE);
+const frameRz = makeResizable(frame, () => ui.frame, w => { ui.frame = w; refresh(); });
 
 /* ---- controls -> options ---- */
 const RANGES = {
@@ -3026,9 +3101,7 @@ function refresh() {
   $('color').value = o.color;
   $('bg').value = ui.bg;
   stage.style.setProperty('--stage-bg', ui.bg);
-  frame.style.setProperty('--frame-w', ui.frame ? ui.frame + 'px' : '100%');
-  frame.classList.toggle('is-fixed', !!ui.frame);
-  document.querySelectorAll('[data-frame]').forEach(b => b.classList.toggle('primary', +b.dataset.frame === ui.frame));
+  frameRz.sync();
   document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('is-active', b.dataset.tab === ui.tab));
   $('toggle').textContent = wall.running ? 'Пауза' : 'Продовжити';
   $('hint').textContent = !wall.running ? 'Пауза'
@@ -3113,7 +3186,6 @@ $('swap-now').addEventListener('click', () => wall.swap());
 $('toggle').addEventListener('click', () => { wall.running ? wall.stop() : wall.start(); refresh(); });
 $('reset').addEventListener('click', () => { ui.frame = 0; ui.bg = '#f5f5f5'; update(BASE); });
 document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => update(PRESETS[b.dataset.preset])));
-document.querySelectorAll('[data-frame]').forEach(b => b.addEventListener('click', () => { ui.frame = +b.dataset.frame; refresh(); }));
 document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { ui.tab = b.dataset.tab; refresh(); }));
 $('copy').addEventListener('click', async () => {
   await navigator.clipboard.writeText($('code').value);
@@ -3140,6 +3212,7 @@ const SA_PRESETS = {
 const SA_BASE = Object.assign({}, ShortAnswer.defaults, SA_PRESETS.signal);
 const saUi = { frame: 0, bg: '#ffffff', tab: 'html' };
 const sa = new ShortAnswer(saEl, SA_BASE);
+const saRz = makeResizable(saFrame, () => saUi.frame, w => { saUi.frame = w; saRefresh(); });
 
 const SA_RANGES = {
   pulseInterval:  { fmt: v => v + ' ms' },
@@ -3169,9 +3242,7 @@ function saRefresh() {
   $('sa-accent').value = o.accent;
   $('sa-bg').value = saUi.bg;
   saStage.style.setProperty('--stage-bg', saUi.bg);
-  saFrame.style.setProperty('--frame-w', saUi.frame ? saUi.frame + 'px' : '100%');
-  saFrame.classList.toggle('is-fixed', !!saUi.frame);
-  document.querySelectorAll('[data-sa-frame]').forEach(b => b.classList.toggle('primary', +b.dataset.saFrame === saUi.frame));
+  saRz.sync();
   document.querySelectorAll('[data-sa-tab]').forEach(b => b.classList.toggle('is-active', b.dataset.saTab === saUi.tab));
   $('sa-toggle').textContent = sa.running ? 'Пауза' : 'Продовжити';
   $('sa-hint').textContent = !o.pulse ? 'Імпульси вимкнені'
@@ -3256,7 +3327,6 @@ $('sa-replay').addEventListener('click', () => { sa.replay(); saRefresh(); });
 $('sa-toggle').addEventListener('click', () => { sa.running ? sa.stop() : sa.start(); saRefresh(); });
 $('sa-reset').addEventListener('click', () => { saUi.frame = 0; saUi.bg = '#ffffff'; saUpdate(SA_BASE); });
 document.querySelectorAll('[data-sa-preset]').forEach(b => b.addEventListener('click', () => saUpdate(SA_PRESETS[b.dataset.saPreset])));
-document.querySelectorAll('[data-sa-frame]').forEach(b => b.addEventListener('click', () => { saUi.frame = +b.dataset.saFrame; saRefresh(); }));
 document.querySelectorAll('[data-sa-tab]').forEach(b => b.addEventListener('click', () => { saUi.tab = b.dataset.saTab; saRefresh(); }));
 $('sa-copy').addEventListener('click', async () => {
   await navigator.clipboard.writeText($('sa-code').value);
@@ -3346,6 +3416,7 @@ const FA_BASE = Object.assign({}, FloatActions.defaults, FA_PRESETS.default, {
 });
 const faUi = { frame: 0, tab: 'html' };
 const fa = new FloatActions(faOverlay, FA_BASE);
+const faRz = makeResizable(faFrame, () => faUi.frame, w => { faUi.frame = w; faRefresh(); });
 
 const FA_RANGES = {
   showAfter:     { fmt: v => v + ' px' },
@@ -3374,8 +3445,7 @@ function faRefresh() {
   $('fa-offset').value = o.offset.bottom; $('fa-offset-out').textContent = o.offset.bottom + ' px';
   $('fa-widgetDelay').value = faSim.delay; $('fa-widgetDelay-out').textContent = faSim.delay + ' ms';
   $('fa-color').value = o.color;
-  faFrame.style.setProperty('--frame-w', faUi.frame ? faUi.frame + 'px' : '100%');
-  document.querySelectorAll('[data-fa-frame]').forEach(b => b.classList.toggle('primary', +b.dataset.faFrame === faUi.frame));
+  faRz.sync();
   document.querySelectorAll('[data-fa-tab]').forEach(b => b.classList.toggle('is-active', b.dataset.faTab === faUi.tab));
   $('fa-code').value = faCodeFor(faUi.tab);
   faStatus();
@@ -3480,7 +3550,6 @@ $('fa-widget-x').addEventListener('click', () => { faCloseWidget(fa.activeId, fa
 $('fa-scroll-footer').addEventListener('click', () => faScroll.scrollTo({ top: faScroll.scrollHeight, behavior: 'smooth' }));
 $('fa-reset').addEventListener('click', () => { faUi.frame = 0; faSim.delay = 700; faScroll.scrollTo({ top: 0 }); faCloseWidget(fa.activeId, fa); faUpdate(FA_BASE); fa.reset(); faRefresh(); });
 document.querySelectorAll('[data-fa-preset]').forEach(b => b.addEventListener('click', () => { faCloseWidget(fa.activeId, fa); faUpdate(FA_PRESETS[b.dataset.faPreset]); fa.reset(); faRefresh(); }));
-document.querySelectorAll('[data-fa-frame]').forEach(b => b.addEventListener('click', () => { faUi.frame = +b.dataset.faFrame; faRefresh(); }));
 document.querySelectorAll('[data-fa-tab]').forEach(b => b.addEventListener('click', () => { faUi.tab = b.dataset.faTab; faRefresh(); }));
 $('fa-copy').addEventListener('click', async () => {
   await navigator.clipboard.writeText($('fa-code').value);
