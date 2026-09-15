@@ -20,6 +20,11 @@ __SA_CSS__
 __FA_CSS__
 </style>
 
+<!-- beam.css (inlined by build-playground.py) -->
+<style id="src-bb-css">
+__BB_CSS__
+</style>
+
 <style>
   :root {
     --bg: #f5f5f5; --panel: #fff; --line: #e4e4e4; --text: #1a1a1a; --muted: #7a7a7a; --accent: #2563eb;
@@ -117,6 +122,13 @@ __FA_CSS__
   .tabs { display: flex; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
   .tabs button { padding: 5px 9px; font-size: 12px; }
   .tabs button.is-active { background: var(--text); color: #fff; border-color: var(--text); }
+  /* colour swatches (beam palettes) */
+  .swatches { display: flex; gap: 6px; flex-wrap: wrap; grid-column: 1 / -1; }
+  .swatch { width: 30px; height: 30px; min-height: 0; padding: 0; border-radius: 9px; border: 1px solid var(--line); cursor: pointer; }
+  .swatch:hover { transform: scale(1.06); }
+  .swatch.is-active { box-shadow: 0 0 0 2px var(--panel), 0 0 0 3.5px var(--text); }
+  /* fields that only apply to one mode are toggled with the hidden attribute */
+  .field[hidden], .check[hidden] { display: none; }
   textarea.code {
     width: 100%; height: 320px; font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
     border: 1px solid var(--line); border-radius: 8px; padding: 10px; resize: vertical; background: #fafafa; color: #333;
@@ -283,6 +295,49 @@ __FA_CSS__
     .sk__cols { grid-template-columns: 1fr 1fr; }
     .sk__section { padding-bottom: 64px; }
   }
+
+  /* --- border beam: a dark stage with one demo element in the middle --- */
+  .stage--beam { --stage-bg: #0e0e10; }
+  .stage--beam[data-grid]::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image: linear-gradient(rgba(127,127,127,.22) 1px, transparent 1px), linear-gradient(90deg, rgba(127,127,127,.22) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  .bb-slot { position: relative; z-index: 1; display: grid; place-items: center; max-width: 100%; }
+  .stage--beam .stage-hint { position: relative; z-index: 1; }
+  /* demo surfaces: the shapes the beam is usually put on. Dark on purpose, the effect is a dark-theme thing. */
+  .bb-demo {
+    --bb-fg: #eeeeef; --bb-dim: rgba(238,238,239,.56); --bb-faint: rgba(238,238,239,.34);
+    background: var(--bb-surface, #1d1d1f); color: var(--bb-fg); max-width: 100%;
+    font: 400 14px/1.5 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased;
+  }
+  .bb-chat { width: 348px; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; }
+  .bb-chat__top { display: flex; align-items: center; gap: 8px; color: var(--bb-faint); }
+  .bb-chat__ph { font-size: 14px; color: rgba(238,238,239,.3); padding: 2px 0 12px; }
+  .bb-chat__row { display: flex; align-items: center; gap: 8px; }
+  .bb-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--bb-dim); padding: 5px 9px; border-radius: 8px; background: rgba(255,255,255,.05); }
+  .bb-chat__send { margin-left: auto; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.08); color: var(--bb-dim); font-size: 13px; }
+  .bb-card { width: 250px; padding: 24px 26px; display: flex; flex-direction: column; gap: 10px; }
+  .bb-card__line { height: 8px; border-radius: 4px; background: rgba(238,238,239,.08); }
+  .bb-card__line--title { height: 10px; width: 55%; background: rgba(238,238,239,.14); }
+  .bb-card__line--short { width: 78%; }
+  .bb-btn { padding: 11px 22px; font-size: 13.5px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; }
+  .bb-input { width: 300px; padding: 12px 14px; font-size: 13.5px; color: rgba(238,238,239,.42); }
+  .bb-tile { width: 64px; height: 64px; display: grid; place-items: center; font-size: 22px; }
+  .bb-bar { width: 366px; height: 42px; display: flex; align-items: center; gap: 10px; padding: 0 15px; font-size: 13px; color: var(--bb-dim); }
+  .bb-bar__dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: rgba(238,238,239,.45); }
+  .bb-bar__spacer { margin-left: auto; font-size: 12px; color: var(--bb-faint); }
+
+  /* --- dot sphere: the canvas is the frame, it paints its own background --- */
+  .sphere-canvas {
+    display: block; width: 100%; height: min(calc(100vh - 44px - 96px - 48px), 720px); min-height: 320px;
+    border-radius: 12px; box-shadow: 0 0 0 1px rgba(0,0,0,.06); touch-action: none;
+  }
+  @media (max-width: 980px) {
+    .sphere-canvas { height: calc(var(--vh) - 48px - 16px - var(--sheet-peek) - 24px - 16px - 20px); min-height: 280px; }
+    /* keep the demo in the part of the stage the half-open sheet leaves visible */
+    .stage--beam { padding-top: 56px; }
+  }
 </style>
 </head>
 <body>
@@ -292,6 +347,8 @@ __FA_CSS__
     <button data-view="logos" class="is-active">S : Clients</button>
     <button data-view="answer">S : Short answer</button>
     <button data-view="fab">Float actions</button>
+    <button data-view="beam">Border beam</button>
+    <button data-view="sphere">Dot sphere</button>
   </div>
 </nav>
 
@@ -724,6 +781,304 @@ __FA_CSS__
   </aside>
 </div>
 
+<!-- ======================= view: border beam ======================= -->
+<div class="app" id="view-beam" hidden>
+  <main class="stage stage--beam" id="bb-stage">
+    <div class="bb-slot" id="bb-slot"></div>
+    <div class="stage-hint" id="bb-hint"></div>
+  </main>
+  <aside class="panel">
+    <h1>Border beam</h1>
+    <p class="sub">Анімоване веселкове світло по межі елемента: різка обводка, м'яке внутрішнє сяйво і розмитий bloom, усі три крутить одна CSS-змінна. Чистий CSS + маленький контролер, без залежностей. Порт <a href="https://libraries.dev/beam" target="_blank" rel="noopener">libraries.dev/beam</a>.</p>
+    <div class="save" data-save="beam">
+      <button class="primary" data-save-do="save">Зберегти</button>
+      <button data-save-do="link">Посилання</button>
+      <button data-save-do="clear">Забути збережене</button>
+      <span class="save__status"></span>
+    </div>
+
+    <div class="group">
+      <h2>Пресети</h2>
+      <div class="presets">
+        <button data-bb-preset="default">Default</button>
+        <button data-bb-preset="status">Status bar</button>
+        <button data-bb-preset="soft">Soft</button>
+        <button data-bb-preset="neon">Neon</button>
+        <button data-bb-preset="mono">Mono</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>Сценарій</h2>
+      <div class="field inline">
+        <label for="bb-demo">Елемент</label>
+        <select id="bb-demo">
+          <option value="chat">Чат-інпут</option>
+          <option value="card">Картка</option>
+          <option value="bar">Статус-панель</option>
+          <option value="button">Кнопка</option>
+          <option value="input">Поле вводу</option>
+          <option value="tile">Плитка</option>
+        </select>
+      </div>
+      <div class="field inline">
+        <label for="bb-mode">Режим</label>
+        <select id="bb-mode">
+          <option value="spin">Обертання по межі</option>
+          <option value="travel">Уздовж нижньої межі</option>
+        </select>
+      </div>
+      <div class="field inline">
+        <label for="bb-trigger">Тригер</label>
+        <select id="bb-trigger">
+          <option value="always">Завжди</option>
+          <option value="hover">Наведення</option>
+          <option value="focus">Фокус</option>
+        </select>
+      </div>
+      <div class="row-btns">
+        <button class="primary" id="bb-replay">Програти появу</button>
+        <button id="bb-toggle">Пауза</button>
+        <button id="bb-random">Випадково</button>
+        <button id="bb-reset">Скинути</button>
+      </div>
+      <div class="status" id="bb-status"></div>
+    </div>
+
+    <div class="group">
+      <h2>Промінь</h2>
+      <div class="field"><label for="bb-duration">Тривалість циклу</label><output id="bb-duration-out"></output>
+        <input type="range" id="bb-duration" min="0.3" max="10" step="0.02"></div>
+      <div class="field inline">
+        <label for="bb-direction">Напрямок</label>
+        <select id="bb-direction">
+          <option value="normal">За годинниковою</option>
+          <option value="reverse">Проти</option>
+        </select>
+      </div>
+      <div class="field"><label for="bb-strength">Загальна сила</label><output id="bb-strength-out"></output>
+        <input type="range" id="bb-strength" min="0" max="3" step="0.01"></div>
+      <div class="field" data-bb-only="spin"><label for="bb-head">Позиція голови</label><output id="bb-head-out"></output>
+        <input type="range" id="bb-head" min="0" max="100" step="0.5"></div>
+      <div class="field" data-bb-only="spin"><label for="bb-arc">Довжина дуги</label><output id="bb-arc-out"></output>
+        <input type="range" id="bb-arc" min="1" max="45" step="0.5"></div>
+      <div class="field" data-bb-only="travel"><label for="bb-breatheDuration">Пульсація висоти</label><output id="bb-breatheDuration-out"></output>
+        <input type="range" id="bb-breatheDuration" min="1" max="12" step="0.1"></div>
+      <div class="field" data-bb-only="travel"><label for="bb-spikeDuration">Мерехтіння голок</label><output id="bb-spikeDuration-out"></output>
+        <input type="range" id="bb-spikeDuration" min="1" max="12" step="0.1"></div>
+      <div class="field" data-bb-only="travel"><label for="bb-spikeScale">Розмір голок</label><output id="bb-spikeScale-out"></output>
+        <input type="range" id="bb-spikeScale" min="0" max="3" step="0.01"></div>
+    </div>
+
+    <div class="group">
+      <h2>Геометрія</h2>
+      <div class="field"><label for="bb-radius">Радіус скруглення</label><output id="bb-radius-out"></output>
+        <input type="range" id="bb-radius" min="0" max="60" step="1"></div>
+      <div class="field"><label for="bb-width">Товщина обводки</label><output id="bb-width-out"></output>
+        <input type="range" id="bb-width" min="0.5" max="6" step="0.5"></div>
+      <div class="field"><label for="bb-innerFeather">Глибина внутрішнього сяйва</label><output id="bb-innerFeather-out"></output>
+        <input type="range" id="bb-innerFeather" min="0" max="90" step="1"></div>
+    </div>
+
+    <div class="group">
+      <h2>Шари</h2>
+      <div class="field"><label for="bb-strokeOpacity">Обводка</label><output id="bb-strokeOpacity-out"></output>
+        <input type="range" id="bb-strokeOpacity" min="0" max="2" step="0.01"></div>
+      <div class="field"><label for="bb-innerOpacity">Внутрішнє сяйво</label><output id="bb-innerOpacity-out"></output>
+        <input type="range" id="bb-innerOpacity" min="0" max="2" step="0.01"></div>
+      <div class="field"><label for="bb-bloomOpacity">Bloom</label><output id="bb-bloomOpacity-out"></output>
+        <input type="range" id="bb-bloomOpacity" min="0" max="3" step="0.01"></div>
+      <div class="field"><label for="bb-bloomBlur">Розмиття bloom</label><output id="bb-bloomBlur-out"></output>
+        <input type="range" id="bb-bloomBlur" min="0" max="30" step="0.5"></div>
+      <div class="field"><label for="bb-innerShadow">Внутрішня рамка</label><output id="bb-innerShadow-out"></output>
+        <input type="range" id="bb-innerShadow" min="0" max="1" step="0.01"></div>
+    </div>
+
+    <div class="group">
+      <h2>Колір</h2>
+      <div class="field"><label>Палітра</label><output id="bb-palette-out"></output>
+        <div class="swatches" id="bb-palettes"></div></div>
+      <div class="field"><label for="bb-hueBase">Зсув відтінку</label><output id="bb-hueBase-out"></output>
+        <input type="range" id="bb-hueBase" min="-180" max="180" step="1"></div>
+      <div class="field"><label for="bb-hueRange">Амплітуда відтінку</label><output id="bb-hueRange-out"></output>
+        <input type="range" id="bb-hueRange" min="0" max="180" step="1"></div>
+      <div class="field"><label for="bb-hueDuration">Період відтінку</label><output id="bb-hueDuration-out"></output>
+        <input type="range" id="bb-hueDuration" min="1" max="40" step="0.5"></div>
+      <div class="field"><label for="bb-saturate">Насиченість</label><output id="bb-saturate-out"></output>
+        <input type="range" id="bb-saturate" min="0" max="3" step="0.01"></div>
+      <div class="field"><label for="bb-brightness">Яскравість</label><output id="bb-brightness-out"></output>
+        <input type="range" id="bb-brightness" min="0.2" max="3" step="0.01"></div>
+    </div>
+
+    <div class="group">
+      <h2>Поява і зникання</h2>
+      <div class="field"><label for="bb-fadeIn">Поява</label><output id="bb-fadeIn-out"></output>
+        <input type="range" id="bb-fadeIn" min="0" max="3" step="0.05"></div>
+      <div class="field"><label for="bb-fadeOut">Зникання</label><output id="bb-fadeOut-out"></output>
+        <input type="range" id="bb-fadeOut" min="0" max="3" step="0.05"></div>
+    </div>
+
+    <div class="group">
+      <h2>Вигляд</h2>
+      <div class="field inline"><label for="bb-surface">Колір елемента</label><input type="color" id="bb-surface"></div>
+      <div class="field inline"><label for="bb-bg">Фон</label><input type="color" id="bb-bg"></div>
+      <div class="check"><input type="checkbox" id="bb-grid"><label for="bb-grid">Сітка на фоні</label></div>
+    </div>
+
+    <div class="group">
+      <h2>Код</h2>
+      <div class="tabs">
+        <button data-bb-tab="html" class="is-active">index.html</button>
+        <button data-bb-tab="css">beam.css</button>
+        <button data-bb-tab="js">beam.js</button>
+      </div>
+      <textarea class="code" id="bb-code" readonly spellcheck="false"></textarea>
+      <div class="row-btns" style="margin-top:8px"><button id="bb-copy">Скопіювати</button></div>
+      <p class="files">Файли лежать у <code>border-beam/</code>: <code>beam.css</code>, <code>beam.js</code>, <code>demo.html</code>, <code>README.md</code>, а ще <code>figma-shader-prompt.md</code>, промпт, що будує той самий ефект як shader fill у Figma. Усі налаштування це CSS-змінні на елементі, вкладка index.html показує їх з поточними значеннями. Потрібні <code>@property</code> і <code>mask-composite</code>: Chrome і Edge 120+, Safari 16.4+, Firefox 128+.</p>
+    </div>
+  </aside>
+</div>
+
+<!-- ======================= view: dot sphere ======================= -->
+<div class="app" id="view-sphere" hidden>
+  <main class="stage" id="ds-stage">
+    <div class="frame" id="ds-frame">
+      <canvas class="sphere-canvas" id="ds-canvas" aria-label="Dot sphere"></canvas>
+    </div>
+    <div class="stage-hint" id="ds-hint"></div>
+  </main>
+  <aside class="panel">
+    <h1>Dot sphere</h1>
+    <p class="sub">3D-сфера з точок на звичайному canvas, без WebGL: повільно обертається, тягнеться за курсором, крутиться перетягуванням з інерцією. Шість розкладок точок, один файл без залежностей.</p>
+    <div class="save" data-save="sphere">
+      <button class="primary" data-save-do="save">Зберегти</button>
+      <button data-save-do="link">Посилання</button>
+      <button data-save-do="clear">Забути збережене</button>
+      <span class="save__status"></span>
+    </div>
+
+    <div class="group">
+      <h2>Пресети</h2>
+      <div class="presets">
+        <button data-ds-preset="stipple">Крапки</button>
+        <button data-ds-preset="orbits">Орбіти</button>
+        <button data-ds-preset="grid">Сітка</button>
+        <button data-ds-preset="spiral">Спіраль</button>
+        <button data-ds-preset="cloud">Хмара</button>
+        <button data-ds-preset="mesh">Мережа</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>Розкладка</h2>
+      <div class="field inline">
+        <label for="ds-style">Розкладка точок</label>
+        <select id="ds-style">
+          <option value="stipple">Крапки, Фібоначчі</option>
+          <option value="orbits">Орбіти</option>
+          <option value="grid">Паралелі й меридіани</option>
+          <option value="spiral">Спіраль</option>
+          <option value="cloud">Об'ємна хмара</option>
+          <option value="mesh">Мережа з лініями</option>
+        </select>
+      </div>
+      <div class="field" data-ds-only="orbits"><label for="ds-rings">Кількість орбіт</label><output id="ds-rings-out"></output>
+        <input type="range" id="ds-rings" min="2" max="40" step="1"></div>
+      <div class="field" data-ds-only="grid"><label for="ds-gridLat">Паралелей</label><output id="ds-gridLat-out"></output>
+        <input type="range" id="ds-gridLat" min="2" max="40" step="1"></div>
+      <div class="field" data-ds-only="grid"><label for="ds-gridLon">Меридіанів</label><output id="ds-gridLon-out"></output>
+        <input type="range" id="ds-gridLon" min="2" max="48" step="1"></div>
+      <div class="field" data-ds-only="spiral"><label for="ds-turns">Витків спіралі</label><output id="ds-turns-out"></output>
+        <input type="range" id="ds-turns" min="2" max="90" step="1"></div>
+      <div class="field" data-ds-only="cloud"><label for="ds-thickness">Товщина оболонки</label><output id="ds-thickness-out"></output>
+        <input type="range" id="ds-thickness" min="0" max="1" step="0.01"></div>
+      <div class="field" data-ds-only="mesh"><label for="ds-linkDist">Дальність зв'язків</label><output id="ds-linkDist-out"></output>
+        <input type="range" id="ds-linkDist" min="0.1" max="0.9" step="0.01"></div>
+      <div class="field" data-ds-only="mesh"><label for="ds-lineWidth">Товщина ліній</label><output id="ds-lineWidth-out"></output>
+        <input type="range" id="ds-lineWidth" min="0.2" max="3" step="0.1"></div>
+      <div class="field"><label for="ds-seed">Варіант розкладки</label><output id="ds-seed-out"></output>
+        <input type="range" id="ds-seed" min="1" max="999" step="1"></div>
+      <div class="row-btns">
+        <button class="primary" id="ds-toggle">Пауза</button>
+        <button id="ds-random">Випадково</button>
+        <button id="ds-reset">Скинути</button>
+      </div>
+      <div class="status" id="ds-status"></div>
+    </div>
+
+    <div class="group">
+      <h2>Рух</h2>
+      <div class="field"><label for="ds-speed">Швидкість обертання</label><output id="ds-speed-out"></output>
+        <input type="range" id="ds-speed" min="0" max="1.2" step="0.005"></div>
+      <div class="field inline">
+        <label for="ds-direction">Напрямок</label>
+        <select id="ds-direction">
+          <option value="1">За годинниковою</option>
+          <option value="-1">Проти</option>
+        </select>
+      </div>
+      <div class="field"><label for="ds-tilt">Нахил осі</label><output id="ds-tilt-out"></output>
+        <input type="range" id="ds-tilt" min="-1" max="1" step="0.01"></div>
+    </div>
+
+    <div class="group">
+      <h2>Реакція на курсор</h2>
+      <div class="field"><label for="ds-pointer">Сила паралаксу</label><output id="ds-pointer-out"></output>
+        <input type="range" id="ds-pointer" min="0" max="1.5" step="0.01"></div>
+      <div class="field"><label for="ds-damping">Пружність</label><output id="ds-damping-out"></output>
+        <input type="range" id="ds-damping" min="0.005" max="0.3" step="0.005"></div>
+      <div class="check"><input type="checkbox" id="ds-drag"><label for="ds-drag">Крутити перетягуванням</label></div>
+      <div class="field"><label for="ds-friction">Інерція після кидка</label><output id="ds-friction-out"></output>
+        <input type="range" id="ds-friction" min="0.8" max="0.995" step="0.005"></div>
+    </div>
+
+    <div class="group">
+      <h2>Геометрія</h2>
+      <div class="field"><label for="ds-count">Кількість точок</label><output id="ds-count-out"></output>
+        <input type="range" id="ds-count" min="200" max="20000" step="100"></div>
+      <div class="field"><label for="ds-dotSize">Розмір точки</label><output id="ds-dotSize-out"></output>
+        <input type="range" id="ds-dotSize" min="0.3" max="6" step="0.05"></div>
+      <div class="field"><label for="ds-radius">Розмір сфери</label><output id="ds-radius-out"></output>
+        <input type="range" id="ds-radius" min="0.3" max="1" step="0.01"></div>
+      <div class="field"><label for="ds-perspective">Перспектива</label><output id="ds-perspective-out"></output>
+        <input type="range" id="ds-perspective" min="1.6" max="20" step="0.1"></div>
+      <div class="field"><label for="ds-jitter">Розкид точок</label><output id="ds-jitter-out"></output>
+        <input type="range" id="ds-jitter" min="0" max="0.5" step="0.005"></div>
+    </div>
+
+    <div class="group">
+      <h2>Адаптив</h2>
+      <p class="files" style="margin:0 0 10px">Ширину рамки тягни за краї прямо на канвасі, пресети на тягачку. Полотно саме стежить за своїм розміром.</p>
+      <div class="status" id="ds-bp"></div>
+    </div>
+
+    <div class="group">
+      <h2>Вигляд</h2>
+      <div class="tabs">
+        <button data-ds-theme="light">Світла</button>
+        <button data-ds-theme="dark">Темна</button>
+      </div>
+      <div class="field inline"><label for="ds-color">Колір точок</label><input type="color" id="ds-color"></div>
+      <div class="field inline"><label for="ds-background">Фон</label><input type="color" id="ds-background"></div>
+      <div class="field"><label for="ds-depthFade">Згасання вглиб</label><output id="ds-depthFade-out"></output>
+        <input type="range" id="ds-depthFade" min="0" max="1" step="0.01"></div>
+      <div class="field"><label for="ds-depthScale">Зменшення вглиб</label><output id="ds-depthScale-out"></output>
+        <input type="range" id="ds-depthScale" min="0" max="1" step="0.01"></div>
+    </div>
+
+    <div class="group">
+      <h2>Код</h2>
+      <div class="tabs">
+        <button data-ds-tab="html" class="is-active">index.html</button>
+        <button data-ds-tab="js">sphere.js</button>
+      </div>
+      <textarea class="code" id="ds-code" readonly spellcheck="false"></textarea>
+      <div class="row-btns" style="margin-top:8px"><button id="ds-copy">Скопіювати</button></div>
+      <p class="files">Файли лежать у <code>dot-sphere/</code>: <code>sphere.js</code>, <code>demo.html</code>, <code>README.md</code>. Увесь ефект це один файл. Полотно малює свій фон саме, <code>background: 'transparent'</code> кладе сферу на будь-яку підкладку. Точки не сортуються за глибиною, а розкладаються по 20 кошиках і кожен кошик малюється одним <code>fill()</code>, тому 20 000 точок тримають 60 fps.</p>
+    </div>
+  </aside>
+</div>
+
 <!-- logos/*.svg inlined by build-playground.py as { path: markup } so the playground works from file:// -->
 <script id="src-logos">
 window.LOGO_FILES = __LOGO_FILES__;
@@ -744,9 +1099,20 @@ __SA_JS__
 __FA_JS__
 </script>
 
+<!-- beam.js (inlined by build-playground.py) -->
+<script id="src-bb-js">
+__BB_JS__
+</script>
+
+<!-- sphere.js (inlined by build-playground.py) -->
+<script id="src-ds-js">
+__DS_JS__
+</script>
+
 <script>
 /* ---------- playground UI ---------- */
 const $ = (id) => document.getElementById(id);
+const pick = (obj, keys) => Object.fromEntries(keys.filter(k => k in obj).map(k => [k, obj[k]]));
 
 /* ---------- resizable canvas frame ----------
    Wraps a demo frame: drag either edge (symmetric, the frame stays centered),
@@ -1357,13 +1723,372 @@ $('fa-copy').addEventListener('click', async () => {
 faStateWatch.observe(fa.layer, { attributes: true, attributeFilter: ['class', 'style'] });
 faRefresh();
 
+/* ---------- border beam playground ----------
+   The effect has no options object: everything is a --beam-* custom property
+   on the host, so the playground keeps its own state and writes it through. */
+const bbStage = $('bb-stage');
+const bbSlot = $('bb-slot');
+
+// state key -> custom property on the host, with its unit
+const BB_VARS = {
+  radius: ['--beam-radius', 'px'], width: ['--beam-width', 'px'],
+  duration: ['--beam-duration', 's'], direction: ['--beam-direction', ''],
+  head: ['--beam-head', ''], arc: ['--beam-arc', ''],
+  strength: ['--beam-strength', ''], strokeOpacity: ['--beam-stroke-opacity', ''],
+  innerOpacity: ['--beam-inner-opacity', ''], bloomOpacity: ['--beam-bloom-opacity', ''],
+  bloomBlur: ['--beam-bloom-blur', 'px'], innerFeather: ['--beam-inner-feather', 'px'], innerShadow: ['--beam-inner-shadow', ''],
+  hueBase: ['--beam-hue-base', 'deg'], hueRange: ['--beam-hue-range', 'deg'], hueDuration: ['--beam-hue-duration', 's'],
+  brightness: ['--beam-brightness', ''], saturate: ['--beam-saturate', ''],
+  fadeIn: ['--beam-fade-in', 's'], fadeOut: ['--beam-fade-out', 's'],
+  breatheDuration: ['--beam-breathe-duration', 's'], spikeDuration: ['--beam-spike-duration', 's'], spikeScale: ['--beam-spike-scale', ''],
+};
+
+const BB_PALETTES = {
+  aurora: { label: 'Aurora', colors: ['#ff3264', '#288cff', '#32c850', '#1eb9aa', '#6446ff', '#288cff', '#ff7828', '#f032b4', '#b428f0'] },
+  sunset: { label: 'Sunset', colors: ['#ff2d55', '#ff6b2c', '#ffb02e', '#ff4d8d', '#ff3c78', '#ffa53d', '#ff7a18', '#ff2f6d', '#d9345f'] },
+  ocean:  { label: 'Ocean',  colors: ['#1ec8ff', '#2b6bff', '#12e0c0', '#0fa5c9', '#5b4dff', '#2f8fff', '#00d4ff', '#7a5cff', '#3ad1ff'] },
+  toxic:  { label: 'Toxic',  colors: ['#b6ff2e', '#25e88a', '#00ffc2', '#7bff3d', '#22d1a0', '#4dff9e', '#d4ff1f', '#00e5a0', '#8cff45'] },
+  candy:  { label: 'Candy',  colors: ['#ff5fd2', '#7a5cff', '#ff8ae0', '#c05cff', '#5c8cff', '#ff6fa8', '#ffa3ec', '#e05cff', '#9d6bff'] },
+  mono:   { label: 'Mono',   colors: ['#ffffff', '#d6d6de', '#ffffff', '#c9c9d4', '#e8e8ef', '#ffffff', '#d0d0d8', '#ffffff', '#bcbcc6'] },
+};
+
+// each demo element has a radius and the mode it was designed for: the bar is the shape the travel mode is for
+const BB_DEMOS = {
+  chat:   { radius: 20, cls: 'bb-chat', mode: 'spin', html: '<div class="bb-chat__top">@</div><div class="bb-chat__ph">Build anything…</div><div class="bb-chat__row"><span class="bb-pill">Agent ⌄</span><span class="bb-pill">Auto ⌄</span><span class="bb-chat__send">↑</span></div>' },
+  card:   { radius: 16, cls: 'bb-card', mode: 'spin', html: '<div class="bb-card__line bb-card__line--title"></div><div class="bb-card__line"></div><div class="bb-card__line bb-card__line--short"></div>' },
+  bar:    { radius: 20, cls: 'bb-bar',  mode: 'travel', html: '<span class="bb-bar__dot"></span><span>Генерую відповідь…</span><span class="bb-bar__spacer">esc, зупинити</span>' },
+  button: { radius: 12, cls: 'bb-btn',  mode: 'spin', html: '✦ Generate' },
+  input:  { radius: 12, cls: 'bb-input', mode: 'spin', html: 'Пошук по проєкту…' },
+  tile:   { radius: 18, cls: 'bb-tile', mode: 'spin', html: '✦' },
+};
+const BB_MODE_DURATION = { spin: 1.96, travel: 3.1 };
+
+const BB_DEFAULTS = {
+  demo: 'chat', mode: 'spin', trigger: 'always', palette: 'aurora',
+  radius: 20, width: 1, duration: 1.96, direction: 'normal', head: 66, arc: 12,
+  strength: 1, strokeOpacity: 1, innerOpacity: 1, bloomOpacity: 1, bloomBlur: 8, innerFeather: 28, innerShadow: 0.27,
+  hueBase: 0, hueRange: 30, hueDuration: 12, brightness: 1.3, saturate: 1.2,
+  fadeIn: 0.6, fadeOut: 0.5, breatheDuration: 4, spikeDuration: 4.1, spikeScale: 1,
+  surface: '#1d1d1f', bg: '#0e0e10', grid: false, paused: false,
+};
+const BB_EFFECT_KEYS = Object.keys(BB_DEFAULTS).filter(k => !['demo', 'trigger', 'surface', 'bg', 'grid', 'paused'].includes(k));
+const BB_PRESETS = {
+  default: pick(BB_DEFAULTS, BB_EFFECT_KEYS),
+  status:  Object.assign(pick(BB_DEFAULTS, BB_EFFECT_KEYS), { demo: 'bar', mode: 'travel', duration: 3.1 }),
+  soft:    { mode: 'spin', palette: 'ocean', duration: 3.2, arc: 22, strength: 0.7, bloomBlur: 12, bloomOpacity: 0.8, innerFeather: 40, hueRange: 20, saturate: 1 },
+  neon:    { mode: 'spin', palette: 'toxic', duration: 1.4, arc: 10, width: 1.5, strength: 1.5, bloomOpacity: 2, bloomBlur: 14, brightness: 1.6, saturate: 1.4 },
+  mono:    { mode: 'spin', palette: 'mono', duration: 2.4, arc: 14, strength: 0.9, saturate: 0, hueRange: 0, bloomBlur: 6 },
+};
+
+const bb = Object.assign({}, BB_DEFAULTS);
+const bbUi = { tab: 'html' };
+let bbHost = null, bbInst = null;
+
+// palette swatches
+$('bb-palettes').innerHTML = Object.entries(BB_PALETTES).map(([id, p]) =>
+  `<button type="button" class="swatch" data-bb-palette="${id}" title="${p.label}" style="background: conic-gradient(${p.colors.join(',')},${p.colors[0]})"></button>`).join('');
+
+function bbMount() {
+  const d = BB_DEMOS[bb.demo];
+  if (bbInst) bbInst.destroy();
+  bbSlot.innerHTML = '';
+  bbHost = document.createElement('div');
+  bbHost.className = `beam bb-demo ${d.cls}`;
+  bbHost.setAttribute('data-beam', '');
+  bbHost.innerHTML = d.html;
+  if (bb.demo === 'input') bbHost.tabIndex = 0;
+  bbSlot.append(bbHost);
+  // the playground exists to show motion, so reduced-motion is not honoured here
+  bbInst = BorderBeam.attach(bbHost, { trigger: bb.trigger, respectReducedMotion: false });
+}
+
+function bbApply() {
+  if (!bbHost || bbHost.dataset.demoId !== bb.demo) { bbMount(); bbHost.dataset.demoId = bb.demo; }
+  bbHost.setAttribute('data-mode', bb.mode);
+  for (const [k, [prop, unit]] of Object.entries(BB_VARS)) bbHost.style.setProperty(prop, bb[k] + unit);
+  BB_PALETTES[bb.palette].colors.forEach((c, i) => bbHost.style.setProperty('--bc-' + (i + 1), c));
+  bbHost.style.setProperty('--bb-surface', bb.surface);
+  bbStage.style.setProperty('--stage-bg', bb.bg);
+  bbStage.toggleAttribute('data-grid', bb.grid);
+  if (bbInst.trigger !== bb.trigger) bbInst.setTrigger(bb.trigger);
+  bb.paused ? bbInst.pause() : bbInst.play();
+}
+
+function bbUpdate(patch) {
+  patch = Object.assign({}, patch);
+  // a new demo brings its own radius and preferred mode, unless the patch says otherwise
+  if (patch.demo && patch.demo !== bb.demo) {
+    const d = BB_DEMOS[patch.demo];
+    patch = Object.assign({ radius: d.radius, mode: d.mode }, patch);
+  }
+  // each mode has its own natural tempo
+  if (patch.mode && patch.mode !== bb.mode && patch.duration == null) patch.duration = BB_MODE_DURATION[patch.mode];
+  Object.assign(bb, patch);
+  bbApply();
+  bbRefresh();
+}
+
+const BB_RANGES = {
+  duration:        { fmt: v => v.toFixed(2) + ' s' },
+  strength:        { fmt: v => v.toFixed(2) },
+  head:            { fmt: v => v + ' %' },
+  arc:             { fmt: v => v + ' %' },
+  breatheDuration: { fmt: v => v.toFixed(1) + ' s' },
+  spikeDuration:   { fmt: v => v.toFixed(1) + ' s' },
+  spikeScale:      { fmt: v => v.toFixed(2) },
+  radius:          { fmt: v => v + ' px' },
+  width:           { fmt: v => v + ' px' },
+  innerFeather:    { fmt: v => v + ' px' },
+  strokeOpacity:   { fmt: v => v.toFixed(2) },
+  innerOpacity:    { fmt: v => v.toFixed(2) },
+  bloomOpacity:    { fmt: v => v.toFixed(2) },
+  bloomBlur:       { fmt: v => v + ' px' },
+  innerShadow:     { fmt: v => v.toFixed(2) },
+  hueBase:         { fmt: v => v + '°' },
+  hueRange:        { fmt: v => v + '°' },
+  hueDuration:     { fmt: v => v + ' s' },
+  saturate:        { fmt: v => v.toFixed(2) },
+  brightness:      { fmt: v => v.toFixed(2) },
+  fadeIn:          { fmt: v => v.toFixed(2) + ' s' },
+  fadeOut:         { fmt: v => v.toFixed(2) + ' s' },
+};
+const BB_SELECTS = ['demo', 'mode', 'trigger', 'direction'];
+
+function bbRefresh() {
+  for (const [k, r] of Object.entries(BB_RANGES)) { $('bb-' + k).value = bb[k]; $('bb-' + k + '-out').textContent = r.fmt(+bb[k]); }
+  for (const k of BB_SELECTS) $('bb-' + k).value = bb[k];
+  document.querySelectorAll('[data-bb-only]').forEach(el => el.hidden = el.dataset.bbOnly !== bb.mode);
+  document.querySelectorAll('[data-bb-palette]').forEach(b => b.classList.toggle('is-active', b.dataset.bbPalette === bb.palette));
+  $('bb-palette-out').textContent = BB_PALETTES[bb.palette].label;
+  $('bb-surface').value = bb.surface;
+  $('bb-bg').value = bb.bg;
+  $('bb-grid').checked = bb.grid;
+  $('bb-toggle').textContent = bb.paused ? 'Продовжити' : 'Пауза';
+  document.querySelectorAll('[data-bb-tab]').forEach(b => b.classList.toggle('is-active', b.dataset.bbTab === bbUi.tab));
+  $('bb-hint').textContent = bb.paused ? 'Пауза'
+    : bb.trigger === 'hover' ? 'Наведи курсор на елемент, щоб запустити промінь'
+    : bb.trigger === 'focus' ? 'Клікни в елемент (фокус), щоб запустити промінь'
+    : bb.mode === 'travel' ? 'Промінь їде вздовж нижньої межі, найкраще на широких низьких елементах' : 'Промінь обертається по всій межі';
+  $('bb-status').innerHTML = `Режим: <b>${bb.mode === 'travel' ? 'нижня межа' : 'обертання'}</b> · цикл <b>${(+bb.duration).toFixed(2)} s</b> · палітра <b>${BB_PALETTES[bb.palette].label}</b>`;
+  $('bb-code').value = bbCodeFor(bbUi.tab);
+}
+
+function bbVarsBlock(pad) {
+  const keys = ['radius', 'width', 'duration', 'direction', 'fadeIn', 'fadeOut',
+    ...(bb.mode === 'spin' ? ['head', 'arc'] : ['breatheDuration', 'spikeDuration', 'spikeScale']),
+    'strength', 'strokeOpacity', 'innerOpacity', 'bloomOpacity', 'bloomBlur', 'innerFeather', 'innerShadow',
+    'hueBase', 'hueRange', 'hueDuration', 'brightness', 'saturate'];
+  const p = BB_PALETTES[bb.palette];
+  return keys.map(k => `${pad}${BB_VARS[k][0]}: ${bb[k]}${BB_VARS[k][1]};`).join('\n') +
+    `\n\n${pad}/* палітра: ${p.label} */\n` + p.colors.map((c, i) => `${pad}--bc-${i + 1}: ${c};`).join('\n');
+}
+
+function bbCodeFor(tab) {
+  if (tab === 'css') return $('src-bb-css').textContent.trim();
+  // the build escapes the closing script tag inside the inlined source; give the copy back verbatim
+  if (tab === 'js') return $('src-bb-js').textContent.trim().replace(/<\\\/script/g, '<\/script');
+  return `<link rel="stylesheet" href="beam.css">
+
+<!-- будь-який елемент стає носієм ефекту -->
+<div class="beam my-card" data-beam data-mode="${bb.mode}" data-trigger="${bb.trigger}">
+  <!-- ваш контент -->
+</div>
+
+<script src="beam.js"><\/script>
+
+<!-- налаштування це звичайні CSS-змінні на носії -->
+<style>
+  .my-card {
+    background: ${bb.surface};
+
+${bbVarsBlock('    ')}
+  }
+</style>
+
+<!-- керування з JS, за потреби:
+     const b = BorderBeam.get(document.querySelector('.beam'));
+     b.show(); b.hide(); b.pause(); b.play();
+     b.setTrigger('hover'); b.set('duration', '3s');
+-->`;
+}
+
+for (const k of Object.keys(BB_RANGES)) $('bb-' + k).addEventListener('input', e => bbUpdate({ [k]: parseFloat(e.target.value) }));
+for (const k of BB_SELECTS) $('bb-' + k).addEventListener('change', e => bbUpdate({ [k]: e.target.value }));
+$('bb-surface').addEventListener('input', e => bbUpdate({ surface: e.target.value }));
+$('bb-bg').addEventListener('input', e => bbUpdate({ bg: e.target.value }));
+$('bb-grid').addEventListener('change', e => bbUpdate({ grid: e.target.checked }));
+$('bb-toggle').addEventListener('click', () => bbUpdate({ paused: !bb.paused }));
+$('bb-replay').addEventListener('click', () => { bbInst.hide(); setTimeout(() => bbInst.show(), bb.fadeOut * 1000 + 40); });
+$('bb-reset').addEventListener('click', () => bbUpdate(BB_DEFAULTS));
+$('bb-random').addEventListener('click', () => {
+  const rnd = (a, b) => Math.round((a + Math.random() * (b - a)) * 100) / 100;
+  const palettes = Object.keys(BB_PALETTES);
+  bbUpdate({
+    palette: palettes[Math.floor(Math.random() * palettes.length)],
+    duration: rnd(0.9, 5), head: rnd(0, 100), arc: rnd(4, 30), strength: rnd(0.6, 1.8),
+    hueBase: Math.round(rnd(-180, 180)), hueRange: Math.round(rnd(0, 90)), bloomBlur: rnd(2, 18),
+    direction: Math.random() < 0.5 ? 'normal' : 'reverse',
+  });
+});
+document.querySelectorAll('[data-bb-preset]').forEach(b => b.addEventListener('click', () => bbUpdate(BB_PRESETS[b.dataset.bbPreset])));
+document.querySelectorAll('[data-bb-palette]').forEach(b => b.addEventListener('click', () => bbUpdate({ palette: b.dataset.bbPalette })));
+document.querySelectorAll('[data-bb-tab]').forEach(b => b.addEventListener('click', () => { bbUi.tab = b.dataset.bbTab; bbRefresh(); }));
+$('bb-copy').addEventListener('click', async () => {
+  await navigator.clipboard.writeText($('bb-code').value);
+  $('bb-copy').textContent = 'Скопійовано';
+  setTimeout(() => $('bb-copy').textContent = 'Скопіювати', 1200);
+});
+
+bbApply();
+bbRefresh();
+
+/* ---------- dot sphere playground ---------- */
+const dsFrame = $('ds-frame');
+const dsCanvas = $('ds-canvas');
+
+const DS_THEMES = {
+  light: { background: '#f4f4f2', color: '#141414' },
+  dark:  { background: '#0e0e10', color: '#e8e8ef' },
+};
+// a sensible starting point for each layout: switching style retunes these
+const DS_PRESETS = {
+  stipple: { style: 'stipple', count: 5200, dotSize: 1.15, radius: 0.78, depthFade: 0.55 },
+  orbits:  { style: 'orbits',  count: 3600, dotSize: 1.35, radius: 0.72, depthFade: 0.62, rings: 12 },
+  grid:    { style: 'grid',    count: 4200, dotSize: 1.2,  radius: 0.76, depthFade: 0.6 },
+  spiral:  { style: 'spiral',  count: 5000, dotSize: 1.25, radius: 0.76, depthFade: 0.58, turns: 26 },
+  cloud:   { style: 'cloud',   count: 7000, dotSize: 1.05, radius: 0.74, depthFade: 0.5 },
+  mesh:    { style: 'mesh',    count: 4800, dotSize: 2.4,  radius: 0.72, depthFade: 0.45, linkDist: 0.34, lineWidth: 0.5 },
+};
+// what goes into the snippet and into the saved state
+const DS_KEYS = Object.keys(DotSphere.defaults).filter(k => !['respectReducedMotion', 'paused'].includes(k));
+const DS_BASE = Object.assign({}, DotSphere.defaults, DS_PRESETS.stipple, { respectReducedMotion: false });
+
+const dsUi = { frame: 0, tab: 'html' };
+const ds = DotSphere.create(dsCanvas, DS_BASE);
+ds.stop(); // showView() starts the loop once the tab is on screen
+const dsRz = makeResizable(dsFrame, () => dsUi.frame, w => { dsUi.frame = w; dsRefresh(); });
+
+const DS_RANGES = {
+  rings:       { fmt: v => v },
+  gridLat:     { fmt: v => v },
+  gridLon:     { fmt: v => v },
+  turns:       { fmt: v => v },
+  thickness:   { fmt: v => v.toFixed(2) },
+  linkDist:    { fmt: v => v.toFixed(2) },
+  lineWidth:   { fmt: v => v.toFixed(1) + ' px' },
+  seed:        { fmt: v => '#' + v },
+  speed:       { fmt: v => v.toFixed(3) + ' рад/с' },
+  tilt:        { fmt: v => v.toFixed(2) + ' рад' },
+  pointer:     { fmt: v => v.toFixed(2) + ' рад' },
+  damping:     { fmt: v => v.toFixed(3) },
+  friction:    { fmt: v => v.toFixed(3) },
+  count:       { fmt: v => v },
+  dotSize:     { fmt: v => v.toFixed(2) + ' px' },
+  radius:      { fmt: v => v.toFixed(2) },
+  perspective: { fmt: v => v.toFixed(1) },
+  jitter:      { fmt: v => v.toFixed(3) },
+  depthFade:   { fmt: v => v.toFixed(2) },
+  depthScale:  { fmt: v => v.toFixed(2) },
+};
+const DS_CHECKS = ['drag'];
+
+function dsUpdate(patch) {
+  // a new layout starts from its preset, then the patch on top
+  if (patch.style && patch.style !== ds.o.style) patch = Object.assign({}, DS_PRESETS[patch.style], patch);
+  ds.setOptions(patch);
+  dsRefresh();
+}
+
+function dsRefresh() {
+  const o = ds.o;
+  for (const [k, r] of Object.entries(DS_RANGES)) { $('ds-' + k).value = o[k]; $('ds-' + k + '-out').textContent = r.fmt(+o[k]); }
+  for (const k of DS_CHECKS) $('ds-' + k).checked = !!o[k];
+  $('ds-style').value = o.style;
+  $('ds-direction').value = String(o.direction);
+  $('ds-color').value = o.color;
+  $('ds-background').value = o.background;
+  document.querySelectorAll('[data-ds-only]').forEach(el => el.hidden = el.dataset.dsOnly !== o.style);
+  document.querySelectorAll('[data-ds-theme]').forEach(b => {
+    const t = DS_THEMES[b.dataset.dsTheme];
+    b.classList.toggle('is-active', t.color === o.color && t.background === o.background);
+  });
+  document.querySelectorAll('[data-ds-preset]').forEach(b => b.classList.toggle('is-active', b.dataset.dsPreset === o.style));
+  dsRz.sync();
+  $('ds-toggle').textContent = o.paused ? 'Продовжити' : 'Пауза';
+  document.querySelectorAll('[data-ds-tab]').forEach(b => b.classList.toggle('is-active', b.dataset.dsTab === dsUi.tab));
+  $('ds-hint').textContent = o.paused ? 'Пауза, сферу все ще можна крутити курсором'
+    : o.drag ? 'Веди курсором, сфера повертається за ним. Тягни, щоб розкрутити' : 'Веди курсором, сфера повертається за ним';
+  $('ds-code').value = dsCodeFor(dsUi.tab);
+  dsStatus();
+}
+
+function dsStatus() {
+  $('ds-status').innerHTML = `Точок: <b>${ds.n}</b>` + (ds.links ? ` · зв'язків: <b>${ds.links.length / 2}</b>` : '');
+  $('ds-bp').innerHTML = `Полотно: <b>${ds.w}×${ds.h}px</b> · dpr <b>${(+ds.dpr).toFixed(2)}</b>`;
+}
+new ResizeObserver(() => requestAnimationFrame(dsStatus)).observe(dsCanvas);
+
+function dsCodeFor(tab) {
+  if (tab === 'js') return $('src-ds-js').textContent.trim();
+  const o = ds.o;
+  const keys = ['style', 'count', 'seed', 'radius', 'dotSize', 'perspective', 'depthFade', 'depthScale', 'color', 'background',
+    'speed', 'direction', 'tilt', 'pointer', 'damping', 'drag', 'friction', 'jitter'];
+  if (o.style === 'orbits') keys.push('rings');
+  if (o.style === 'grid') keys.push('gridLat', 'gridLon');
+  if (o.style === 'spiral') keys.push('turns');
+  if (o.style === 'cloud') keys.push('thickness');
+  if (o.style === 'mesh') keys.push('linkDist', 'lineWidth');
+  const opts = keys.map(k => `    ${k}: ${typeof o[k] === 'string' ? `'${o[k]}'` : o[k]},`).join('\n');
+  return `<!-- полотно потрібного розміру; воно саме стежить за ним і саме малює фон -->
+<canvas id="sphere" style="width: 480px; height: 480px"></canvas>
+
+<script src="sphere.js"><\/script>
+<script>
+  const sphere = DotSphere.create(document.getElementById('sphere'), {
+${opts}
+  });
+
+  // далі можна крутити на льоту:
+  //   sphere.set('style', 'orbits');
+  //   sphere.setOptions({ speed: 0.3, color: '#fff' });
+  //   sphere.pause(); sphere.resume(); sphere.stop(); sphere.play(); sphere.destroy();
+<\/script>`;
+}
+
+for (const k of Object.keys(DS_RANGES)) $('ds-' + k).addEventListener('input', e => dsUpdate({ [k]: parseFloat(e.target.value) }));
+for (const k of DS_CHECKS) $('ds-' + k).addEventListener('change', e => dsUpdate({ [k]: e.target.checked }));
+$('ds-style').addEventListener('change', e => dsUpdate({ style: e.target.value }));
+$('ds-direction').addEventListener('change', e => dsUpdate({ direction: +e.target.value }));
+$('ds-color').addEventListener('input', e => dsUpdate({ color: e.target.value }));
+$('ds-background').addEventListener('input', e => dsUpdate({ background: e.target.value }));
+$('ds-toggle').addEventListener('click', () => dsUpdate({ paused: !ds.o.paused }));
+$('ds-reset').addEventListener('click', () => { dsUi.frame = 0; dsUpdate(DS_BASE); });
+$('ds-random').addEventListener('click', () => {
+  const rnd = (a, b) => Math.round((a + Math.random() * (b - a)) * 100) / 100;
+  const styles = Object.keys(DS_PRESETS);
+  dsUpdate({
+    style: styles[Math.floor(Math.random() * styles.length)],
+    seed: Math.round(rnd(1, 999)), speed: rnd(0.04, 0.45), tilt: rnd(-0.7, 0.7), perspective: rnd(2, 12),
+    jitter: Math.random() < 0.4 ? rnd(0, 0.12) : 0, direction: Math.random() < 0.5 ? 1 : -1,
+  });
+});
+document.querySelectorAll('[data-ds-preset]').forEach(b => b.addEventListener('click', () => dsUpdate(DS_PRESETS[b.dataset.dsPreset])));
+document.querySelectorAll('[data-ds-theme]').forEach(b => b.addEventListener('click', () => dsUpdate(DS_THEMES[b.dataset.dsTheme])));
+document.querySelectorAll('[data-ds-tab]').forEach(b => b.addEventListener('click', () => { dsUi.tab = b.dataset.dsTab; dsRefresh(); }));
+$('ds-copy').addEventListener('click', async () => {
+  await navigator.clipboard.writeText($('ds-code').value);
+  $('ds-copy').textContent = 'Скопійовано';
+  setTimeout(() => $('ds-copy').textContent = 'Скопіювати', 1200);
+});
+
+dsRefresh();
+
 /* ---------- save / share ----------
    "Зберегти" keeps the current values in this browser (localStorage),
    "Посилання" packs them into the URL hash so the same setup opens anywhere. */
 const STORE = 'ws-playground:';
 const b64e = str => btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const b64d = str => decodeURIComponent(escape(atob(str.replace(/-/g, '+').replace(/_/g, '/'))));
-const pick = (obj, keys) => Object.fromEntries(keys.filter(k => k in obj).map(k => [k, obj[k]]));
 
 const PERSIST = {
   logos: {
@@ -1377,6 +2102,14 @@ const PERSIST = {
   fab: {
     get: () => ({ opts: pick(fa.options, Object.keys(FloatActions.defaults).filter(k => !['scroller', 'fixed', 'onAction', 'onClose', 't'].includes(k))), ui: { frame: faUi.frame, delay: faSim.delay, lang: faUi.lang } }),
     set: d => { if (d.ui) { faUi.frame = d.ui.frame ?? 0; faSim.delay = d.ui.delay ?? 700; faUi.lang = d.ui.lang || 'en'; } faCloseWidget(fa.activeId, fa); faUpdate(Object.assign({}, d.opts || {}, { t: FA_I18N[faUi.lang] })); fa.reset(); faRefresh(); },
+  },
+  beam: {
+    get: () => ({ opts: pick(bb, Object.keys(BB_DEFAULTS).filter(k => k !== 'paused')) }),
+    set: d => bbUpdate(d.opts || {}),
+  },
+  sphere: {
+    get: () => ({ opts: pick(ds.o, DS_KEYS), ui: { frame: dsUi.frame } }),
+    set: d => { if (d.ui) dsUi.frame = d.ui.frame ?? 0; dsUpdate(d.opts || {}); },
   },
 };
 
@@ -1494,14 +2227,16 @@ document.querySelectorAll('.panel').forEach(panel => {
 setSheet(sheet.state);
 
 /* ---------- view switcher ---------- */
-const VIEWS = { logos: $('view-logos'), answer: $('view-answer'), fab: $('view-fab') };
+const VIEWS = { logos: $('view-logos'), answer: $('view-answer'), fab: $('view-fab'), beam: $('view-beam'), sphere: $('view-sphere') };
 function showView(name) {
   if (!VIEWS[name]) name = 'logos';
   for (const [k, v] of Object.entries(VIEWS)) v.hidden = k !== name;
   document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('is-active', b.dataset.view === name));
   history.replaceState(null, '', '#' + name);
+  // the sphere runs a requestAnimationFrame loop: only while its tab is on screen
+  if (name === 'sphere') { ds.resize(); ds.play(); } else ds.stop();
   // the observers only see the block once it is displayed
-  setTimeout(() => { refresh(); saRefresh(); faRefresh(); }, 50);
+  setTimeout(() => { refresh(); saRefresh(); faRefresh(); bbRefresh(); dsRefresh(); }, 50);
 }
 document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
 const [hashView, hashQuery] = location.hash.slice(1).split('?');

@@ -25,7 +25,7 @@
 | `float-actions.js` | клас `FloatActions`, без залежностей, іконки з Figma вшиті |
 | `demo.html` | приклад підключення з імітацією віджета |
 
-Плейграунд спільний з іншими блоками: `../index.html`, вкладка «Float actions». Сайт і сторонній віджет там скелети. Збирається: `python3 logo-wall/build-playground.py`.
+Плейграунд спільний з іншими блоками: `../index.html`, вкладка «Float actions». Сайт і сторонній віджет там скелети. Збирається: `python3 build-playground.py`.
 
 ## Підключення
 

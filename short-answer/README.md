@@ -10,7 +10,7 @@
 | `short-answer.js` | клас `ShortAnswer`, без залежностей, логотипи Trello і Worksection вшиті |
 | `demo.html` | приклад підключення |
 
-Плейграунд спільний з logo wall: `../index.html`, вкладка «S : Short answer». Збирається тим самим скриптом: `python3 logo-wall/build-playground.py`.
+Плейграунд спільний з logo wall: `../index.html`, вкладка «S : Short answer». Збирається тим самим скриптом: `python3 build-playground.py`.
 
 ## Підключення
 

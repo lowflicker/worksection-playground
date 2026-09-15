@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dot sphere demo</title>
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f4f4f2; font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; }
+  canvas { width: min(90vw, 480px); height: min(90vw, 480px); touch-action: none; }
+  p { position: fixed; bottom: 16px; left: 0; right: 0; margin: 0; text-align: center; font-size: 12px; color: #7a7a7a; }
+</style>
+</head>
+<body>
+<canvas id="sphere"></canvas>
+<p>Веди курсором, тягни, щоб розкрутити. Пробіл — пауза.</p>
+
+<script src="sphere.js"></script>
+<script>
+  const s = DotSphere.create(document.getElementById('sphere'), {
+    style: 'stipple',
+    count: 5200,
+    color: '#141414',
+    background: 'transparent',
+    speed: 0.13,
+  });
+  document.addEventListener('keydown', e => { if (e.key === ' ') { e.preventDefault(); s.o.paused ? s.resume() : s.pause(); } });
+</script>
+</body>
+</html>

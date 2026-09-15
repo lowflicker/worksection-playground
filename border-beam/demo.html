@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Border beam demo</title>
+<link rel="stylesheet" href="beam.css">
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; gap: 32px; background: #0e0e10; color: #eeeeef; font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; }
+  main { display: flex; flex-direction: column; align-items: center; gap: 32px; padding: 48px 24px; }
+  .card { width: 320px; padding: 24px; border-radius: 20px; background: #1d1d1f; --beam-radius: 20px; }
+  .card p { margin: 0; color: rgba(238,238,239,.56); font-size: 14px; line-height: 1.5; }
+  .bar { width: 360px; height: 42px; display: flex; align-items: center; padding: 0 16px; border-radius: 20px; background: #1d1d1f; font-size: 13px; color: rgba(238,238,239,.56); --beam-radius: 20px; }
+  .btn { padding: 11px 22px; border-radius: 12px; background: #1d1d1f; font-size: 13.5px; --beam-radius: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <!-- runs all the time -->
+  <div class="beam card" data-beam data-trigger="always">
+    <p>Промінь обертається по межі картки. Радіус ефекту задано змінною <code>--beam-radius</code>, він має збігатися з радіусом самої картки.</p>
+  </div>
+
+  <!-- travel mode: along the bottom edge, for wide low elements -->
+  <div class="beam bar" data-beam data-mode="travel">Генерую відповідь…</div>
+
+  <!-- only while hovered -->
+  <div class="beam btn" data-beam data-trigger="hover">✦ Наведи на мене</div>
+</main>
+
+<script src="beam.js"></script>
+<script>
+  // optional: drive it from JS
+  const bar = BorderBeam.get(document.querySelector('.bar'));
+  document.addEventListener('keydown', e => { if (e.key === ' ') { e.preventDefault(); bar.el.hasAttribute('data-paused') ? bar.play() : bar.pause(); } });
+</script>
+</body>
+</html>
