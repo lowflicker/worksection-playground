@@ -669,6 +669,13 @@ __FA_CSS__
     <div class="group">
       <h2>Наведення і клік</h2>
       <div class="check"><input type="checkbox" id="fa-labels"><label for="fa-labels">Підпис при наведенні</label></div>
+      <div class="field inline">
+        <label for="fa-lang">Мова текстів (через ключі і <code>t</code>)</label>
+        <select id="fa-lang">
+          <option value="en">English</option>
+          <option value="uk">Українська</option>
+        </select>
+      </div>
       <div class="field"><label for="fa-labelDelay">Затримка підпису</label><output id="fa-labelDelay-out"></output>
         <input type="range" id="fa-labelDelay" min="0" max="600" step="20"></div>
       <div class="field"><label for="fa-hoverScale">Scale при наведенні</label><output id="fa-hoverScale-out"></output>
@@ -1182,10 +1189,20 @@ function faCloseWidget(id, inst) {
   faStatus();
 }
 
+// the module only sees keys; the site's i18n resolves them (here: two dictionaries)
+const FA_I18N = {
+  en: FloatActions.defaults.t,
+  uk: {
+    'fa.support.label': 'Написати в чат',
+    'fa.ringostat.label': 'Замовити дзвінок',
+    'fa.nudge.message': 'Привіт! Допомогти обрати тариф?',
+    'fa.dismiss': 'Закрити',
+  },
+};
 const FA_BASE = Object.assign({}, FloatActions.defaults, FA_PRESETS.default, {
   fixed: false, scroller: faScroll, onAction: faOpenWidget, onClose: faCloseWidget,
 });
-const faUi = { frame: 0, tab: 'html' };
+const faUi = { frame: 0, tab: 'html', lang: 'en' };
 const fa = new FloatActions(faOverlay, FA_BASE);
 const faRz = makeResizable(faFrame, () => faUi.frame, w => { faUi.frame = w; faRefresh(); });
 
@@ -1214,6 +1231,7 @@ function faRefresh() {
   for (const k of FA_SELECTS) $('fa-' + k).value = o[k];
   for (const k of FA_CHECKS) $('fa-' + k).checked = !!o[k];
   $('fa-offset').value = o.offset.bottom; $('fa-offset-out').textContent = o.offset.bottom + ' px';
+  $('fa-lang').value = faUi.lang;
   $('fa-widgetDelay').value = faSim.delay; $('fa-widgetDelay-out').textContent = faSim.delay + ' ms';
   $('fa-color').value = o.color;
   faRz.sync();
@@ -1248,6 +1266,7 @@ function faCodeFor(tab) {
   if (tab === 'js') return $('src-fa-js').textContent.trim();
   const o = fa.options;
   const acts = o.actions.map(a => `      { id: '${a.id}', icon: '${a.icon}', label: '${a.label}' },`).join('\n');
+  const dict = FA_I18N[faUi.lang];
   return `<link rel="stylesheet" href="float-actions.css">
 
 <!-- the footer (or anything else) the buttons must not cover -->
@@ -1259,6 +1278,13 @@ function faCodeFor(tab) {
     actions: [
 ${acts}
     ],
+
+    // texts are keys, resolved through t: plug in the site's i18n
+    // (function key => string) or pass a dictionary per language
+    t: key => i18n.t(key),
+    // current "${faUi.lang}" dictionary for reference:
+${Object.entries(dict).map(([k, v]) => `    //   '${k}': '${v}',`).join('\n')}
+    strings: { dismiss: '${o.strings.dismiss}' },
 
     // the click hands over to a third-party widget, loaded on demand
     onAction(id, fa) {
@@ -1311,6 +1337,7 @@ for (const k of FA_SELECTS) $('fa-' + k).addEventListener('change', e => faUpdat
 for (const k of FA_CHECKS) $('fa-' + k).addEventListener('change', e => faUpdate({ [k]: e.target.checked }));
 $('fa-offset').addEventListener('input', e => faUpdate({ offset: { right: +e.target.value, bottom: +e.target.value } }));
 $('fa-color').addEventListener('input', e => faUpdate({ color: e.target.value }));
+$('fa-lang').addEventListener('change', e => { faUi.lang = e.target.value; faUpdate({ t: FA_I18N[faUi.lang] }); });
 $('fa-replay').addEventListener('click', () => { fa.reset(); faRefresh(); });
 $('fa-nudge-now').addEventListener('click', () => { fa.nudge(); faRefresh(); });
 $('fa-widgetDelay').addEventListener('input', e => { faSim.delay = +e.target.value; faRefresh(); });
@@ -1319,7 +1346,7 @@ $('fa-click-ringostat').addEventListener('click', () => { const it = fa.items.fi
 $('fa-close-widget').addEventListener('click', () => { faCloseWidget(fa.activeId, fa); faRefresh(); });
 $('fa-widget-x').addEventListener('click', () => { faCloseWidget(fa.activeId, fa); faRefresh(); });
 $('fa-scroll-footer').addEventListener('click', () => faScroll.scrollTo({ top: faScroll.scrollHeight, behavior: 'smooth' }));
-$('fa-reset').addEventListener('click', () => { faUi.frame = 0; faSim.delay = 700; faScroll.scrollTo({ top: 0 }); faCloseWidget(fa.activeId, fa); faUpdate(FA_BASE); fa.reset(); faRefresh(); });
+$('fa-reset').addEventListener('click', () => { faUi.frame = 0; faUi.lang = 'en'; faSim.delay = 700; faScroll.scrollTo({ top: 0 }); faCloseWidget(fa.activeId, fa); faUpdate(FA_BASE); fa.reset(); faRefresh(); });
 document.querySelectorAll('[data-fa-preset]').forEach(b => b.addEventListener('click', () => { faCloseWidget(fa.activeId, fa); faUpdate(FA_PRESETS[b.dataset.faPreset]); fa.reset(); faRefresh(); }));
 document.querySelectorAll('[data-fa-tab]').forEach(b => b.addEventListener('click', () => { faUi.tab = b.dataset.faTab; faRefresh(); }));
 $('fa-copy').addEventListener('click', async () => {
@@ -1348,8 +1375,8 @@ const PERSIST = {
     set: d => { if (d.ui) { saUi.frame = d.ui.frame ?? 0; saUi.bg = d.ui.bg ?? '#ffffff'; } saUpdate(d.opts || {}); },
   },
   fab: {
-    get: () => ({ opts: pick(fa.options, Object.keys(FloatActions.defaults).filter(k => !['scroller', 'fixed', 'onAction', 'onClose'].includes(k))), ui: { frame: faUi.frame, delay: faSim.delay } }),
-    set: d => { if (d.ui) { faUi.frame = d.ui.frame ?? 0; faSim.delay = d.ui.delay ?? 700; } faCloseWidget(fa.activeId, fa); faUpdate(d.opts || {}); fa.reset(); faRefresh(); },
+    get: () => ({ opts: pick(fa.options, Object.keys(FloatActions.defaults).filter(k => !['scroller', 'fixed', 'onAction', 'onClose', 't'].includes(k))), ui: { frame: faUi.frame, delay: faSim.delay, lang: faUi.lang } }),
+    set: d => { if (d.ui) { faUi.frame = d.ui.frame ?? 0; faSim.delay = d.ui.delay ?? 700; faUi.lang = d.ui.lang || 'en'; } faCloseWidget(fa.activeId, fa); faUpdate(Object.assign({}, d.opts || {}, { t: FA_I18N[faUi.lang] })); fa.reset(); faRefresh(); },
   },
 };
 

@@ -9,6 +9,10 @@
    Options (every key has a default, see FloatActions.defaults):
      actions          [{ id, icon: 'chat' | 'phone' | '<svg…>', label }]
                       top to bottom; the bottom one is the anchor the others tuck behind
+     t                translation: a function key => string, or a dictionary { key: string }.
+                      Every text option (label, nudgeMessage, strings.*) is a key passed through it;
+                      without `t` the key is shown as is. Change language with setOptions({ t })
+     strings          { dismiss } keys for the module's own texts
      onAction         (id, fa) => {}   click on a button. Load your widget here:
                         fa.loading(id)  spinner while the script loads
                         fa.active(id)   widget is open: cross icon, other buttons step aside
@@ -69,9 +73,16 @@
 
   const defaults = {
     actions: [
-      { id: 'support', icon: 'chat', label: 'Chat with us' },
-      { id: 'ringostat', icon: 'phone', label: 'Request a call' },
+      { id: 'support', icon: 'chat', label: 'fa.support.label' },
+      { id: 'ringostat', icon: 'phone', label: 'fa.ringostat.label' },
     ],
+    t: {
+      'fa.support.label': 'Chat with us',
+      'fa.ringostat.label': 'Request a call',
+      'fa.nudge.message': 'Hi! Need help choosing a plan?',
+      'fa.dismiss': 'Dismiss',
+    },
+    strings: { dismiss: 'fa.dismiss' },
     onAction: null,
     onClose: null,
     whenActive: 'others',
@@ -95,7 +106,7 @@
 
     nudge: true,
     nudgeAfter: 8000,
-    nudgeMessage: 'Hi! Need help choosing a plan?',
+    nudgeMessage: 'fa.nudge.message',
     bubbleFor: 7000,
 
     avoid: '[data-fa-avoid]',
@@ -149,6 +160,25 @@
       this._scheduleShow();
     }
 
+    /** key -> text through options.t (function or dictionary); the key itself as a fallback */
+    _t(key) {
+      const t = this.options.t;
+      if (!key) return '';
+      const out = typeof t === 'function' ? t(key) : t && typeof t === 'object' ? t[key] : undefined;
+      return out == null ? key : out;
+    }
+
+    /** (re)apply every visible text, e.g. after a language change */
+    _texts() {
+      this.items.forEach(it => {
+        const label = this._t(it.a.label);
+        it.btn.setAttribute('aria-label', label);
+        it.label.textContent = label;
+        it.bubbleX.setAttribute('aria-label', this._t(this.options.strings.dismiss));
+        if (it.item.classList.contains('has-bubble')) it.bubbleText.textContent = this._t(this.options.nudgeMessage);
+      });
+    }
+
     /* ---- build ---------------------------------------------------------- */
 
     _build() {
@@ -163,7 +193,6 @@
 
         const btn = el('button', 'fa__btn');
         btn.type = 'button';
-        btn.setAttribute('aria-label', a.label);
         btn.setAttribute('aria-pressed', 'false');
         btn.innerHTML = `${ICONS[a.icon] || a.icon || ''}${ICONS.close}<span class="fa__spin" aria-hidden="true"></span>`;
         btn.addEventListener('animationend', e => {
@@ -171,14 +200,13 @@
           if (e.animationName === 'fa-ripple') btn.classList.remove('is-ringing');
         });
 
-        const label = el('span', 'fa__label', a.label);
+        const label = el('span', 'fa__label');
         label.setAttribute('aria-hidden', 'true');
         const bubble = el('div', 'fa__bubble');
         bubble.setAttribute('role', 'status');
         const bubbleText = el('span');
         const bubbleX = el('button', 'fa__bubble-x', ICONS.x);
         bubbleX.type = 'button';
-        bubbleX.setAttribute('aria-label', 'Dismiss');
         bubble.append(bubbleText, bubbleX);
 
         item.append(bubble, label, btn);
@@ -188,6 +216,7 @@
       this.stack.append(...this.items.map(i => i.item));
       this.layer.append(this.stack);
       this.root.append(this.layer);
+      this._texts();
     }
 
     _applyTokens() {
@@ -448,7 +477,7 @@
         it.btn.classList.add('is-ringing', 'is-nudging');
       }
       if (o.nudgeMessage) {
-        it.bubbleText.textContent = o.nudgeMessage;
+        it.bubbleText.textContent = this._t(o.nudgeMessage);
         // the bubble follows the bounce
         setTimeout(() => { this._bubble(it, true); this._bubbleClock(it, o.bubbleFor); }, reduced() ? 0 : 260);
       }
@@ -475,6 +504,7 @@
       }
       this._applyTokens();
       this._measure();
+      if ('t' in patch || 'strings' in patch || 'nudgeMessage' in patch) this._texts();
       if ('nudge' in patch || 'nudgeAfter' in patch) { this.nudged = false; if (this.shown) this._armNudge(); }
       if ('showAfter' in patch && !this.shown) this._scheduleShow();
       if (!this.options.fold) this.unfold();

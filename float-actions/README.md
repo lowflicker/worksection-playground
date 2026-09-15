@@ -38,9 +38,10 @@
 <script>
   new FloatActions(document.body, {
     actions: [
-      { id: 'support', icon: 'chat', label: 'Chat with us' },
-      { id: 'ringostat', icon: 'phone', label: 'Request a call' },
+      { id: 'support', icon: 'chat', label: 'fa.support.label' },
+      { id: 'ringostat', icon: 'phone', label: 'fa.ringostat.label' },
     ],
+    t: key => i18n.t(key),                   // або словник { 'fa.support.label': '…', … }
     onAction(id, fa) {
       fa.loading(id);
       loadWidget(id).then(widget => {        // твій лоадер: Intercom, Crisp, Ringostat…
@@ -58,6 +59,10 @@
 ```
 
 Усі інші опції мають дефолти, повний список у шапці `float-actions.js`. Плейграунд показує готовий сніпет з підкрученими значеннями.
+
+## Локалізація
+
+Модуль не містить жодного тексту напряму. `label`, `nudgeMessage` і `strings.dismiss` це ключі, які проходять через опцію `t`: функцію `key => string` (підключаєш i18n сайту) або словник. Без `t` ключ показується як є. Дефолтні ключі: `fa.support.label`, `fa.ringostat.label`, `fa.nudge.message`, `fa.dismiss`. Зміна мови на льоту: `fa.setOptions({ t: newDict })`, тексти перемальовуються без перезбирання кнопок.
 
 ## Що ще варто знати
 

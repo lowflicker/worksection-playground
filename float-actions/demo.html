@@ -28,9 +28,16 @@
 
   new FloatActions(document.body, {
     actions: [
-      { id: 'support', icon: 'chat', label: 'Chat with us' },
-      { id: 'ringostat', icon: 'phone', label: 'Request a call' },
+      { id: 'support', icon: 'chat', label: 'fa.support.label' },
+      { id: 'ringostat', icon: 'phone', label: 'fa.ringostat.label' },
     ],
+    // keys resolve through t: a function (your i18n) or a dictionary
+    t: {
+      'fa.support.label': 'Написати в чат',
+      'fa.ringostat.label': 'Замовити дзвінок',
+      'fa.nudge.message': 'Привіт! Допомогти обрати тариф?',
+      'fa.dismiss': 'Закрити',
+    },
     onAction(id, fa) {
       fa.loading(id);
       loadWidget(id).then(w => { widgets[id] = w; w.open(); fa.active(id); });
@@ -39,7 +46,6 @@
       widgets[id].close();
       fa.idle(id);
     },
-    nudgeMessage: 'Hi! Need help choosing a plan?',
   });
 </script>
 </body>
