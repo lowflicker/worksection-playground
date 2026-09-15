@@ -103,9 +103,7 @@
      'btn-code', 'btn-panel', 'btn-theme', 'btn-help', 'help'].forEach(id => { els[id] = document.getElementById(id); });
   }
 
-  /* ==========================================================================
-     Registering a module: the view skeleton, the panel, the demo
-     ========================================================================== */
+  /* ===== Registering a module: the view skeleton, the panel, the demo ===== */
   function register(def) {
     if (!def || !def.id || !def.defaults || !def.mount || !def.apply) throw new Error('Playground.register: id, defaults, mount and apply are required');
     const stageDef = Object.assign({ resizable: true, bg: '#f5f5f5' }, def.stage || {});
@@ -192,9 +190,7 @@
     saveStatus(m);
   }
 
-  /* ==========================================================================
-     Panel
-     ========================================================================== */
+  /* ===== Panel ===== */
   function buildPanel(m) {
     const def = m.def, scroll = m.els.scroll;
     scroll.innerHTML = '';
@@ -335,9 +331,7 @@
     return null;
   }
 
-  /* ==========================================================================
-     Save / share: the browser keeps the state, links carry it
-     ========================================================================== */
+  /* ===== Save / share: the browser keeps the state, links carry it ===== */
   const snapshot = m => ({ state: clone(m.state), ui: { frame: m.ui.frame, bg: m.ui.bg } });
   function restoreSnapshot(m, d) {
     if (!d || typeof d !== 'object') return;
@@ -374,9 +368,7 @@
     }
   }
 
-  /* ==========================================================================
-     Resizable frame: drag either edge, the frame stays centred
-     ========================================================================== */
+  /* ===== Resizable frame: drag either edge, the frame stays centred ===== */
   function makeResizable(m, frame) {
     const el = h('div', 'rz');
     el.append(frame);
@@ -425,9 +417,7 @@
     return rz;
   }
 
-  /* ==========================================================================
-     Stage toolbar
-     ========================================================================== */
+  /* ===== Stage toolbar ===== */
   function buildToolbar() {
     els['tb-play'].addEventListener('click', () => setPaused(!paused));
     els['tb-rates'].innerHTML = RATES.map(r => `<button type="button" data-rate="${r}">${r}×</button>`).join('');
@@ -521,9 +511,7 @@
     }
   }
 
-  /* ==========================================================================
-     Code drawer
-     ========================================================================== */
+  /* ===== Code drawer ===== */
   const sources = {};
   let drawerTab = null, drawerText = '', drawerKey = '';
 
@@ -576,9 +564,7 @@
     fetch(file).then(r => (r.ok ? r.text() : null)).catch(() => null).then(text => { sources[file] = text; renderDrawer(); });
   }
 
-  /* ==========================================================================
-     Theme, panel, help, keyboard
-     ========================================================================== */
+  /* ===== Theme, panel, help, keyboard ===== */
   function setTheme(t) {
     document.documentElement.dataset.theme = t;
     store.set(STORE + 'theme', t);
@@ -626,9 +612,7 @@
     });
   }
 
-  /* ==========================================================================
-     Mobile bottom sheet: one state for every panel
-     ========================================================================== */
+  /* ===== Mobile bottom sheet: one state for every panel ===== */
   const sheet = { state: store.get(STORE + 'sheet', 'half'), peek: 60 };
   const SHEET_LABEL = { collapsed: 'згорнуто', half: 'половина', full: 'весь екран' };
   function setSheet(state) {
@@ -671,9 +655,7 @@
     handle.addEventListener('click', e => { if (e.target.closest('.panel__expand') || moved) return; setSheet(sheet.state === 'collapsed' ? 'half' : 'collapsed'); });
   }
 
-  /* ==========================================================================
-     View switching
-     ========================================================================== */
+  /* ===== View switching ===== */
   function show(id) {
     const m = byId[id] || modules[0];
     if (!m) return;
@@ -708,6 +690,56 @@
     show(byId[hashView] ? hashView : byId[saved] ? saved : modules[0] && modules[0].id);
   }
 
+  /* ---------- dev helpers: cheap answers from the console instead of reading files or taking screenshots ---------- */
+  // what a module offers, in a few hundred characters: groups, items with key / type / range, presets, tabs, state
+  function describe(id) {
+    const m = byId[id] || active;
+    if (!m) return null;
+    return {
+      id: m.id, title: m.def.title, tabs: (m.def.tabs || []).map(t => t.id + (t.file ? ':file' : ':render')),
+      presets: (m.def.presets || []).map(p => p.label), random: !!m.def.random, resizable: !!m.rz, playback: Object.keys(m.def.playback || {}),
+      controls: (m.def.controls || []).map(g => ({ group: g.title, items: (g.items || []).map(it =>
+        it.type + ':' + (it.key || (it.items ? it.items.map(b => b.label).join('|') : '')) + (it.type === 'range' ? `[${it.min}..${it.max}/${it.step == null ? 1 : it.step}]` : '') + (it.when ? '?' : '')) })),
+      state: clone(m.state),
+    };
+  }
+
+  // smoke test: every module shown, first preset applied, reset, snippets rendered; state is restored afterwards
+  async function check() {
+    const report = { errors: [], warnings: [], modules: {} };
+    const onErr = e => {
+      const msg = String((e.error && e.error.stack) || e.message || e).split('\n').slice(0, 2).join(' ');
+      // Chrome reports this when layout changes inside a ResizeObserver callback; the modules do that on purpose and it is harmless
+      (/ResizeObserver loop/.test(msg) ? report.warnings : report.errors).push(msg);
+    };
+    window.addEventListener('error', onErr);
+    const start = active && active.id;
+    const wait = ms => new Promise(res => setTimeout(res, ms));
+    for (const m of modules) {
+      const r = report.modules[m.id] = {};
+      const before = snapshot(m);
+      try {
+        show(m.id);
+        await wait(120);
+        r.shown = !m.els.app.hidden && m.els.stage.contains(els.toolbar);
+        r.fields = m.fields.length + ' (' + m.fields.filter(f => f.el.hidden).length + ' hidden)';
+        if (m.def.presets && m.def.presets.length) setState(m, m.def.presets[0].patch);
+        reset(m);
+        r.reset = same(m.state, m.defaults) ? 'ok' : 'state differs from defaults';
+        for (const t of m.def.tabs || []) if (t.render) { const txt = t.render(m.state, m.ctx); if (typeof txt !== 'string' || txt.length < 20) r['tab:' + t.id] = 'empty'; }
+        if (m.def.hint) r.hint = m.def.hint(m.ctx) || '';
+        for (const f of m.fields) if (f.item.type === 'status' && f.sync) f.sync(m.state);
+      } catch (e) { r.error = String(e.stack || e).split('\n').slice(0, 2).join(' '); }
+      restoreSnapshot(m, before);
+    }
+    await wait(120);
+    window.removeEventListener('error', onErr);
+    if (start) show(start);
+    report.fps = els['tb-fps'].textContent;
+    report.console = 'check the browser console for warnings';
+    return report;
+  }
+
   /* ---------- public ---------- */
   const styles = [];
   window.Playground = {
@@ -716,6 +748,7 @@
     css(text) { const s = document.createElement('style'); s.textContent = text; document.head.append(s); styles.push(s); },
     show,
     get active() { return active && active.ctx; },
+    describe, check,
     esc, fmt: fmtNum,
   };
 
