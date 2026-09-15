@@ -17,6 +17,8 @@
      whenActive       'others' | 'all' | 'none'
                       what the other buttons do while a widget is open: step aside, all hide
                       (the widget has its own close), or stay
+     whenActiveCompact  same under `compactBelow`; default 'all', mobile widgets are full screen
+                      with their own close and sit above our buttons
 
      size             px, button diameter
      gap              px between buttons
@@ -31,6 +33,7 @@
 
      fold             tuck the upper buttons behind the anchor while scrolling down;
                       they come back on scrolling up, near the top of the page, or on hover.
+                      On touch the first tap on a folded stack only unfolds it.
                       Direction only, no timers, so slow step-by-step scrolling never flickers
      foldAfter        px in one direction before the state flips (hysteresis)
      unfoldDelay      ms of no scrolling before they come back on their own; 0 = never (default)
@@ -72,6 +75,7 @@
     onAction: null,
     onClose: null,
     whenActive: 'others',
+    whenActiveCompact: 'all',
 
     size: 56,
     gap: 8,
@@ -104,6 +108,7 @@
   };
 
   const reduced = () => global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const noHover = () => global.matchMedia && global.matchMedia('(hover: none)').matches;
   const el = (tag, cls, html) => { const n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
   const merge = (base, patch) => {
     const out = Object.assign({}, base);
@@ -200,12 +205,19 @@
       this.layer.classList.toggle('no-labels', !o.labels);
       this.layer.classList.toggle('hide-others', o.whenActive === 'others');
       this.layer.classList.toggle('hide-all', o.whenActive === 'all');
+      this.layer.classList.toggle('hide-others-compact', o.whenActiveCompact === 'others');
+      this.layer.classList.toggle('hide-all-compact', o.whenActiveCompact === 'all');
     }
 
     /* ---- wiring --------------------------------------------------------- */
 
     get scroller() { return this.options.scroller || global; }
-    _scrollTop() { const s = this.scroller; return s === global ? global.scrollY : s.scrollTop; }
+    _scrollTop() {
+      const s = this.scroller;
+      // clamp: iOS rubber-banding reports positions past the ends
+      const max = s === global ? document.documentElement.scrollHeight - global.innerHeight : s.scrollHeight - s.clientHeight;
+      return Math.min(Math.max(0, s === global ? global.scrollY : s.scrollTop), Math.max(0, max));
+    }
     _viewport() {
       const s = this.scroller;
       if (s === global) return { top: 0, bottom: global.innerHeight, width: global.innerWidth };
@@ -227,7 +239,13 @@
         // hovering the message pauses its clock
         it.bubble.addEventListener('pointerenter', () => clearTimeout(this._timers.bubble));
         it.bubble.addEventListener('pointerleave', () => this._bubbleClock(it, 2500));
-        it.item.addEventListener('pointerenter', () => { this._touch(); if (this.folded) this.unfold(); });
+        it.item.addEventListener('pointerenter', e => {
+          this._touch();
+          if (!this.folded) return;
+          this.unfold();
+          // touch: the tap that unfolds the stack must not also fire the action
+          if (e.pointerType === 'touch' || noHover()) this._unfoldedAt = performance.now();
+        });
       });
 
       this._onKey = e => { if (e.key === 'Escape' && this.activeId) this._requestClose(this.activeId); };
@@ -238,6 +256,7 @@
       this._touch();
       const id = it.a.id;
       if (it.btn.classList.contains('is-loading')) return;
+      if (performance.now() - (this._unfoldedAt || 0) < 600) return;
       if (this.activeId === id) return this._requestClose(id);
       this.layer.dispatchEvent(new CustomEvent('fa:action', { detail: { id } }));
       if (this.options.onAction) this.options.onAction(id, this);

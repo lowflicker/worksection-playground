@@ -101,10 +101,13 @@
   filter: brightness(.82);
   pointer-events: none;
 }
-/* a widget is open: the other buttons step aside (hideOthers: 'others') */
-.fa.is-open.hide-others .fa__item:not(.is-active),
-/* or every button goes away, the widget has its own close (hideOthers: 'all') */
-.fa.is-open.hide-all .fa__item {
+/* a widget is open: the other buttons step aside (whenActive: 'others') */
+.fa.is-open.hide-others:not(.is-compact) .fa__item:not(.is-active),
+/* or every button goes away, the widget has its own close (whenActive: 'all') */
+.fa.is-open.hide-all:not(.is-compact) .fa__item,
+/* compact has its own setting: mobile widgets are usually full screen */
+.fa.is-open.is-compact.hide-others-compact .fa__item:not(.is-active),
+.fa.is-open.is-compact.hide-all-compact .fa__item {
   opacity: 0;
   transform: translateY(12px) scale(.8);
   pointer-events: none;
@@ -248,7 +251,8 @@
     transition: opacity 160ms var(--fa-ease-inout) var(--fa-label-delay), transform 240ms var(--fa-ease) var(--fa-label-delay);
   }
 }
-.fa__item:focus-within .fa__label { opacity: 1; transform: translateX(0); }
+/* keyboard focus only: a tap on a touch tablet must not pin the label */
+.fa__item:has(.fa__btn:focus-visible) .fa__label { opacity: 1; transform: translateX(0); }
 .fa.is-open .fa__label,
 .fa.is-folded .fa__label,
 .fa.no-labels .fa__label,
@@ -276,6 +280,8 @@
   transition: opacity 160ms var(--fa-ease-inout), transform 200ms var(--fa-ease-inout);
   pointer-events: none;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 /* tail toward the button, bottom right */
 .fa__bubble::after {
@@ -312,6 +318,7 @@
   background: #1e201f;
   color: #fff;
   cursor: pointer;
+  touch-action: manipulation;
   display: grid;
   place-items: center;
   opacity: 0;

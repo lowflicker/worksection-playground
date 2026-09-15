@@ -580,10 +580,13 @@
   filter: brightness(.82);
   pointer-events: none;
 }
-/* a widget is open: the other buttons step aside (hideOthers: 'others') */
-.fa.is-open.hide-others .fa__item:not(.is-active),
-/* or every button goes away, the widget has its own close (hideOthers: 'all') */
-.fa.is-open.hide-all .fa__item {
+/* a widget is open: the other buttons step aside (whenActive: 'others') */
+.fa.is-open.hide-others:not(.is-compact) .fa__item:not(.is-active),
+/* or every button goes away, the widget has its own close (whenActive: 'all') */
+.fa.is-open.hide-all:not(.is-compact) .fa__item,
+/* compact has its own setting: mobile widgets are usually full screen */
+.fa.is-open.is-compact.hide-others-compact .fa__item:not(.is-active),
+.fa.is-open.is-compact.hide-all-compact .fa__item {
   opacity: 0;
   transform: translateY(12px) scale(.8);
   pointer-events: none;
@@ -727,7 +730,8 @@
     transition: opacity 160ms var(--fa-ease-inout) var(--fa-label-delay), transform 240ms var(--fa-ease) var(--fa-label-delay);
   }
 }
-.fa__item:focus-within .fa__label { opacity: 1; transform: translateX(0); }
+/* keyboard focus only: a tap on a touch tablet must not pin the label */
+.fa__item:has(.fa__btn:focus-visible) .fa__label { opacity: 1; transform: translateX(0); }
 .fa.is-open .fa__label,
 .fa.is-folded .fa__label,
 .fa.no-labels .fa__label,
@@ -755,6 +759,8 @@
   transition: opacity 160ms var(--fa-ease-inout), transform 200ms var(--fa-ease-inout);
   pointer-events: none;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 /* tail toward the button, bottom right */
 .fa__bubble::after {
@@ -791,6 +797,7 @@
   background: #1e201f;
   color: #fff;
   cursor: pointer;
+  touch-action: manipulation;
   display: grid;
   place-items: center;
   opacity: 0;
@@ -914,8 +921,13 @@
     transition: opacity 160ms cubic-bezier(.65,0,.35,1), transform 200ms cubic-bezier(.65,0,.35,1), visibility 0s linear 200ms;
   }
   .fake-widget.is-on { opacity: 1; transform: none; visibility: visible; transition: opacity 180ms cubic-bezier(.65,0,.35,1), transform 320ms cubic-bezier(.22,1,.36,1), visibility 0s; }
-  .fake-widget.is-compact { right: 12px; left: 12px; width: auto; max-width: none; bottom: calc(16px + 48px + 12px); }
-  .fake-widget__head { height: 72px; background: var(--fw, #4a83f4); }
+  /* on mobile third-party widgets go full screen and bring their own close */
+  .fake-widget.is-compact { inset: 0; width: auto; max-width: none; height: auto; border-radius: 0; transform-origin: bottom center; }
+  .fake-widget__head { position: relative; height: 72px; background: var(--fw, #4a83f4); }
+  .fake-widget__x {
+    position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%;
+    background: rgba(255,255,255,.22); color: #fff; font: 18px/32px sans-serif; cursor: pointer;
+  }
   .fake-widget__body { display: flex; flex-direction: column; gap: 10px; padding: 20px; }
   .fake-widget__body i { display: block; height: 10px; border-radius: 5px; background: #eaebeb; }
   .fake-widget__body i:nth-child(2) { width: 78%; } .fake-widget__body i:nth-child(3) { width: 52%; }
@@ -1272,7 +1284,7 @@
       <div class="browser__view">
         <div class="browser__scroll" id="fa-scroll"><div class="sk" id="fa-site"></div></div>
         <div class="browser__overlay" id="fa-overlay">
-          <div class="fake-widget" id="fa-widget" aria-hidden="true"><div class="fake-widget__head"></div><div class="fake-widget__body"><i></i><i></i><i></i><i class="box"></i><i class="box"></i></div></div>
+          <div class="fake-widget" id="fa-widget" aria-hidden="true"><div class="fake-widget__head"><button type="button" class="fake-widget__x" id="fa-widget-x" aria-label="Close">×</button></div><div class="fake-widget__body"><i></i><i></i><i></i><i class="box"></i><i class="box"></i></div></div>
         </div>
       </div>
     </div>
@@ -1312,6 +1324,14 @@
         <select id="fa-whenActive">
           <option value="others">Відходять, активна стає хрестиком</option>
           <option value="all">Ховаються всі, віджет закривається сам</option>
+          <option value="none">Лишаються</option>
+        </select>
+      </div>
+      <div class="field inline">
+        <label for="fa-whenActiveCompact">Те саме на мобільному</label>
+        <select id="fa-whenActiveCompact">
+          <option value="all">Ховаються всі, віджет на весь екран</option>
+          <option value="others">Відходять, активна стає хрестиком</option>
           <option value="none">Лишаються</option>
         </select>
       </div>
@@ -2377,6 +2397,8 @@ window.LOGO_FILES = {
      whenActive       'others' | 'all' | 'none'
                       what the other buttons do while a widget is open: step aside, all hide
                       (the widget has its own close), or stay
+     whenActiveCompact  same under `compactBelow`; default 'all', mobile widgets are full screen
+                      with their own close and sit above our buttons
 
      size             px, button diameter
      gap              px between buttons
@@ -2391,6 +2413,7 @@ window.LOGO_FILES = {
 
      fold             tuck the upper buttons behind the anchor while scrolling down;
                       they come back on scrolling up, near the top of the page, or on hover.
+                      On touch the first tap on a folded stack only unfolds it.
                       Direction only, no timers, so slow step-by-step scrolling never flickers
      foldAfter        px in one direction before the state flips (hysteresis)
      unfoldDelay      ms of no scrolling before they come back on their own; 0 = never (default)
@@ -2432,6 +2455,7 @@ window.LOGO_FILES = {
     onAction: null,
     onClose: null,
     whenActive: 'others',
+    whenActiveCompact: 'all',
 
     size: 56,
     gap: 8,
@@ -2464,6 +2488,7 @@ window.LOGO_FILES = {
   };
 
   const reduced = () => global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const noHover = () => global.matchMedia && global.matchMedia('(hover: none)').matches;
   const el = (tag, cls, html) => { const n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
   const merge = (base, patch) => {
     const out = Object.assign({}, base);
@@ -2560,12 +2585,19 @@ window.LOGO_FILES = {
       this.layer.classList.toggle('no-labels', !o.labels);
       this.layer.classList.toggle('hide-others', o.whenActive === 'others');
       this.layer.classList.toggle('hide-all', o.whenActive === 'all');
+      this.layer.classList.toggle('hide-others-compact', o.whenActiveCompact === 'others');
+      this.layer.classList.toggle('hide-all-compact', o.whenActiveCompact === 'all');
     }
 
     /* ---- wiring --------------------------------------------------------- */
 
     get scroller() { return this.options.scroller || global; }
-    _scrollTop() { const s = this.scroller; return s === global ? global.scrollY : s.scrollTop; }
+    _scrollTop() {
+      const s = this.scroller;
+      // clamp: iOS rubber-banding reports positions past the ends
+      const max = s === global ? document.documentElement.scrollHeight - global.innerHeight : s.scrollHeight - s.clientHeight;
+      return Math.min(Math.max(0, s === global ? global.scrollY : s.scrollTop), Math.max(0, max));
+    }
     _viewport() {
       const s = this.scroller;
       if (s === global) return { top: 0, bottom: global.innerHeight, width: global.innerWidth };
@@ -2587,7 +2619,13 @@ window.LOGO_FILES = {
         // hovering the message pauses its clock
         it.bubble.addEventListener('pointerenter', () => clearTimeout(this._timers.bubble));
         it.bubble.addEventListener('pointerleave', () => this._bubbleClock(it, 2500));
-        it.item.addEventListener('pointerenter', () => { this._touch(); if (this.folded) this.unfold(); });
+        it.item.addEventListener('pointerenter', e => {
+          this._touch();
+          if (!this.folded) return;
+          this.unfold();
+          // touch: the tap that unfolds the stack must not also fire the action
+          if (e.pointerType === 'touch' || noHover()) this._unfoldedAt = performance.now();
+        });
       });
 
       this._onKey = e => { if (e.key === 'Escape' && this.activeId) this._requestClose(this.activeId); };
@@ -2598,6 +2636,7 @@ window.LOGO_FILES = {
       this._touch();
       const id = it.a.id;
       if (it.btn.classList.contains('is-loading')) return;
+      if (performance.now() - (this._unfoldedAt || 0) < 600) return;
       if (this.activeId === id) return this._requestClose(id);
       this.layer.dispatchEvent(new CustomEvent('fa:action', { detail: { id } }));
       if (this.options.onAction) this.options.onAction(id, this);
@@ -3247,7 +3286,7 @@ const FA_RANGES = {
   size:          { fmt: v => v + ' px' },
   gap:           { fmt: v => v + ' px' },
 };
-const FA_SELECTS = ['easing', 'avoidMode', 'whenActive'];
+const FA_SELECTS = ['easing', 'avoidMode', 'whenActive', 'whenActiveCompact'];
 const FA_CHECKS = ['fold', 'labels', 'nudge'];
 
 function faUpdate(patch) { fa.setOptions(patch); faRefresh(); }
@@ -3273,7 +3312,8 @@ function faStatus() {
   const state = !fa.shown ? 'ще не з’явились' : loading ? `вантажиться віджет: ${loading.a.id}` : fa.activeId ? `віджет відкритий: ${fa.activeId}` : L.contains('is-away') ? 'сховані за футером' : fa.folded ? 'складені (скрол)' : 'на місці';
   const lift = parseFloat(fa.layer.style.getPropertyValue('--fa-lift')) || 0;
   $('fa-status').innerHTML = `Стан: <b>${state}</b>` + (lift ? ` · підняті на <b>${Math.round(lift)}px</b>` : '') + (fa.nudged ? ' · нудж уже був' : '');
-  $('fa-hint').textContent = fa.activeId ? 'Хрестик або Esc закриває віджет' : o_hint();
+  const compactAll = fa.layer.classList.contains('is-compact') && fa.options.whenActiveCompact === 'all';
+  $('fa-hint').textContent = fa.activeId ? (compactAll ? 'На мобільному віджет на весь екран, наші кнопки сховані, закриває його власний хрестик' : 'Хрестик або Esc закриває віджет') : o_hint();
   const w = faOverlay.clientWidth;
   $('fa-bp').innerHTML = `Ширина рамки: <b>${w}px</b> · режим: <b>${L.contains('is-compact') ? 'компактний, панель як шторка' : 'десктоп'}</b>`;
 }
@@ -3318,6 +3358,7 @@ ${acts}
       fa.idle(id);
     },
     whenActive: '${o.whenActive}',
+    whenActiveCompact: '${o.whenActiveCompact}',
 
     size: ${o.size},
     gap: ${o.gap},
@@ -3360,6 +3401,7 @@ $('fa-widgetDelay').addEventListener('input', e => { faSim.delay = +e.target.val
 $('fa-click-support').addEventListener('click', () => { const it = fa.items.find(i => i.a.id === 'support'); it && it.btn.click(); faRefresh(); });
 $('fa-click-ringostat').addEventListener('click', () => { const it = fa.items.find(i => i.a.id === 'ringostat'); it && it.btn.click(); faRefresh(); });
 $('fa-close-widget').addEventListener('click', () => { faCloseWidget(fa.activeId, fa); faRefresh(); });
+$('fa-widget-x').addEventListener('click', () => { faCloseWidget(fa.activeId, fa); faRefresh(); });
 $('fa-scroll-footer').addEventListener('click', () => faScroll.scrollTo({ top: faScroll.scrollHeight, behavior: 'smooth' }));
 $('fa-reset').addEventListener('click', () => { faUi.frame = 0; faSim.delay = 700; faScroll.scrollTo({ top: 0 }); faCloseWidget(fa.activeId, fa); faUpdate(FA_BASE); fa.reset(); faRefresh(); });
 document.querySelectorAll('[data-fa-preset]').forEach(b => b.addEventListener('click', () => { faCloseWidget(fa.activeId, fa); faUpdate(FA_PRESETS[b.dataset.faPreset]); fa.reset(); faRefresh(); }));
