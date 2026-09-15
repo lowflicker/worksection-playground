@@ -896,6 +896,11 @@
   .files { font-size: 12px; color: var(--muted); margin: 8px 0 0; line-height: 1.6; }
   .files code { font: 11px ui-monospace, Menlo, monospace; color: var(--text); }
 
+  /* save / share row */
+  .save { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: -8px 0 14px; }
+  .save__status { width: 100%; font-size: 12px; color: var(--muted); line-height: 1.5; min-height: 18px; }
+  .save__status.is-dirty { color: #b45309; }
+
   /* --- fake browser with a skeleton site (float actions view) --- */
   .stage--fab { padding: 24px; gap: 16px; justify-content: flex-start; }
   .browser {
@@ -1023,6 +1028,12 @@
   <aside class="panel">
     <h1>Logo blur swap</h1>
     <p class="sub">Плейграунд для блоку «S : Clients». Крути параметри, внизу готовий код з поточними значеннями.</p>
+    <div class="save" data-save="logos">
+      <button class="primary" data-save-do="save">Зберегти</button>
+      <button data-save-do="link">Посилання</button>
+      <button data-save-do="clear">Забути збережене</button>
+      <span class="save__status"></span>
+    </div>
 
     <div class="group">
       <h2>Пресети</h2>
@@ -1164,6 +1175,12 @@
   <aside class="panel">
     <h1>Short answer</h1>
     <p class="sub">Плейграунд для блоку «S : Short answer». Вердикт зліва, варіанти справа, між ними живі конектори: лінії малюються при появі, далі імпульс іде від вердикту до карток. Гілка до нейтрального варіанта гасне на півдорозі, гілка до акцентного доходить і підсвічує картку.</p>
+    <div class="save" data-save="answer">
+      <button class="primary" data-save-do="save">Зберегти</button>
+      <button data-save-do="link">Посилання</button>
+      <button data-save-do="clear">Забути збережене</button>
+      <span class="save__status"></span>
+    </div>
 
     <div class="group">
       <h2>Пресети</h2>
@@ -1293,6 +1310,12 @@
   <aside class="panel">
     <h1>Float actions</h1>
     <p class="sub">Плейграунд для кнопок support і ringostat поверх сайту. Сайт тут скелет із прямокутників, сторонній віджет теж: клік вантажить його (спінер на кнопці), потім кнопка стає хрестиком. Скроль у рамці, наводь, клікай, дочекайся нуджу.</p>
+    <div class="save" data-save="fab">
+      <button class="primary" data-save-do="save">Зберегти</button>
+      <button data-save-do="link">Посилання</button>
+      <button data-save-do="clear">Забути збережене</button>
+      <span class="save__status"></span>
+    </div>
 
     <div class="group">
       <h2>Пресети</h2>
@@ -3415,6 +3438,83 @@ $('fa-copy').addEventListener('click', async () => {
 faStateWatch.observe(fa.layer, { attributes: true, attributeFilter: ['class', 'style'] });
 faRefresh();
 
+/* ---------- save / share ----------
+   "Зберегти" keeps the current values in this browser (localStorage),
+   "Посилання" packs them into the URL hash so the same setup opens anywhere. */
+const STORE = 'ws-playground:';
+const b64e = str => btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const b64d = str => decodeURIComponent(escape(atob(str.replace(/-/g, '+').replace(/_/g, '/'))));
+const pick = (obj, keys) => Object.fromEntries(keys.filter(k => k in obj).map(k => [k, obj[k]]));
+
+const PERSIST = {
+  logos: {
+    get: () => ({ opts: pick(wall.options, Object.keys(LogoWall.defaults).filter(k => k !== 'logos')), ui: { frame: ui.frame, bg: ui.bg } }),
+    set: d => { if (d.ui) { ui.frame = d.ui.frame ?? 0; ui.bg = d.ui.bg ?? '#f5f5f5'; } update(d.opts || {}); },
+  },
+  answer: {
+    get: () => ({ opts: pick(sa.options, Object.keys(ShortAnswer.defaults)), ui: { frame: saUi.frame, bg: saUi.bg } }),
+    set: d => { if (d.ui) { saUi.frame = d.ui.frame ?? 0; saUi.bg = d.ui.bg ?? '#ffffff'; } saUpdate(d.opts || {}); },
+  },
+  fab: {
+    get: () => ({ opts: pick(fa.options, Object.keys(FloatActions.defaults).filter(k => !['scroller', 'fixed', 'onAction', 'onClose'].includes(k))), ui: { frame: faUi.frame, delay: faSim.delay } }),
+    set: d => { if (d.ui) { faUi.frame = d.ui.frame ?? 0; faSim.delay = d.ui.delay ?? 700; } faCloseWidget(fa.activeId, fa); faUpdate(d.opts || {}); fa.reset(); faRefresh(); },
+  },
+};
+
+const stored = view => { try { return localStorage.getItem(STORE + view); } catch (e) { return null; } };
+const stamp = () => new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+
+function saveStatus(view, text) {
+  const box = document.querySelector(`[data-save="${view}"] .save__status`);
+  if (!box) return;
+  const now = JSON.stringify(PERSIST[view].get()), was = stored(view);
+  const dirty = !!was && was !== now;
+  box.classList.toggle('is-dirty', dirty);
+  box.textContent = text || (!was ? 'Не збережено, при перезавантаженні будуть дефолти'
+    : dirty ? 'Є незбережені зміни' : 'Збережено в цьому браузері');
+}
+
+document.querySelectorAll('[data-save]').forEach(row => {
+  const view = row.dataset.save;
+  row.addEventListener('click', async e => {
+    const btn = e.target.closest('[data-save-do]');
+    if (!btn) return;
+    const act = btn.dataset.saveDo;
+    if (act === 'save') {
+      try { localStorage.setItem(STORE + view, JSON.stringify(PERSIST[view].get())); } catch (err) {}
+      saveStatus(view, `Збережено в цьому браузері, ${stamp()}`);
+    } else if (act === 'link') {
+      const url = `${location.origin}${location.pathname}#${view}?s=${b64e(JSON.stringify(PERSIST[view].get()))}`;
+      try { await navigator.clipboard.writeText(url); saveStatus(view, 'Посилання з поточними налаштуваннями скопійовано'); }
+      catch (err) { prompt('Скопіюй посилання', url); }
+      history.replaceState(null, '', url);
+    } else if (act === 'clear') {
+      try { localStorage.removeItem(STORE + view); } catch (err) {}
+      saveStatus(view, 'Збережене видалено, «Скинути» поверне дефолти');
+    }
+  });
+  // any tweak in the panel refreshes the status
+  const panel = row.closest('.panel');
+  let t = 0;
+  ['input', 'change', 'click'].forEach(ev => panel.addEventListener(ev, () => { clearTimeout(t); t = setTimeout(() => saveStatus(view), 50); }));
+});
+
+function restoreAll(hashView, hashQuery) {
+  const fromLink = hashQuery && new URLSearchParams(hashQuery).get('s');
+  for (const view of Object.keys(PERSIST)) {
+    try {
+      if (fromLink && view === hashView) {
+        PERSIST[view].set(JSON.parse(b64d(fromLink)));
+        saveStatus(view, 'Відкрито з налаштуваннями з посилання. «Зберегти», щоб лишити їх у цьому браузері');
+        continue;
+      }
+      const raw = stored(view);
+      if (raw) { PERSIST[view].set(JSON.parse(raw)); saveStatus(view, 'Відновлено збережене'); }
+      else saveStatus(view);
+    } catch (err) { saveStatus(view, 'Не вдалося прочитати збережене'); }
+  }
+}
+
 /* ---------- view switcher ---------- */
 const VIEWS = { logos: $('view-logos'), answer: $('view-answer'), fab: $('view-fab') };
 function showView(name) {
@@ -3426,7 +3526,9 @@ function showView(name) {
   setTimeout(() => { refresh(); saRefresh(); faRefresh(); }, 50);
 }
 document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
-showView(location.hash.slice(1) || 'logos');
+const [hashView, hashQuery] = location.hash.slice(1).split('?');
+restoreAll(hashView, hashQuery);
+showView(hashView || 'logos');
 </script>
 </body>
 </html>
