@@ -869,23 +869,27 @@
   }
   .rz:hover .rz__grip { opacity: .55; }
   .rz__handle:hover .rz__grip, .rz__handle:focus-visible .rz__grip, .rz.is-dragging .rz__grip { opacity: 1; height: 56px; background: var(--text); }
-  .rz__menu {
-    position: absolute; top: 50%; display: flex; flex-direction: column; gap: 3px; padding: 5px;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 24px -12px rgba(0, 0, 0, .3);
-    transform: translateY(-50%) scale(.96); opacity: 0; pointer-events: none; transition: opacity 120ms, transform 160ms cubic-bezier(.22, 1, .36, 1);
+  /* width badge and presets live in a bar above the frame, never over the demo */
+  .rz__bar {
+    position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px; opacity: 0; transition: opacity 120ms 300ms; pointer-events: none;
   }
-  .rz__handle--r .rz__menu { right: 20px; transform-origin: right center; }
-  .rz__handle--l .rz__menu { left: 20px; transform-origin: left center; }
-  .rz__handle:hover .rz__menu, .rz__handle:focus-within .rz__menu, .rz__menu:hover { opacity: 1; pointer-events: auto; transform: translateY(-50%) scale(1); }
-  .rz__menu button { padding: 4px 9px; font-size: 12px; min-height: 0; white-space: nowrap; text-align: left; }
-  .rz__menu button.is-active { background: var(--text); color: #fff; border-color: var(--text); }
+  .rz:hover .rz__bar, .rz.is-dragging .rz__bar, .rz:focus-within .rz__bar, .rz__bar:hover { opacity: 1; transition-delay: 0s; pointer-events: auto; }
   .rz__badge {
-    position: absolute; top: -30px; left: 50%; transform: translateX(-50%); padding: 3px 8px; border-radius: 6px;
-    background: var(--text); color: #fff; font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap;
-    opacity: 0; transition: opacity 120ms; pointer-events: none;
+    padding: 3px 8px; border-radius: 6px; background: var(--text); color: #fff;
+    font-size: 11px; line-height: 16px; font-variant-numeric: tabular-nums; white-space: nowrap;
   }
-  .rz:hover .rz__badge, .rz.is-dragging .rz__badge, .rz:focus-within .rz__badge { opacity: 1; }
-  @media (max-width: 980px) { .rz__handle, .rz__badge { display: none; } }
+  .rz__menu {
+    display: flex; gap: 3px; padding: 3px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    opacity: 0; transform: translateX(-6px); pointer-events: none; transition: opacity 120ms 400ms, transform 160ms 400ms;
+  }
+  /* presets come out when a grip is hovered, and stay while the pointer travels to the bar */
+  .rz__handle:hover ~ .rz__bar .rz__menu, .rz__handle:focus-within ~ .rz__bar .rz__menu, .rz.is-dragging .rz__menu, .rz__bar:hover .rz__menu {
+    opacity: 1; transform: translateX(0); pointer-events: auto; transition-delay: 0s;
+  }
+  .rz__menu button { padding: 2px 8px; font-size: 11px; line-height: 16px; min-height: 0; border-radius: 5px; white-space: nowrap; }
+  .rz__menu button.is-active { background: var(--text); color: #fff; border-color: var(--text); }
+  @media (max-width: 980px) { .rz__handle, .rz__bar { display: none; } }
 
   .panel {
     background: var(--panel); border-left: 1px solid var(--line);
@@ -983,10 +987,10 @@
   .save__status.is-dirty { color: #b45309; }
 
   /* --- fake browser with a skeleton site (float actions view) --- */
-  .stage--fab { padding: 24px; gap: 16px; justify-content: flex-start; }
+  .stage--fab { padding: 40px 24px 24px; gap: 16px; justify-content: flex-start; }
   .browser {
     position: relative; display: flex; flex-direction: column;
-    width: 100%; height: calc(100vh - 44px - 48px - 28px);
+    width: 100%; height: calc(100vh - 44px - 64px - 28px);
     border-radius: 12px; background: #fff; overflow: hidden;
     box-shadow: 0 0 0 1px #e4e4e4, 0 16px 40px -16px rgba(0,0,0,.18);
   }
@@ -2982,9 +2986,6 @@ function makeResizable(frameEl, getW, setW) {
   rz.className = 'rz';
   frameEl.parentNode.insertBefore(rz, frameEl);
   rz.append(frameEl);
-  const badge = document.createElement('div');
-  badge.className = 'rz__badge';
-  rz.append(badge);
   const maxW = () => {
     const st = getComputedStyle(rz.parentNode);
     return rz.parentNode.clientWidth - parseFloat(st.paddingLeft) - parseFloat(st.paddingRight);
@@ -2998,9 +2999,8 @@ function makeResizable(frameEl, getW, setW) {
     h.tabIndex = 0;
     h.setAttribute('role', 'slider');
     h.setAttribute('aria-label', 'Ширина рамки, стрілки вліво і вправо');
-    h.innerHTML = `<span class="rz__grip"></span><div class="rz__menu">${FRAME_PRESETS.map(w => `<button type="button" data-w="${w}">${w || 'Auto'}</button>`).join('')}</div>`;
+    h.innerHTML = '<span class="rz__grip"></span>';
     rz.append(h);
-    h.querySelectorAll('[data-w]').forEach(b => b.addEventListener('click', () => setW(+b.dataset.w)));
 
     let sx = 0, sw = 0, on = false;
     h.addEventListener('pointerdown', e => {
@@ -3028,6 +3028,13 @@ function makeResizable(frameEl, getW, setW) {
       setW(w >= maxW() ? 0 : w);
     });
   });
+
+  const bar = document.createElement('div');
+  bar.className = 'rz__bar';
+  bar.innerHTML = `<span class="rz__badge"></span><div class="rz__menu">${FRAME_PRESETS.map(w => `<button type="button" data-w="${w}">${w || 'Auto'}</button>`).join('')}</div>`;
+  rz.append(bar);
+  const badge = bar.querySelector('.rz__badge');
+  bar.querySelectorAll('[data-w]').forEach(b => b.addEventListener('click', () => setW(+b.dataset.w)));
 
   rz.sync = () => {
     const w = getW();
