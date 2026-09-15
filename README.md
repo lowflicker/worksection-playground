@@ -2,7 +2,7 @@
 
 Плейграунд для блоків промосайту Worksection: крутиш параметри, бачиш результат, копіюєш готовий код.
 
-Онлайн: після публікації на GitHub Pages адреса буде `https://<user>.github.io/<repo>/`.
+Онлайн: https://lowflicker.github.io/worksection-playground/
 
 | Вкладка | Модуль | Що це |
 |---|---|---|
