@@ -40,6 +40,7 @@
     main: 'desktop',     // 'desktop' | 'phone': the big screenshot on narrow screens
     swap: true,          // a tap on the small screenshot makes it the main one
     hint: true,          // badge on the small screenshot
+    nudge: true,         // once, when the screenshots scroll into view: the phone bobs and the badge pulses
     duration: 600,       // ms, the swap
     easing: 'cubic-bezier(.22, 1, .36, 1)',   // the picture that shrinks
     overshoot: 0.2,      // the picture that grows: 0 = same curve as easing, 0.4 = a clear bounce
@@ -156,11 +157,30 @@
       this.root.classList.toggle('hero--no-swap', !o.swap);
       this.root.classList.toggle('hero--no-hint', !o.hint);
       this.root.classList.toggle('hero--no-lift', !o.lift);
+      this._watchNudge(o.nudge && o.swap);
       if ('view' in patch || this.index < 0) this.select(o.view);
       if ('main' in patch) this.show(o.main);
     }
 
+    // the nudge fires once, the first time most of the stage is on screen; hero.css does the motion
+    _watchNudge(on) {
+      if (!on) {
+        if (this._io) { this._io.disconnect(); this._io = null; }
+        delete this.screens.dataset.nudge;
+        return;
+      }
+      if (this._io || 'nudge' in this.screens.dataset || !('IntersectionObserver' in window)) return;
+      this._io = new IntersectionObserver(entries => {
+        if (!entries.some(e => e.isIntersecting)) return;
+        this._io.disconnect();
+        this._io = null;
+        if (this.options.nudge) this.screens.dataset.nudge = '';
+      }, { threshold: 0.6 });
+      this._io.observe(this.screens);
+    }
+
     destroy() {
+      if (this._io) this._io.disconnect();
       this.root.removeEventListener('click', this._onClick);
       this.root.removeEventListener('keydown', this._onKey);
       this.screens.removeEventListener('pointerdown', this._onDown);
