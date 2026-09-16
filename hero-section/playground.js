@@ -44,7 +44,7 @@
   // the phone is always on top, so every composition keeps the desktop thumb mostly out from under it
   // desktop a bit narrower than the 560 px of Figma and the phone thumb bigger and lower,
   // so almost half of it sits on the section background instead of the white screenshot
-  const FIGMA = { stageH: 124, deskW: 130, deskX: 5, deskS: 0.4, deskTx: 5, deskTy: 92, phoneW: 52, phoneX: 43, phoneS: 0.77, phoneTx: 55, phoneTy: 36 };
+  const FIGMA = { stageH: 124, deskW: 130, deskX: 5, deskS: 0.55, deskTx: 5, deskTy: 80, phoneW: 52, phoneX: 43, phoneS: 0.77, phoneTx: 55, phoneTy: 36 };
   const MOTION = { duration: 600, easing: 'cubic-bezier(.22, 1, .36, 1)', overshoot: 0.2, tilt: 3, lift: true };
   const PRESETS = {
     figma:   { label: 'Figma',          patch: Object.assign({}, FIGMA, MOTION) },
@@ -115,7 +115,6 @@ ${markup(s, '', false)}
     main: '${s.main}',
     swap: ${s.swap},
     hint: ${s.hint},
-    nudge: ${s.nudge},
     duration: ${s.duration},
     easing: '${s.easing}',
     overshoot: ${s.overshoot},
@@ -158,14 +157,6 @@ ${markup(s, '', false)}
         { type: 'seg', key: 'main', label: 'Головний скрін', options: [['desktop', 'Десктоп'], ['phone', 'Телефон']] },
         { type: 'check', key: 'swap', label: 'Тап по мініатюрі робить її головною' },
         { type: 'check', key: 'hint', label: 'Бейдж-підказка на мініатюрі', when: s => s.swap },
-        { type: 'check', key: 'nudge', label: 'Кивок телефона при появі сцени (один раз)', when: s => s.swap },
-        { type: 'buttons', items: [{ label: 'Показати кивок', run: () => {
-          const st = root.querySelector('.hero__screens');
-          hero.show('desktop');
-          delete st.dataset.swapped; delete st.dataset.nudge;
-          void st.offsetWidth; // restart the keyframes
-          st.dataset.nudge = '';
-        } }], when: s => s.swap && s.nudge },
         { type: 'range', key: 'duration', label: 'Тривалість свапу', min: 200, max: 1500, step: 50, unit: 'ms' },
         { type: 'select', key: 'easing', label: 'Easing (той, що зменшується)', options: EASINGS },
         { type: 'range', key: 'overshoot', label: 'Перельот того, що росте', min: 0, max: 0.5, step: 0.05, fmt: v => v === 0 ? 'нема' : v.toFixed(2) },

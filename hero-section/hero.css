@@ -66,8 +66,8 @@
      *-s/tx/ty: scale and position of the same picture as the thumb */
   --hero-stage-h: 124cqw;
   --hero-desk-w: 130cqw;  --hero-desk-x: 5cqw;   --hero-desk-y: 0cqw;
-  --hero-desk-s: .4;      --hero-desk-tx: 5cqw;  --hero-desk-ty: 92cqw;
-  --hero-phone-w: 52cqw;  --hero-phone-x: 43cqw; --hero-phone-y: 6cqw;
+  --hero-desk-s: .55;     --hero-desk-tx: 5cqw;  --hero-desk-ty: 80cqw;
+  --hero-phone-w: 52cqw;  --hero-phone-x: 43cqw; --hero-phone-y: 0cqw;
   --hero-phone-s: .77;    --hero-phone-tx: 55cqw; --hero-phone-ty: 36cqw;
 
   position: relative;
@@ -458,12 +458,6 @@
   .hero__screens[data-swapped][data-main="desktop"] .hero__screen--phone::before { animation: hero-lift-b var(--hero-swap) ease-in-out; }
   .hero--no-lift .hero__screen--phone::before { display: none; }
 
-  /* one-time nudge: when the stage scrolls into view (hero.js sets data-nudge) and nobody
-     has swapped yet, the phone thumb bobs twice and its badge pulses. Both run on
-     properties the swap does not touch (img translate, badge scale) */
-  .hero__screens[data-nudge]:not([data-swapped])[data-main="desktop"] .hero__screen--phone img { animation: hero-bob 1.1s var(--hero-ease) .5s 2; }
-  .hero__screens[data-nudge]:not([data-swapped])[data-main="desktop"] .hero__screen--phone::after { animation: hero-pulse .7s ease-in-out .5s 3; }
-
   /* the badge counter-scales so it keeps its size on the thumb, and appears once the move is over.
      On the desktop thumb it sits top-left: the top-right corner is under the phone */
   .hero__screens[data-main="desktop"] .hero__screen--phone::after {
@@ -490,8 +484,6 @@
 @keyframes hero-tilt-ccw { 50% { rotate: calc(-1 * var(--tilt)); } }
 @keyframes hero-lift-a { 50% { opacity: 1; } }
 @keyframes hero-lift-b { 50% { opacity: 1; } }
-@keyframes hero-bob   { 35% { translate: 0 -10px; } }
-@keyframes hero-pulse { 50% { scale: 1.3; } }
 
 /* options from hero.js */
 .hero--no-swap .hero__screen { pointer-events: none; cursor: default; }
