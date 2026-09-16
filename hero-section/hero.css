@@ -65,8 +65,8 @@
   /* narrow composition, in cqw. *-w/x/y: the picture as the main one,
      *-s/tx/ty: scale and position of the same picture as the thumb */
   --hero-stage-h: 124cqw;
-  --hero-desk-w: 130cqw;  --hero-desk-x: 5cqw;   --hero-desk-y: 0cqw;
-  --hero-desk-s: .55;     --hero-desk-tx: 5cqw;  --hero-desk-ty: 80cqw;
+  --hero-desk-w: 139cqw;  --hero-desk-x: 5cqw;   --hero-desk-y: 0cqw;
+  --hero-desk-s: 1;       --hero-desk-tx: 5cqw;  --hero-desk-ty: 14cqw;
   --hero-phone-w: 52cqw;  --hero-phone-x: 43cqw; --hero-phone-y: 0cqw;
   --hero-phone-s: .77;    --hero-phone-tx: 55cqw; --hero-phone-ty: 36cqw;
 

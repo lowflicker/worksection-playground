@@ -42,9 +42,9 @@
   };
 
   // the phone is always on top, so every composition keeps the desktop thumb mostly out from under it
-  // desktop a bit narrower than the 560 px of Figma and the phone thumb bigger and lower,
-  // so almost half of it sits on the section background instead of the white screenshot
-  const FIGMA = { stageH: 124, deskW: 130, deskX: 5, deskS: 0.55, deskTx: 5, deskTy: 80, phoneW: 52, phoneX: 43, phoneS: 0.77, phoneTx: 55, phoneTy: 36 };
+  // phone thumb bigger and lower than in Figma, so almost half of it sits on the section background;
+  // with the phone main, the desktop keeps its size and slides behind it, centred on the phone
+  const FIGMA = { stageH: 124, deskW: 139, deskX: 5, deskS: 1, deskTx: 5, deskTy: 14, phoneW: 52, phoneX: 43, phoneS: 0.77, phoneTx: 55, phoneTy: 36 };
   const MOTION = { duration: 600, easing: 'cubic-bezier(.22, 1, .36, 1)', overshoot: 0.2, tilt: 3, lift: true };
   const PRESETS = {
     figma:   { label: 'Figma',          patch: Object.assign({}, FIGMA, MOTION) },
@@ -175,7 +175,7 @@ ${markup(s, '', false)}
         { type: 'range', key: 'stageH', label: 'Висота сцени', min: 70, max: 150, step: 0.5, unit: 'cqw' },
         { type: 'range', key: 'deskW', label: 'Десктоп: ширина', min: 90, max: 170, step: 1, unit: 'cqw' },
         { type: 'range', key: 'deskX', label: 'Десктоп: зсув X', min: -40, max: 40, step: 0.5, unit: 'cqw' },
-        { type: 'range', key: 'deskS', label: 'Десктоп: масштаб мініатюри', min: 0.25, max: 0.8, step: 0.005, fmt: pct },
+        { type: 'range', key: 'deskS', label: 'Десктоп: масштаб під телефоном', min: 0.25, max: 1, step: 0.005, fmt: pct },
         { type: 'range', key: 'deskTx', label: 'Десктоп-мініатюра: X', min: -20, max: 70, step: 0.5, unit: 'cqw' },
         { type: 'range', key: 'deskTy', label: 'Десктоп-мініатюра: Y', min: 0, max: 120, step: 0.5, unit: 'cqw' },
         { type: 'range', key: 'phoneW', label: 'Телефон: ширина', min: 30, max: 80, step: 0.5, unit: 'cqw' },
