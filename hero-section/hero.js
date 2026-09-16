@@ -10,8 +10,11 @@
      new Hero('#hero', { view: 0, main: 'desktop' });
 
    Markup: see the header of hero.css or demo.html. Each tab carries the
-   pictures of its view in data-desktop / data-phone; a tab without them
-   keeps the pictures that are already shown.
+   pictures of its view in data-desktop / data-phone (plus optional
+   data-desktop-srcset / data-phone-srcset; the <img> keeps its own
+   `sizes`); a tab without them keeps the pictures that are already shown.
+   On touch screens a horizontal swipe over the screenshots steps through
+   the views; the neighbouring views' pictures are prefetched when idle.
 
    Public API:
      hero.select(i)          show view i: the tab and both screenshots
@@ -55,11 +58,17 @@
       };
       this.index = -1;
       this._pending = {};
+      this._warm = new Set();
       // one delegated listener each: tabs, arrows and screenshots all live under the root
       this._onClick = e => this._click(e);
       this._onKey = e => this._key(e);
+      this._onDown = e => this._down(e);
+      this._onUp = e => this._up(e);
       this.root.addEventListener('click', this._onClick);
       this.root.addEventListener('keydown', this._onKey);
+      this.screens.addEventListener('pointerdown', this._onDown);
+      this.screens.addEventListener('pointerup', this._onUp);
+      this.screens.addEventListener('pointercancel', this._onUp);
       this.setOptions(Object.assign({}, DEFAULTS, options));
     }
 
@@ -75,26 +84,49 @@
         tab.tabIndex = k === i ? 0 : -1;
       });
       const d = this.tabs[i].dataset;
-      this._swapImage('desktop', d.desktop);
-      this._swapImage('phone', d.phone);
+      this._swapImage('desktop', d.desktop, d.desktopSrcset);
+      this._swapImage('phone', d.phone, d.phoneSrcset);
       this.root.dispatchEvent(new CustomEvent('hero:view', { detail: { index: i } }));
+      // warm the neighbours while nothing else is going on, so the next step is instant
+      const idle = window.requestIdleCallback || (fn => setTimeout(fn, 300));
+      idle(() => { if (this.index === i) { this._prefetch(i - 1); this._prefetch(i + 1); } });
     }
     prev() { this.select(this.index - 1); }
     next() { this.select(this.index + 1); }
 
-    _swapImage(which, src) {
-      const img = this.img[which];
-      if (!img || !src || img.getAttribute('src') === src) return;
-      // decode off screen first, so the crossfade never shows a half-loaded picture
+    // a detached <img> with the same sizes picks the same srcset candidate the real one will
+    _load(which, src, srcset) {
       const pre = new Image();
+      if (this.img[which] && this.img[which].sizes) pre.sizes = this.img[which].sizes;
+      if (srcset) pre.srcset = srcset;
       pre.src = src;
+      this._warm.add(src);
+      return pre;
+    }
+    _swapImage(which, src, srcset) {
+      const img = this.img[which];
+      srcset = srcset || '';
+      if (!img || !src || (img.getAttribute('src') === src && (img.getAttribute('srcset') || '') === srcset)) return;
+      // decode off screen first, so the crossfade never shows a half-loaded picture
+      const pre = this._load(which, src, srcset);
       this._pending[which] = pre;
       const ready = pre.decode ? pre.decode().catch(() => {}) : Promise.resolve();
       ready.then(() => {
         if (this._pending[which] !== pre) return; // a newer tab won
+        if (srcset) img.srcset = srcset; else img.removeAttribute('srcset');
         img.src = src;
         if (this.options.fade > 0) img.animate([{ opacity: 0 }, { opacity: 1 }], { duration: this.options.fade, easing: 'ease-out' });
       });
+    }
+    _prefetch(i) {
+      const n = this.tabs.length;
+      const d = this.tabs[((i % n) + n) % n].dataset;
+      for (const which of ['desktop', 'phone']) {
+        const src = d[which];
+        if (!src || this._warm.has(src)) continue;
+        this._warm.add(src);
+        this._load(which, src, d[which + 'Srcset']);
+      }
     }
 
     /* ---------- main / thumb ---------- */
@@ -123,6 +155,9 @@
     destroy() {
       this.root.removeEventListener('click', this._onClick);
       this.root.removeEventListener('keydown', this._onKey);
+      this.screens.removeEventListener('pointerdown', this._onDown);
+      this.screens.removeEventListener('pointerup', this._onUp);
+      this.screens.removeEventListener('pointercancel', this._onUp);
     }
 
     /* ---------- events ---------- */
@@ -131,7 +166,27 @@
       if (!t || !this.root.contains(t)) return;
       if (t.classList.contains('hero__tab')) this.select(this.tabs.indexOf(t));
       else if (t.classList.contains('hero__arrow')) this[t.classList.contains('hero__arrow--prev') ? 'prev' : 'next']();
-      else if (this.options.swap && t.dataset.screen !== this.screens.dataset.main && this._swappable()) this.show(t.dataset.screen);
+      else if (this._swiped) this._swiped = false; // the tap that ends a swipe is not a tap
+      else if (this.options.swap && t.dataset.screen !== this.screens.dataset.main && this._swappable()) {
+        this.show(t.dataset.screen);
+        // the picture grows towards the bottom; keep the whole stage on screen
+        this.screens.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }
+    // horizontal swipe over the screenshots steps through the views (touch and pen only; hero.css sets touch-action: pan-y)
+    _down(e) {
+      this._swipe = e.pointerType === 'mouse' ? null : { x: e.clientX, y: e.clientY };
+    }
+    _up(e) {
+      const s = this._swipe;
+      this._swipe = null;
+      if (!s || e.type === 'pointercancel') return;
+      const dx = e.clientX - s.x, dy = e.clientY - s.y;
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      // browsers usually drop the click after a moved touch, but not always; swallow one if it comes right away
+      this._swiped = true;
+      setTimeout(() => { this._swiped = false; }, 300);
+      this[dx < 0 ? 'next' : 'prev']();
     }
     // hero.css sets --hero-swappable: 1 in the narrow composition; wide, the screenshots are decorative
     _swappable() { return getComputedStyle(this.screens).getPropertyValue('--hero-swappable').trim() === '1'; }

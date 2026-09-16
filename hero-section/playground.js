@@ -60,9 +60,12 @@
 
   /* the block's markup. In the demo every tab points at the one screenshot pair we have;
      the snippet shows a pair per view, which is how a site would do it */
+  // the desktop picture has a 1280 px variant for phones (it renders at ~560 CSS px there)
+  const SIZES = '(max-width: 639px) 140vw, 1280px';
+  const srcset = (base, d) => `${base}img/${d}-1280.webp 1280w, ${base}img/${d}.webp 2496w`;
   const tab = (v, i, base, demo) => {
     const d = demo ? 'dashboard' : v.id;
-    return `<button type="button" class="hero__tab" role="tab" aria-selected="${i === 0}" data-desktop="${base}img/${d}.webp" data-phone="${base}img/${d}-phone.webp">${ICONS[v.icon]}${v.label}</button>`;
+    return `<button type="button" class="hero__tab" role="tab" aria-selected="${i === 0}" data-desktop="${base}img/${d}.webp" data-desktop-srcset="${srcset(base, d)}" data-phone="${base}img/${d}-phone.webp">${ICONS[v.icon]}${v.label}</button>`;
   };
   const markup = (s, base, demo) => `<section class="hero" id="hero">
   <div class="hero__inner">
@@ -86,7 +89,7 @@
         <button type="button" class="hero__arrow hero__arrow--next" aria-label="Next view">${ICONS.chevR}</button>
       </div>
       <div class="hero__screens" data-main="${s.main}">
-        <button type="button" class="hero__screen hero__screen--desktop" data-screen="desktop" aria-label="Show the desktop version"><img src="${base}img/dashboard.webp" width="2496" height="1528" alt="Worksection dashboard on desktop" fetchpriority="high" decoding="async"></button>
+        <button type="button" class="hero__screen hero__screen--desktop" data-screen="desktop" aria-label="Show the desktop version"><img src="${base}img/dashboard.webp" srcset="${srcset(base, 'dashboard')}" sizes="${SIZES}" width="2496" height="1528" alt="Worksection dashboard on desktop" fetchpriority="high" decoding="async"></button>
         <button type="button" class="hero__screen hero__screen--phone" data-screen="phone" aria-label="Show the mobile version"><img src="${base}img/dashboard-phone.webp" width="804" height="1748" alt="Worksection dashboard on a phone" decoding="async"></button>
       </div>
     </div>
