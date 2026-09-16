@@ -41,12 +41,16 @@
     phoneS: ['--hero-phone-s', ''], phoneTx: ['--hero-phone-tx', 'cqw'], phoneTy: ['--hero-phone-ty', 'cqw'],
   };
 
-  const FIGMA = { stageH: 115, deskW: 139, deskX: 5, deskS: 0.45, deskTx: 5, deskTy: 76.5, phoneW: 52, phoneX: 42, phoneS: 0.685, phoneTx: 59, phoneTy: 35 };
+  // the phone is always on top, so every composition keeps the desktop thumb mostly out from under it
+  const FIGMA = { stageH: 115, deskW: 139, deskX: 5, deskS: 0.4, deskTx: 5, deskTy: 81, phoneW: 50, phoneX: 45, phoneS: 0.71, phoneTx: 59.5, phoneTy: 35 };
+  const MOTION = { duration: 600, easing: 'cubic-bezier(.22, 1, .36, 1)', overshoot: 0.2, tilt: 3, lift: true };
   const PRESETS = {
-    figma:   { label: 'Figma',            patch: FIGMA },
-    compact: { label: 'Малі мініатюри',   patch: { stageH: 115, deskW: 139, deskX: 5, deskS: 0.38, deskTx: 5, deskTy: 82, phoneW: 52, phoneX: 42, phoneS: 0.55, phoneTx: 66, phoneTy: 45 } },
-    center:  { label: 'Телефон по центру', patch: { stageH: 115, deskW: 139, deskX: 5, deskS: 0.5, deskTx: 3, deskTy: 72, phoneW: 52, phoneX: 24, phoneS: 0.685, phoneTx: 59, phoneTy: 35 } },
-    close:   { label: 'Ближче',           patch: { stageH: 100, deskW: 120, deskX: 5, deskS: 0.5, deskTx: 5, deskTy: 63, phoneW: 46, phoneX: 48, phoneS: 0.6, phoneTx: 64, phoneTy: 30 } },
+    figma:   { label: 'Figma',          patch: Object.assign({}, FIGMA, MOTION) },
+    compact: { label: 'Малі мініатюри', patch: { stageH: 115, deskW: 139, deskX: 5, deskS: 0.36, deskTx: 5, deskTy: 84, phoneW: 50, phoneX: 45, phoneS: 0.55, phoneTx: 67, phoneTy: 45 } },
+    apart:   { label: 'Поруч',          patch: { stageH: 100, deskW: 139, deskX: 5, deskS: 0.34, deskTx: 5, deskTy: 71, phoneW: 44, phoneX: 53, phoneS: 0.8, phoneTx: 60, phoneTy: 24 } },
+    close:   { label: 'Ближче',         patch: { stageH: 100, deskW: 120, deskX: 5, deskS: 0.42, deskTx: 5, deskTy: 69, phoneW: 46, phoneX: 48, phoneS: 0.65, phoneTx: 65, phoneTy: 30 } },
+    calm:    { label: 'Спокійний рух',  patch: { duration: 700, easing: 'cubic-bezier(.4, 0, .2, 1)', overshoot: 0, tilt: 0, lift: false } },
+    bouncy:  { label: 'Пружний рух',    patch: { duration: 750, easing: 'cubic-bezier(.16, 1, .3, 1)', overshoot: 0.4, tilt: 5, lift: true } },
   };
 
   const defaults = Object.assign({}, Hero.defaults, { content: 'lead', badge: true }, FIGMA);
@@ -111,6 +115,9 @@ ${markup(s, '', false)}
     hint: ${s.hint},
     duration: ${s.duration},
     easing: '${s.easing}',
+    overshoot: ${s.overshoot},
+    tilt: ${s.tilt},
+    lift: ${s.lift},
     fade: ${s.fade},
   });
 <\/script>
@@ -149,8 +156,12 @@ ${markup(s, '', false)}
         { type: 'check', key: 'swap', label: 'Тап по мініатюрі робить її головною' },
         { type: 'check', key: 'hint', label: 'Бейдж-підказка на мініатюрі', when: s => s.swap },
         { type: 'range', key: 'duration', label: 'Тривалість свапу', min: 200, max: 1500, step: 50, unit: 'ms' },
-        { type: 'select', key: 'easing', label: 'Easing', options: EASINGS },
-        { type: 'note', text: 'Свап живе лише у вузькій композиції (< 640 px). Постав ширину фрейму 390 або 320.' },
+        { type: 'select', key: 'easing', label: 'Easing (той, що зменшується)', options: EASINGS },
+        { type: 'range', key: 'overshoot', label: 'Перельот того, що росте', min: 0, max: 0.5, step: 0.05, fmt: v => v === 0 ? 'нема' : v.toFixed(2) },
+        { type: 'range', key: 'tilt', label: 'Нахил у польоті', min: 0, max: 8, step: 0.5, unit: '°' },
+        { type: 'check', key: 'lift', label: 'Тінь-підйом під телефоном' },
+        { type: 'buttons', items: [{ label: 'Свапнути', primary: true, run: () => hero.toggle() }] },
+        { type: 'note', text: 'Свап живе лише у вузькій композиції (< 640 px). Постав ширину фрейму 390 або 320. Телефон завжди зверху, десктоп-мініатюра визирає з-під нього.' },
       ] },
       { title: 'Вкладки', items: [
         { type: 'select', key: 'view', label: 'Активна вкладка', options: VIEWS.map((v, i) => [i, v.label]) },

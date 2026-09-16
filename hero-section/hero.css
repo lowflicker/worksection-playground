@@ -55,18 +55,20 @@
   --hero-accent-ink: #5a6204;
   --hero-accent-glow: rgba(212, 229, 98, .2);
 
-  /* motion (hero.js writes the first three from its options) */
+  /* motion (hero.js writes these from its options) */
   --hero-swap: 600ms;
-  --hero-ease: cubic-bezier(.22, 1, .36, 1);
+  --hero-ease: cubic-bezier(.22, 1, .36, 1);         /* the picture that shrinks, tab fade-in */
+  --hero-ease-grow: cubic-bezier(.3, 1.2, .4, 1);    /* the picture that grows: a touch of overshoot */
+  --hero-tilt: 3deg;                                 /* lean at mid-flight, 0 to switch off */
   --hero-fade: 300ms;
 
   /* narrow composition, in cqw. *-w/x/y: the picture as the main one,
      *-s/tx/ty: scale and position of the same picture as the thumb */
   --hero-stage-h: 115cqw;
   --hero-desk-w: 139cqw;  --hero-desk-x: 5cqw;   --hero-desk-y: 0cqw;
-  --hero-desk-s: .45;     --hero-desk-tx: 5cqw;  --hero-desk-ty: 76.5cqw;
-  --hero-phone-w: 52cqw;  --hero-phone-x: 42cqw; --hero-phone-y: 0cqw;
-  --hero-phone-s: .685;   --hero-phone-tx: 59cqw; --hero-phone-ty: 35cqw;
+  --hero-desk-s: .4;      --hero-desk-tx: 5cqw;  --hero-desk-ty: 81cqw;
+  --hero-phone-w: 50cqw;  --hero-phone-x: 45cqw; --hero-phone-y: 0cqw;
+  --hero-phone-s: .71;    --hero-phone-tx: 59.5cqw; --hero-phone-ty: 35cqw;
 
   position: relative;
   container-type: inline-size;
@@ -263,13 +265,15 @@
   background: var(--hero-tint);
   box-shadow: inset 0 0 0 1px rgba(36, 56, 56, .05);
 }
+/* the button is only the hit box; radius and shadow sit on the picture, so the
+   in-flight tilt (narrow composition) turns the shadow with it */
 .hero__screen {
   display: block;
   margin: 0;
   padding: 0;
   border: 0;
   border-radius: 12px;
-  background: #fff;
+  background: none;
   /* decorative here; interactive only in the narrow composition */
   pointer-events: none;
   cursor: default;
@@ -280,10 +284,13 @@
   width: 100%;
   height: auto;
   border-radius: inherit;
+  background: #fff;
 }
 .hero__screen--desktop {
   position: relative;
   width: 100%;
+}
+.hero__screen--desktop img {
   box-shadow: 0 0 0 1px rgba(38, 54, 54, .06), 0 4px 4px -2px rgba(15, 28, 41, .15), 0 12px 12px -6px rgba(38, 54, 54, .06), 0 24px 24px -12px rgba(38, 54, 54, .06);
 }
 .hero__screen--phone {
@@ -292,6 +299,8 @@
   top: 13.5%;
   width: 21%;
   border-radius: clamp(12px, 2.2cqw, 28px);
+}
+.hero__screen--phone img {
   /* the first ring is the bezel */
   box-shadow: 0 0 0 clamp(3px, .47cqw, 6px) rgba(15, 28, 41, .15), 0 0 0 1px rgba(15, 28, 41, .15), 0 8px 8px -4px rgba(15, 28, 41, .15), 0 16px 16px -6px rgba(15, 28, 41, .15), 0 32px 24px -12px rgba(38, 54, 54, .06);
 }
@@ -392,15 +401,21 @@
     pointer-events: auto;
     cursor: pointer;
     will-change: transform;
-    /* z-order flips once the move is over, so the growing picture stays on top while it moves */
-    transition: transform var(--hero-swap) var(--hero-ease), z-index 0s linear var(--hero-swap);
+    transition: transform var(--hero-swap) var(--hero-ease);
   }
-  /* laid out at the main size and position; the thumb state is a transform on top of that */
+  /* the picture that grows gets the overshoot curve, the one that shrinks the plain one;
+     the timing function is read from the new state, so each side picks its own */
+  .hero__screens[data-main="desktop"] .hero__screen--desktop,
+  .hero__screens[data-main="phone"] .hero__screen--phone { transition-timing-function: var(--hero-ease-grow); }
+  /* laid out at the main size and position; the thumb state is a transform on top of that.
+     The phone is always on top: it is the physical object, the desktop thumb peeks out from under it */
   .hero__screen--desktop {
     z-index: 1;
     width: var(--hero-desk-w);
     translate: var(--hero-desk-x) var(--hero-desk-y);
     border-radius: 7px;
+  }
+  .hero__screen--desktop img {
     box-shadow: 0 0 0 .6px rgba(38, 54, 54, .06), 0 2px 2px -1px rgba(15, 28, 41, .15), 0 7px 7px -3.5px rgba(38, 54, 54, .06), 0 14px 14px -7px rgba(38, 54, 54, .06);
   }
   .hero__screen--phone {
@@ -408,18 +423,43 @@
     width: var(--hero-phone-w);
     translate: var(--hero-phone-x) var(--hero-phone-y);
     border-radius: 22px;
+  }
+  .hero__screen--phone img {
     box-shadow: 0 0 0 4px rgba(15, 28, 41, .15), 0 0 0 1px rgba(15, 28, 41, .15), 0 8px 8px -4px rgba(15, 28, 41, .15), 0 16px 16px -6px rgba(15, 28, 41, .15), 0 32px 24px -12px rgba(38, 54, 54, .06);
   }
   .hero__screens[data-main="desktop"] .hero__screen--phone {
     transform: translate(calc(var(--hero-phone-tx) - var(--hero-phone-x)), calc(var(--hero-phone-ty) - var(--hero-phone-y))) scale(var(--hero-phone-s));
   }
   .hero__screens[data-main="phone"] .hero__screen--desktop {
-    z-index: 2;
     transform: translate(calc(var(--hero-desk-tx) - var(--hero-desk-x)), calc(var(--hero-desk-ty) - var(--hero-desk-y))) scale(var(--hero-desk-s));
   }
-  .hero__screens[data-main="phone"] .hero__screen--phone { z-index: 1; }
 
-  /* the badge counter-scales so it keeps its size on the thumb, and appears once the move is over */
+  /* in flight: the pictures lean into the move (the phone twice as much as the desktop)
+     and the phone lifts, a soft extra shadow fades in and out. Keyframes run on the
+     picture, around its centre, on top of the button's transform; two names per
+     direction so a change of data-main restarts them. Gated on data-swapped, which
+     hero.js sets on the first swap, so nothing moves on page load */
+  .hero__screen img { --tilt: calc(var(--hero-tilt) * .5); }
+  .hero__screen--phone img { --tilt: var(--hero-tilt); }
+  .hero__screens[data-swapped][data-main="phone"] .hero__screen--phone img,
+  .hero__screens[data-swapped][data-main="phone"] .hero__screen--desktop img { animation: hero-tilt-ccw var(--hero-swap) var(--hero-ease); }
+  .hero__screens[data-swapped][data-main="desktop"] .hero__screen--phone img,
+  .hero__screens[data-swapped][data-main="desktop"] .hero__screen--desktop img { animation: hero-tilt-cw var(--hero-swap) var(--hero-ease); }
+  .hero__screen--phone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    box-shadow: 0 48px 56px -24px rgba(15, 28, 41, .5);
+    opacity: 0;
+  }
+  .hero__screens[data-swapped][data-main="phone"] .hero__screen--phone::before { animation: hero-lift-a var(--hero-swap) ease-in-out; }
+  .hero__screens[data-swapped][data-main="desktop"] .hero__screen--phone::before { animation: hero-lift-b var(--hero-swap) ease-in-out; }
+  .hero--no-lift .hero__screen--phone::before { display: none; }
+
+  /* the badge counter-scales so it keeps its size on the thumb, and appears once the move is over.
+     On the desktop thumb it sits top-left: the top-right corner is under the phone */
   .hero__screens[data-main="desktop"] .hero__screen--phone::after {
     opacity: 1;
     transform: scale(calc(1 / var(--hero-phone-s)));
@@ -427,6 +467,9 @@
   }
   .hero__screens[data-main="phone"] .hero__screen--desktop::after {
     opacity: 1;
+    left: -10px;
+    right: auto;
+    transform-origin: 0 0;
     transform: scale(calc(1 / var(--hero-desk-s)));
     transition-delay: var(--hero-swap);
   }
@@ -436,6 +479,11 @@
 @keyframes hero-tab-in {
   from { opacity: 0; transform: translateY(4px); }
 }
+/* the same lean in both directions, two names so a change of data-main restarts it */
+@keyframes hero-tilt-cw  { 50% { rotate: var(--tilt); } }
+@keyframes hero-tilt-ccw { 50% { rotate: calc(-1 * var(--tilt)); } }
+@keyframes hero-lift-a { 50% { opacity: 1; } }
+@keyframes hero-lift-b { 50% { opacity: 1; } }
 
 /* options from hero.js */
 .hero--no-swap .hero__screen { pointer-events: none; cursor: default; }
@@ -443,5 +491,5 @@
 .hero--no-hint .hero__screen::after { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero__screen, .hero__screen::after, .hero__tab, .hero__tab::before, .hero__tab::after { transition: none; animation: none; }
+  .hero__screen, .hero__screen::before, .hero__screen::after, .hero__screen img, .hero__tab, .hero__tab::before, .hero__tab::after { transition: none; animation: none; }
 }

@@ -41,7 +41,10 @@
     swap: true,          // a tap on the small screenshot makes it the main one
     hint: true,          // badge on the small screenshot
     duration: 600,       // ms, the swap
-    easing: 'cubic-bezier(.22, 1, .36, 1)',
+    easing: 'cubic-bezier(.22, 1, .36, 1)',   // the picture that shrinks
+    overshoot: 0.2,      // the picture that grows: 0 = same curve as easing, 0.4 = a clear bounce
+    tilt: 3,             // deg, how much the pictures lean at mid-flight; 0 = none
+    lift: true,          // extra shadow under the phone while it moves
     fade: 300,           // ms, screenshot crossfade on a tab change
   };
 
@@ -135,6 +138,7 @@
       this.options.main = main;
       if (this.screens.dataset.main === main) return;
       this.screens.dataset.main = main;
+      this.screens.dataset.swapped = ''; // unlocks the in-flight keyframes; absent on page load
       this.root.dispatchEvent(new CustomEvent('hero:main', { detail: { main } }));
     }
     toggle() { this.show(this.screens.dataset.main === 'phone' ? 'desktop' : 'phone'); }
@@ -145,9 +149,13 @@
       const s = this.root.style;
       s.setProperty('--hero-swap', o.duration + 'ms');
       s.setProperty('--hero-ease', o.easing);
+      // overshoot 0 falls back to the plain curve; otherwise a back-out whose bounce grows with the value
+      s.setProperty('--hero-ease-grow', o.overshoot > 0 ? `cubic-bezier(.3, ${1 + o.overshoot}, .4, 1)` : o.easing);
+      s.setProperty('--hero-tilt', o.tilt + 'deg');
       s.setProperty('--hero-fade', o.fade + 'ms');
       this.root.classList.toggle('hero--no-swap', !o.swap);
       this.root.classList.toggle('hero--no-hint', !o.hint);
+      this.root.classList.toggle('hero--no-lift', !o.lift);
       if ('view' in patch || this.index < 0) this.select(o.view);
       if ('main' in patch) this.show(o.main);
     }
