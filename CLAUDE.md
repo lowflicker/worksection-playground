@@ -10,7 +10,7 @@ effects here with an AI; the **audience is the developers** in his company,
 who copy a module's files into the site. Two strictly separate parts:
 
 1. **Modules** (`logo-wall/`, `short-answer/`, `float-actions/`, `border-beam/`,
-   `dot-sphere/`) — the product. Plain HTML + CSS + vanilla JS, no deps, no
+   `dot-sphere/`, `hero-section/`) — the product. Plain HTML + CSS + vanilla JS, no deps, no
    build, no frameworks, ever. These files are what gets exported.
 2. **Shell** (`playground/`) — the chrome around them. Never exported, knows
    nothing about any specific module, currently vanilla with no deps.
@@ -36,7 +36,10 @@ README.md               developer overview + how to add a module.
 ```
 
 Globals / ids: `LogoWall`→`logos`, `ShortAnswer`→`answer`, `FloatActions`→`fab`,
-`BorderBeam`→`beam`, `DotSphere`→`sphere`. Each exposes `.defaults`.
+`BorderBeam`→`beam`, `DotSphere`→`sphere`, `Hero`→`hero`. Each exposes `.defaults`.
+`hero-section/` is markup-first: the adapter builds the HTML, `hero.js` only
+enhances it; its breakpoints are container queries, so the frame width
+presets (390 / 320) show the narrow composition.
 
 ## Token discipline
 
@@ -122,5 +125,7 @@ sheet, collapsible groups. localStorage prefix `ws-playground:`.
 ## Status (keep to 5 lines, update when it changes)
 
 - 2026-09-16: shell rewrite done, 5 modules on the new contract, pushed.
+- 2026-09-16: `hero-section/` added (Figma hero, tap-to-swap screenshots on
+  phones). Demo has only the Dashboard screenshot pair; other views reuse it.
 - Old folder `Desktop/vis-effects-for-ui` is superseded; work from this repo.
-- Nothing pending.
+- `.claude/launch.json` runs `python3` (no bare `python` on this Mac).

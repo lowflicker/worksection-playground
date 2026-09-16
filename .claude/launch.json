@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "playground",
-      "runtimeExecutable": "python",
+      "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "5174"],
       "port": 5174
     }

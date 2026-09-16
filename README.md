@@ -11,6 +11,7 @@
 | Float actions | [`float-actions/`](float-actions) | кнопки support і ringostat поверх сайту | `float-actions.css`, `float-actions.js` |
 | Border beam | [`border-beam/`](border-beam) | веселкове світло по межі елемента, чистий CSS | `beam.css`, `beam.js` |
 | Dot sphere | [`dot-sphere/`](dot-sphere) | 3D-сфера з точок на canvas, реагує на курсор | `sphere.js` |
+| S : Hero | [`hero-section/`](hero-section) | хіро з вкладками і двома скріншотами, на телефоні тап міняє головний | `hero.css`, `hero.js`, своя розмітка і скріншоти |
 
 ## Для розробника
 
