@@ -109,6 +109,21 @@ ${vars.join('\n')}
     <div class="sh-page__block"></div>
   </div></div></div>`;
 
+  // The real S : Hero under the bar, as on the site. It comes from the hero's own demo page
+  // over HTTP (the adapters never see each other); the stand-in above stays if that fails
+  async function placeHero(holder) {
+    if (!window.Hero) return;
+    const html = await fetch('hero-section/demo.html').then(r => r.ok ? r.text() : '');
+    const m = html.match(/<section class="hero"[\s\S]*?<\/section>/);
+    if (!m) return;
+    const tpl = document.createElement('template');
+    tpl.innerHTML = m[0].replace(/(^|[\s"',])img\//g, '$1hero-section/img/');
+    const hero = tpl.content.firstElementChild;
+    hero.removeAttribute('id');
+    holder.replaceWith(hero);
+    new Hero(hero);
+  }
+
   let root = null, bar = null, scroller = null;
   const layout = () => root.clientWidth >= 1240 ? 'широка' : root.clientWidth >= 620 ? 'планшет' : 'телефон';
 
@@ -159,6 +174,7 @@ ${vars.join('\n')}
       scroller.addEventListener('scroll', () => requestAnimationFrame(ctx.refresh), { passive: true });
       bar = new SiteHeader(root);
       ctx.instance = bar;
+      placeHero(ctx.frame.querySelector('.sh-page__hero'));
       root.addEventListener('header:compact', () => requestAnimationFrame(ctx.refresh));
       root.addEventListener('header:open', () => requestAnimationFrame(ctx.refresh));
       root.addEventListener('header:close', () => requestAnimationFrame(ctx.refresh));

@@ -40,8 +40,9 @@ Globals / ids: `LogoWall`→`logos`, `ShortAnswer`→`answer`, `FloatActions`→
 `hero-section/` is markup-first: the adapter builds the HTML, `hero.js` only
 enhances it; its breakpoints are container queries, so the frame width
 presets (390 / 320) show the narrow composition. `site-header/` is the same
-kind (markup-first, container queries) and mounts its own scroller window
-(`stage--fill`) so the sticky bar has something to stick to.
+kind (markup-first, container queries); its stage is its own scroller window
+(`stage--fill`) with the real hero under the bar, pulled from
+`hero-section/demo.html` over HTTP (the adapters never reference each other).
 
 ## Token discipline
 
