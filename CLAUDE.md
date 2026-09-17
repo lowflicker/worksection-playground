@@ -10,7 +10,7 @@ effects here with an AI; the **audience is the developers** in his company,
 who copy a module's files into the site. Two strictly separate parts:
 
 1. **Modules** (`logo-wall/`, `short-answer/`, `float-actions/`, `border-beam/`,
-   `dot-sphere/`, `hero-section/`) — the product. Plain HTML + CSS + vanilla JS, no deps, no
+   `dot-sphere/`, `hero-section/`, `site-header/`) — the product. Plain HTML + CSS + vanilla JS, no deps, no
    build, no frameworks, ever. These files are what gets exported.
 2. **Shell** (`playground/`) — the chrome around them. Never exported, knows
    nothing about any specific module, currently vanilla with no deps.
@@ -36,10 +36,12 @@ README.md               developer overview + how to add a module.
 ```
 
 Globals / ids: `LogoWall`→`logos`, `ShortAnswer`→`answer`, `FloatActions`→`fab`,
-`BorderBeam`→`beam`, `DotSphere`→`sphere`, `Hero`→`hero`. Each exposes `.defaults`.
+`BorderBeam`→`beam`, `DotSphere`→`sphere`, `Hero`→`hero`, `SiteHeader`→`header`. Each exposes `.defaults`.
 `hero-section/` is markup-first: the adapter builds the HTML, `hero.js` only
 enhances it; its breakpoints are container queries, so the frame width
-presets (390 / 320) show the narrow composition.
+presets (390 / 320) show the narrow composition. `site-header/` is the same
+kind (markup-first, container queries) and mounts its own scroller window
+(`stage--fill`) so the sticky bar has something to stick to.
 
 ## Token discipline
 
@@ -125,7 +127,7 @@ sheet, collapsible groups. localStorage prefix `ws-playground:`.
 ## Status (keep to 5 lines, update when it changes)
 
 - 2026-09-16: shell rewrite done, 5 modules on the new contract, pushed.
-- 2026-09-16: `hero-section/` added (Figma hero, tap-to-swap screenshots on
-  phones). Real screenshots for all 7 views; `img/build.py` rebuilds them from PNG.
+- 2026-09-16: `hero-section/` (Figma hero, tap-to-swap on phones; `img/build.py` rebuilds the screenshots from PNG).
+- 2026-09-17: `site-header/` (worksection.com top bar; its demo stacks it on the hero).
 - Old folder `Desktop/vis-effects-for-ui` is superseded; work from this repo.
 - `.claude/launch.json` runs `python3` (no bare `python` on this Mac).

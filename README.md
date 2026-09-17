@@ -12,6 +12,7 @@
 | Border beam | [`border-beam/`](border-beam) | веселкове світло по межі елемента, чистий CSS | `beam.css`, `beam.js` |
 | Dot sphere | [`dot-sphere/`](dot-sphere) | 3D-сфера з точок на canvas, реагує на курсор | `sphere.js` |
 | S : Hero | [`hero-section/`](hero-section) | хіро з вкладками і двома скріншотами, на телефоні тап міняє головний | `hero.css`, `hero.js`, своя розмітка і скріншоти |
+| S : Header | [`site-header/`](site-header) | шапка worksection.com: липка пігулка, стискається на скролі, бургер і лист на вузькому | `header.css`, `header.js`, своя розмітка |
 
 ## Для розробника
 

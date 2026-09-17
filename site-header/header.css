@@ -1,0 +1,307 @@
+/* ============================================================
+   Site header — the worksection.com top bar
+   ============================================================
+   A sticky pill: brand, menu with dropdown panels, language, login and two
+   CTAs. Compacts (1360 → 1024 px) once the page has scrolled, collapses to
+   brand + sign-up + burger below 1240 px, and the burger opens a full-height
+   sheet with the same menu. Breakpoints are container queries on the header
+   itself, so the bar follows the width it is given, not the viewport.
+
+   Markup (header.js only enhances it; without JS the bar is a static sticky
+   pill with working links, no panels and no sheet):
+
+   <header class="site-header" id="header">
+     <div class="site-header__bar">
+       <div class="site-header__left">
+         <a class="site-header__brand" href="/"><svg …/><span>worksection</span></a>
+         <nav class="site-header__menu" aria-label="…">
+           <div class="site-header__group">
+             <button type="button" class="site-header__item" aria-expanded="false"><span>Продукт</span><svg …/></button>
+             <div class="site-header__panel"><a class="site-header__link" href="…">…</a>…</div>
+           </div>
+           …
+           <a class="site-header__item" href="…"><span>Ціни</span></a>
+         </nav>
+       </div>
+       <div class="site-header__actions">
+         <button type="button" class="site-header__btn site-header__btn--plain site-header__lang">…</button>
+         <a class="site-header__btn site-header__btn--plain" href="…"><span>Увійти</span></a>
+         <a class="site-header__btn site-header__btn--accent" href="…"><span>Забронювати демо</span></a>
+         <a class="site-header__btn site-header__btn--primary" href="…"><span>Реєстрація</span></a>
+         <button type="button" class="site-header__burger" aria-expanded="false" aria-label="Меню"><svg …/><svg …/></button>
+       </div>
+     </div>
+   </header>
+
+   header.js builds .site-header__sheet (the mobile menu) from the nav and the
+   actions, so the menu is written once. Everything themable sits in the
+   custom properties on .site-header. */
+
+.site-header {
+  --sh-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --sh-font-brand: "Work Sans", var(--sh-font);
+  --sh-ink: rgba(0, 0, 0, .93);
+  --sh-ink-2: rgba(0, 0, 0, .66);
+  --sh-ink-3: rgba(5, 5, 5, .5);
+  --sh-surface: rgba(255, 255, 255, .8);      /* the pill; the page shows through the blur */
+  --sh-solid: #fff;
+  --sh-tint: rgba(22, 34, 34, .09);           /* hover fill for menu items and links */
+  --sh-accent: #eef95a;
+  --sh-accent-hover: #e6f33c;
+  --sh-accent-press: #d4e121;
+  --sh-accent-line: #b1c00c;
+  --sh-accent-ink: #323702;
+  --sh-dark: #1e201f;
+  --sh-dark-line: #2d2f2e;
+  --sh-dark-hover: #4f5452;
+  --sh-dark-press: #636967;
+  --sh-shadow: 0 0 0 1px rgba(13, 28, 20, .14), 0 2px 4px -2px rgba(13, 28, 20, .14), 0 6px 12px -2px rgba(22, 34, 34, .09), 0 12px 24px -2px rgba(22, 34, 34, .09);
+  --sh-width: 1360px;                         /* the pill at rest */
+  --sh-width-compact: 1024px;                 /* the pill once the page has scrolled */
+  --sh-radius: 48px;
+  --sh-blur: 6px;
+  --sh-top: 12px;                             /* gap above the pill */
+  --sh-bottom: 28px;                          /* transparent strip under the pill, part of the sticky box */
+  --sh-gutter: 40px;                          /* side gap when the width is tight; lives on the bar, see below */
+  --sh-speed: 300ms;
+  --sh-ease: cubic-bezier(0, 0, .05, 1);
+  --sh-z: 50;
+
+  position: sticky;
+  top: 0;
+  z-index: var(--sh-z);
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--sh-top) 0 var(--sh-bottom);
+  /* the header is the query container; queries measure its content box, so the side
+     gutter is on the bar, not here, and the breakpoints read the full width */
+  container-type: inline-size;
+  font-family: var(--sh-font);
+  color: var(--sh-ink);
+  -webkit-font-smoothing: antialiased;
+}
+.site-header--static { position: relative; }
+.site-header *, .site-header *::before, .site-header *::after { box-sizing: border-box; }
+
+/* ---------- the pill ---------- */
+.site-header__bar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: calc(100% - 2 * var(--sh-gutter));
+  max-width: var(--sh-width);
+  margin: 0 auto;
+  padding: 16px;
+  border-radius: var(--sh-radius);
+  background: var(--sh-surface);
+  box-shadow: var(--sh-shadow);
+  -webkit-backdrop-filter: blur(var(--sh-blur));
+  backdrop-filter: blur(var(--sh-blur));
+  transition: max-width var(--sh-speed) var(--sh-ease), border-radius var(--sh-speed) var(--sh-ease), box-shadow var(--sh-speed) var(--sh-ease);
+}
+.site-header--compact .site-header__bar { max-width: var(--sh-width-compact); }
+.site-header--compact .site-header__menu { padding-left: 8px; gap: 2px; }
+
+.site-header__left, .site-header__actions { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.site-header__actions { padding-right: 2px; }
+
+/* ---------- brand ---------- */
+.site-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 36px;
+  color: var(--sh-ink);
+  text-decoration: none;
+  transform-origin: left center;
+}
+.site-header__brand svg { width: 36px; height: 36px; flex: none; }
+.site-header__brand span {
+  font-family: var(--sh-font-brand);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 24px;
+  font-feature-settings: "calt" 0;
+  white-space: nowrap;
+}
+
+/* ---------- menu ---------- */
+.site-header__menu { display: flex; gap: 8px; padding-left: 28px; transition: padding var(--sh-speed) var(--sh-ease), gap var(--sh-speed) var(--sh-ease); }
+.site-header__group { position: relative; display: flex; align-items: center; }
+.site-header__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 20px;
+  background: none;
+  font: 500 13px/18px var(--sh-font);
+  color: var(--sh-ink-2);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.site-header__item span { padding: 0 2px; white-space: nowrap; }
+.site-header__item svg { width: 16px; height: 16px; fill: var(--sh-ink-3); transition: fill .15s, rotate .2s; }
+.site-header__item:hover, .site-header__item[aria-expanded="true"] { background: var(--sh-tint); color: var(--sh-ink); }
+.site-header__item:hover svg, .site-header__item[aria-expanded="true"] svg { fill: var(--sh-ink); }
+.site-header__item[aria-expanded="true"] svg { rotate: 180deg; }
+.site-header__item:focus-visible, .site-header__btn:focus-visible, .site-header__burger:focus-visible, .site-header__link:focus-visible { outline: 2px solid var(--sh-accent-line); outline-offset: 2px; }
+
+/* dropdown: sits under its item, opens by data-open from header.js */
+.site-header__panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 2;
+  min-width: 220px;
+  padding: 8px;
+  border-radius: 16px;
+  background: var(--sh-solid);
+  box-shadow: var(--sh-shadow);
+  opacity: 0;
+  visibility: hidden;
+  translate: 0 -6px;
+  transition: opacity .18s, translate .18s, visibility 0s .18s;
+}
+.site-header__panel::before { content: ""; position: absolute; left: 0; right: 0; top: -10px; height: 10px; } /* keeps hover alive across the gap */
+.site-header__group[data-open] .site-header__panel { opacity: 1; visibility: visible; translate: 0 0; transition: opacity .18s, translate .18s; }
+.site-header__link {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font: 500 13px/18px var(--sh-font);
+  color: var(--sh-ink);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background .12s;
+}
+.site-header__link:hover { background: var(--sh-tint); }
+.site-header__link small { display: block; margin-top: 1px; font-size: 12px; font-weight: 400; color: var(--sh-ink-3); }
+
+/* ---------- buttons ---------- */
+.site-header__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  height: 32px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 50px;
+  background: none;
+  font: 600 13px/18px var(--sh-font);
+  color: var(--sh-ink-2);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .15s, box-shadow .15s, color .15s;
+}
+.site-header__btn span { padding: 0 4px; white-space: nowrap; }
+.site-header__btn svg { width: 16px; height: 16px; flex: none; fill: currentColor; }
+.site-header__lang span { padding: 0; margin: 0 2px; }
+.site-header__btn--plain:hover { color: var(--sh-ink); }
+.site-header__btn--accent {
+  color: var(--sh-accent-ink);
+  background: var(--sh-accent);
+  box-shadow: 0 3px 1px -1px rgba(255, 255, 255, .5) inset, 0 -8px 28px 4px rgba(13, 28, 20, .14) inset, 0 0 0 1px var(--sh-accent-line), 0 1px 2px -.5px rgba(13, 28, 20, .14), 0 3px 4px -1.5px rgba(13, 28, 20, .14), 0 8px 10px -4px rgba(22, 34, 34, .09);
+}
+.site-header__btn--accent:hover {
+  background: var(--sh-accent-hover);
+  box-shadow: 0 0 0 1.5px var(--sh-accent-press), 0 1px 2px -.5px rgba(13, 28, 20, .14), 0 3px 4px -1.5px rgba(13, 28, 20, .14), 0 8px 10px -4px rgba(22, 34, 34, .09);
+}
+.site-header__btn--accent:active { background: var(--sh-accent-press); box-shadow: 0 0 0 1.5px var(--sh-accent-press); }
+.site-header__btn--primary {
+  color: #fff;
+  background: var(--sh-dark);
+  box-shadow: 0 0 0 1px var(--sh-dark-line), 0 2px 2px -1px rgba(5, 20, 15, .2), 0 4px 4px -2px rgba(5, 20, 15, .2), 0 6px 8px -3px rgba(13, 28, 20, .14);
+}
+.site-header__btn--primary:hover { background: var(--sh-dark-hover); box-shadow: 0 0 0 1px var(--sh-dark-hover), 0 2px 2px -1px rgba(5, 20, 15, .2), 0 4px 4px -2px rgba(5, 20, 15, .2), 0 6px 8px -3px rgba(13, 28, 20, .14); }
+.site-header__btn--primary:active { background: var(--sh-dark-press); box-shadow: 0 0 0 1px var(--sh-dark-press); }
+
+/* burger: two icons, aria-expanded picks one; hidden until the menu collapses */
+.site-header__burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 36px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50px;
+  background: none;
+  color: var(--sh-ink-2);
+  cursor: pointer;
+}
+.site-header__burger svg { width: 16px; height: 16px; fill: currentColor; }
+.site-header__burger svg:last-child, .site-header__burger[aria-expanded="true"] svg:first-child { display: none; }
+.site-header__burger[aria-expanded="true"] svg:last-child { display: block; }
+
+/* ---------- mobile sheet ---------- */
+/* Full height under the bar; the bar itself goes flat and white while it is open.
+   --sh-sheet-h is set by header.js when the page scrolls inside an element rather than the window */
+.site-header__sheet {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  height: var(--sh-sheet-h, 100dvh);
+  padding-top: calc(var(--sh-top) + 64px);
+  background: var(--sh-solid);
+  overflow: hidden;
+}
+.site-header__sheet[hidden] { display: none; }
+.site-header--open .site-header__bar { width: 100%; max-width: none; padding: 16px 20px 16px 36px; border-radius: 0; background: var(--sh-solid); box-shadow: 0 1px 0 var(--sh-tint); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.site-header__sheet-nav { flex: 1 1 auto; overflow-y: auto; padding: 24px 36px 60px; }
+.site-header__sheet-group { padding: 12px 0; }
+.site-header__sheet-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 500 18px/24px var(--sh-font);
+  color: var(--sh-ink);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.site-header__sheet-item svg { width: 20px; height: 20px; flex: none; fill: var(--sh-ink-2); transition: rotate .2s; }
+.site-header__sheet-item[aria-expanded="true"] svg { rotate: 90deg; }
+.site-header__sheet-sub { display: grid; gap: 4px; padding: 12px 0 4px 12px; }
+.site-header__sheet-sub[hidden] { display: none; }
+.site-header__sheet-link { display: block; padding: 6px 0; font: 500 15px/20px var(--sh-font); color: var(--sh-ink-2); text-decoration: none; }
+.site-header__sheet-link:hover { color: var(--sh-ink); }
+.site-header__sheet-foot { display: flex; align-items: center; gap: 8px; padding: 12px 36px; background: var(--sh-solid); box-shadow: 0 -1px 0 var(--sh-tint); }
+.site-header__sheet-foot .site-header__btn--accent { margin-left: auto; }
+
+/* ---------- widths ---------- */
+/* Below 1240 px the menu and the secondary actions leave the bar: brand, sign-up and the
+   burger stay, and the pill narrows to 566 px. Below 620 px it takes the width minus 20 px
+   a side; below 470 px the brand shrinks to 80 % */
+@container (max-width: 1239px) {
+  .site-header__menu { display: none; }
+  .site-header__actions > :not(.site-header__btn--primary):not(.site-header__burger) { display: none; }
+  .site-header__burger { display: inline-flex; }
+  .site-header__bar { max-width: 566px; }
+  .site-header--open .site-header__bar { max-width: none; }
+}
+@container (max-width: 619px) {
+  .site-header__bar { --sh-gutter: 20px; max-width: none; }
+}
+@container (max-width: 469px) {
+  .site-header__brand { scale: .8; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header__bar, .site-header__menu, .site-header__panel, .site-header__item svg, .site-header__sheet-item svg { transition: none; }
+}
