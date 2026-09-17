@@ -242,13 +242,15 @@
     }
 
     /* ---------- entrance ---------- */
-    // plays once, the first time the view (tabs + stage) shows a sixth of itself; enter() replays it
+    // plays once, the first time the view (tabs + stage) shows a sixth of itself; enter() replays it.
+    // In the narrow composition (hero.css sets --hero-swappable there) it is skipped outright
     _watchEntrance(on) {
       const view = this.root.querySelector('.hero__view') || this.screens;
       if (!on || this._io || 'shown' in view.dataset || !('IntersectionObserver' in window)) {
         if (!on && this._io) { this._io.disconnect(); this._io = null; }
         return;
       }
+      if (this._swappable()) { view.dataset.shown = ''; return; }
       this._io = new IntersectionObserver(entries => {
         if (!entries.some(e => e.isIntersecting)) return;
         this._io.disconnect();
@@ -260,7 +262,8 @@
     enter() {
       const st = this.screens, o = this.options, view = this.root.querySelector('.hero__view') || st;
       view.dataset.shown = '';
-      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      // no entrance on phones: nothing to gain there and nothing to risk in the load metrics
+      if (this._swappable() || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       const out = 'cubic-bezier(.19, 1, .22, 1)';
       // tabs and arrows first, one after another
       this.root.querySelectorAll('.hero__tabs .hero__arrow, .hero__tab').forEach((el, i) =>

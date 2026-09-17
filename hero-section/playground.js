@@ -195,7 +195,7 @@ ${markup(s, '', false)}
         { type: 'range', key: 'perspective', label: 'Перспектива (менше = сильніше)', min: 300, max: 2000, step: 50, unit: 'px', when: s => s.entrance },
         { type: 'range', key: 'tiltRest', label: 'Залишковий нахил, сходить при скролі', min: 0, max: 6, step: 0.5, unit: '°', when: s => s.entrance },
         { type: 'range', key: 'fly', label: 'Телефон стартує правіше на', min: 0, max: 200, step: 10, unit: 'px', when: s => s.entrance },
-        { type: 'note', text: 'Як на sketch.com: один раз, коли блок з’являється у в’юпорті. Сцена стартує не з нуля прозорості, бо десктопний скріншот це LCP-елемент, а невидимий елемент Chrome не рахує намальованим. Усе на opacity і transform, CLS нуль. Залишковий нахил керується скролом (animation-timeline: view()).' },
+        { type: 'note', text: 'Як на sketch.com: один раз, коли блок з’являється у в’юпорті, лише в широкій композиції (≥ 640 px); на телефонах появи немає взагалі. Сцена стартує не з нуля прозорості, бо десктопний скріншот це LCP-елемент, а невидимий елемент Chrome не рахує намальованим. Усе на opacity і transform, CLS нуль. Залишковий нахил керується скролом (animation-timeline: view()).' },
       ] },
       { title: 'Вкладки', items: [
         { type: 'select', key: 'view', label: 'Активна вкладка', options: VIEWS.map((v, i) => [i, v.label]) },
