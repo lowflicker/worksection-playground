@@ -49,18 +49,20 @@
     overshoot: 0.2,      // the picture that grows: 0 = same curve as easing, 0.4 = a clear bounce
     tilt: 3,             // deg, how much the pictures lean at mid-flight; 0 = none
     lift: true,          // extra shadow under the phone while it moves
-    fade: 450,           // ms, screenshot crossfade on a tab change
+    fade: 650,           // ms, screenshot change on a tab change
+    strength: 0.6,       // how much blur / travel / scale the change uses (1 = full)
     switch: 'blur',      // 'fade' | 'slide' | 'zoom' | 'wipe' | 'circle' | 'blur': how the pictures change on a tab change
     stagger: 90,         // ms, the phone follows the desktop by this much on a tab change (depth)
   };
 
   // how the incoming picture appears over the old one on a view change: [layer keyframes, old picture
-  // keyframes or null]; dir is +1 forward, -1 back. The old picture's animation is fill: none, so it
-  // is back to normal under the fully opaque layer before the sources swap
+  // keyframes or null]; dir is +1 forward, -1 back, k scales the amounts (option `strength`). The old
+  // picture's animation is fill: none, so it is back to normal under the fully opaque layer before
+  // the sources swap
   const SWITCH = {
     fade: () => [[{ opacity: 0 }, { opacity: 1 }]],
-    slide: dir => [[{ opacity: 0, translate: `${6 * dir}% 0`, scale: '.985' }, { opacity: 1, translate: '0 0', scale: '1' }]],
-    zoom: () => [[{ opacity: 0, scale: '.97' }, { opacity: 1, scale: '1' }]],
+    slide: (dir, k) => [[{ opacity: 0, translate: `${6 * dir * k}% 0`, scale: 1 - .015 * k }, { opacity: 1, translate: '0 0', scale: '1' }]],
+    zoom: (dir, k) => [[{ opacity: 0, scale: 1 - .03 * k }, { opacity: 1, scale: '1' }]],
     // a diagonal edge sweeps across from the side the views move to
     wipe: dir => [dir > 0
       ? [{ clipPath: 'polygon(120% 0, 200% 0, 200% 100%, 100% 100%)', translate: '2% 0' }, { clipPath: 'polygon(0 0, 200% 0, 200% 100%, -20% 100%)', translate: '0 0' }]
@@ -68,8 +70,8 @@
     circle: dir => [[{ clipPath: `circle(0% at ${dir > 0 ? 85 : 15}% 50%)` }, { clipPath: `circle(125% at ${dir > 0 ? 85 : 15}% 50%)` }]],
     // the old screen softens under the new one; the new one is sharp at 80 % so the last stretch
     // is opacity only. Both blur the img inside a clipping picture: the frame never blurs
-    blur: () => [[{ opacity: 0, filter: 'blur(14px)', scale: '1.04' }, { filter: 'blur(0)', scale: '1', offset: .8 }, { opacity: 1, filter: 'blur(0)', scale: '1' }],
-                 [{ filter: 'blur(0)' }, { filter: 'blur(6px)' }]],
+    blur: (dir, k) => [[{ opacity: 0, filter: `blur(${14 * k}px)`, scale: 1 + .04 * k }, { filter: 'blur(0)', scale: '1', offset: .8 }, { opacity: 1, filter: 'blur(0)', scale: '1' }],
+                       [{ filter: 'blur(0)' }, { filter: `blur(${6 * k}px)` }]],
   };
 
   class Hero {
@@ -180,8 +182,8 @@
         layer.className = 'hero__ghost';
         (pic || img).after(layer);
         const layers = this._ghost[which] = (this._ghost[which] || []).concat(layer);
-        const [into, out] = (SWITCH[this.options.switch] || SWITCH.fade)(dir);
-        const ease = 'cubic-bezier(.22, 1, .36, 1)';
+        const [into, out] = (SWITCH[this.options.switch] || SWITCH.fade)(dir, this.options.strength);
+        const ease = 'cubic-bezier(.45, 0, .2, 1)'; // even in and out: a change, not a snap
         if (out) img.animate(out, { duration: ms, easing: ease, delay: delay || 0 }); // the img only: the picture keeps the frame sharp and clips the blur
         layer.animate(into, { duration: ms, easing: ease, delay: delay || 0, fill: 'both' }).finished.then(async () => {
           if (this._pending[which] !== pre) return; // superseded; the newer layer will clean up
