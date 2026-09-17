@@ -64,8 +64,7 @@
 
   let hero = null, root = null;
 
-  /* the block's markup. Only Dashboard has real screenshots; the other views are
-     hue-shifted copies of it so the switch is visible in the demo */
+  /* the block's markup; every view has its own pair of screenshots from Figma */
   // every picture is AVIF with a WebP fallback; the desktop one also has a 1280 px
   // candidate for phones, where it renders at ~560 CSS px
   const SIZES = '(max-width: 639px) 140vw, 1280px';
@@ -183,7 +182,7 @@ ${markup(s, '', false)}
         { type: 'select', key: 'view', label: 'Активна вкладка', options: VIEWS.map((v, i) => [i, v.label]) },
         { type: 'range', key: 'fade', label: 'Кросфейд скріншота', min: 0, max: 1000, step: 50, unit: 'ms' },
         { type: 'buttons', items: [{ label: '← Попередня', run: () => hero.prev() }, { label: 'Наступна →', primary: true, run: () => hero.next() }] },
-        { type: 'note', text: 'Справжні скріншоти є лише для Dashboard; решта вкладок показують його перефарбовані копії без підписів. На сайті кожна вкладка несе свої data-desktop / data-phone. На телефоні вкладки гортаються і свайпом по скріншотах.' },
+        { type: 'note', text: 'Кожна вкладка несе свою пару скріншотів у data-desktop / data-phone (AVIF + WebP). На телефоні вкладки гортаються і свайпом по скріншотах.' },
       ] },
       { title: 'Композиція (< 640 px)', items: [
         { type: 'range', key: 'stageH', label: 'Висота сцени', min: 70, max: 150, step: 0.5, unit: 'cqw' },
