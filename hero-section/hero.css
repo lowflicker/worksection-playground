@@ -63,7 +63,7 @@
   --hero-fade: 300ms;
   --hero-perspective: 800px;                         /* entrance: depth of the lean, smaller = stronger */
   --hero-tilt-in: 12deg;                             /* entrance: the lean the stage starts from */
-  --hero-fade-from: .5;                              /* entrance: the stage starts at this opacity, never 0 (see below) */
+  --hero-fade-from: .8;                              /* entrance: the stage starts at this opacity, never 0 (see below) */
   --hero-tilt-rest: 2deg;                            /* entrance: the residual lean that settles on scroll */
 
   /* narrow composition, in cqw. *-w/x/y: the picture as the main one,

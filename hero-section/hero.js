@@ -52,7 +52,7 @@
     lift: true,          // extra shadow under the phone while it moves
     entrance: true,      // first time in view: the stage fades in from a lean, the phone flies in from the right
     tiltIn: 12,          // deg, the lean the stage starts from
-    fadeFrom: 0.5,       // the stage starts at this opacity; keep it above 0 or the LCP screenshot counts as unpainted
+    fadeFrom: 0.8,       // the stage starts at this opacity; keep it above 0 or the LCP screenshot counts as unpainted
     tiltRest: 2,         // deg, the residual lean that settles to zero on scroll
     perspective: 800,    // px, depth of the lean; smaller is stronger
     fly: 80,             // px, how far right the phone starts
