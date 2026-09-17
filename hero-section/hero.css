@@ -295,6 +295,8 @@
   width: 100%;
   pointer-events: none;
 }
+/* the frame and shadow belong to the picture underneath; the layer carries only the new screen */
+.hero__screen .hero__ghost img { box-shadow: none; background: none; }
 .hero__screen--desktop {
   position: relative;
   width: 100%;
@@ -311,7 +313,7 @@
 }
 .hero__screen--phone img {
   /* the first ring is the bezel */
-  box-shadow: 0 0 0 clamp(3px, .47cqw, 6px) rgba(15, 28, 41, .15), 0 0 0 1px rgba(15, 28, 41, .15), 0 8px 8px -4px rgba(15, 28, 41, .15), 0 16px 16px -6px rgba(15, 28, 41, .15), 0 32px 24px -12px rgba(38, 54, 54, .06);
+  box-shadow: 0 0 0 clamp(3px, .47cqw, 6px) rgba(15, 28, 41, .15), 0 8px 8px -4px rgba(15, 28, 41, .15), 0 16px 16px -6px rgba(15, 28, 41, .15), 0 32px 24px -12px rgba(38, 54, 54, .06);
 }
 /* "tap to enlarge" badge, shown on the thumb in the narrow composition */
 .hero__screen::after {
@@ -434,7 +436,7 @@
     border-radius: 22px;
   }
   .hero__screen--phone img {
-    box-shadow: 0 0 0 4px rgba(15, 28, 41, .15), 0 0 0 1px rgba(15, 28, 41, .15), 0 8px 8px -4px rgba(15, 28, 41, .15), 0 16px 16px -6px rgba(15, 28, 41, .15), 0 32px 24px -12px rgba(38, 54, 54, .06);
+    box-shadow: 0 0 0 4px rgba(15, 28, 41, .15), 0 8px 8px -4px rgba(15, 28, 41, .15), 0 16px 16px -6px rgba(15, 28, 41, .15), 0 32px 24px -12px rgba(38, 54, 54, .06);
   }
   .hero__screens[data-main="desktop"] .hero__screen--phone {
     transform: translate(calc(var(--hero-phone-tx) - var(--hero-phone-x)), calc(var(--hero-phone-ty) - var(--hero-phone-y))) scale(var(--hero-phone-s));
