@@ -46,13 +46,9 @@
   // with the phone main, the desktop keeps its size and slides behind it, centred on the phone
   const FIGMA = { stageH: 124, deskW: 139, deskX: 5, deskS: 1, deskTx: 5, deskTy: 14, phoneW: 52, phoneX: 43, phoneS: 0.77, phoneTx: 55, phoneTy: 36 };
   const MOTION = { duration: 600, easing: 'cubic-bezier(.22, 1, .36, 1)', overshoot: 0.2, tilt: 3, lift: true };
+  // one preset: the composition and motion as agreed; everything else is the sliders
   const PRESETS = {
-    figma:   { label: 'Figma',          patch: Object.assign({}, FIGMA, MOTION) },
-    compact: { label: 'Малі мініатюри', patch: { stageH: 115, deskW: 139, deskX: 5, deskS: 0.36, deskTx: 5, deskTy: 84, phoneW: 50, phoneX: 45, phoneS: 0.55, phoneTx: 67, phoneTy: 45 } },
-    apart:   { label: 'Поруч',          patch: { stageH: 100, deskW: 139, deskX: 5, deskS: 0.34, deskTx: 5, deskTy: 71, phoneW: 44, phoneX: 53, phoneS: 0.8, phoneTx: 60, phoneTy: 24 } },
-    close:   { label: 'Ближче',         patch: { stageH: 100, deskW: 120, deskX: 5, deskS: 0.42, deskTx: 5, deskTy: 69, phoneW: 46, phoneX: 48, phoneS: 0.65, phoneTx: 65, phoneTy: 30 } },
-    calm:    { label: 'Спокійний рух',  patch: { duration: 700, easing: 'cubic-bezier(.4, 0, .2, 1)', overshoot: 0, tilt: 0, lift: false } },
-    bouncy:  { label: 'Пружний рух',    patch: { duration: 750, easing: 'cubic-bezier(.16, 1, .3, 1)', overshoot: 0.4, tilt: 5, lift: true } },
+    figma: { label: 'Figma', patch: Object.assign({}, FIGMA, MOTION) },
   };
 
   const defaults = Object.assign({}, Hero.defaults, { content: 'lead', badge: true }, FIGMA);
