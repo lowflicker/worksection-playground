@@ -61,8 +61,8 @@
   --hero-ease-grow: cubic-bezier(.3, 1.2, .4, 1);    /* the picture that grows: a touch of overshoot */
   --hero-tilt: 3deg;                                 /* lean at mid-flight, 0 to switch off */
   --hero-fade: 300ms;
-  --hero-tilt-in: 14deg;                             /* entrance: the screens start leaning, bottom towards the viewer */
-  --hero-fly: 80px;                                  /* entrance: the phone flies in from this far right */
+  --hero-perspective: 800px;                         /* entrance: depth of the lean, smaller = stronger */
+  --hero-tilt-rest: 2deg;                            /* entrance: the residual lean that settles on scroll */
 
   /* narrow composition, in cqw. *-w/x/y: the picture as the main one,
      *-s/tx/ty: scale and position of the same picture as the thumb */
@@ -509,35 +509,34 @@
 }
 
 /* the tab label slides in from the side the views move to (--hero-dir is set by hero.js) */
-/* ---------- entrance on scroll ----------
-   Scroll-driven, no JS: the stage leans back (perspective + rotateX, bottom edge towards
-   the viewer) and straightens as it enters the viewport; the phone flies in from the right
-   through --hero-fly-x, a registered property folded into its base translate, so the
-   entrance never fights the swap transform. Browsers without scroll timelines see the
-   final state */
+/* ---------- entrance ----------
+   Like sketch.com: when the stage first comes into view it fades in from a lean
+   (rotateX, perspective on the parent, axis through the centre, so the bottom edge
+   starts towards the viewer) over 0.8 s, and the phone flies in from the right a
+   beat later. hero.js runs that with WAAPI on the registered --hero-lean and
+   --hero-fly-x; the phone's offset is folded into its base translate, so it never
+   fights the swap transform. A small residual lean (--hero-rest) is scroll-driven
+   and settles to zero as the stage moves up the viewport; without scroll timelines
+   it is simply absent */
+@property --hero-lean { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@property --hero-rest { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
 @property --hero-fly-x { syntax: '<length>'; inherits: false; initial-value: 0px; }
+.hero__view { perspective: var(--hero-perspective); }
+.hero__screens { --hero-lean: 0deg; --hero-rest: 0deg; transform: rotateX(calc(var(--hero-lean) + var(--hero-rest))); }
 .hero__screen--phone { --hero-fly-x: 0px; }
+/* hero.js adds hero--entrance, then data-shown when the stage is in view: nothing is hidden without JS */
+.hero--entrance .hero__screens:not([data-shown]) { opacity: 0; }
 @supports (animation-timeline: view()) {
   .hero__screens { view-timeline-name: --hero-stage; }
-  .hero:not(.hero--no-entrance) .hero__screens {
-    transform-origin: 50% 0;
-    animation: hero-straighten cubic-bezier(.33, 1, .68, 1) both;
+  .hero--entrance .hero__screens {
+    animation: hero-rest linear both;
     animation-timeline: --hero-stage;
-    animation-range: entry 0% entry 95%;
-  }
-  .hero:not(.hero--no-entrance) .hero__screen--phone {
-    animation: hero-fly-in cubic-bezier(.33, 1, .68, 1) both;
-    animation-timeline: --hero-stage;
-    animation-range: entry 20% entry 100%;
+    animation-range: cover 0% cover 55%;
   }
 }
-@keyframes hero-straighten {
-  from { transform: perspective(1400px) rotateX(var(--hero-tilt-in)); }
-  to { transform: perspective(1400px) rotateX(0deg); }
-}
-@keyframes hero-fly-in {
-  from { opacity: 0; --hero-fly-x: var(--hero-fly); }
-  to { opacity: 1; --hero-fly-x: 0px; }
+@keyframes hero-rest {
+  from { --hero-rest: var(--hero-tilt-rest); }
+  to { --hero-rest: 0deg; }
 }
 
 @keyframes hero-tab-in {

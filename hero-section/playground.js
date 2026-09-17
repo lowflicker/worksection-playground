@@ -131,6 +131,8 @@ ${markup(s, '', false)}
     lift: ${s.lift},
     entrance: ${s.entrance},
     tiltIn: ${s.tiltIn},
+    tiltRest: ${s.tiltRest},
+    perspective: ${s.perspective},
     fly: ${s.fly},
     fade: ${s.fade},
     switch: '${s.switch}',
@@ -181,10 +183,17 @@ ${markup(s, '', false)}
         { type: 'note', text: 'Свап живе лише у вузькій композиції (< 640 px). Постав ширину фрейму 390 або 320. Телефон завжди зверху, десктоп-мініатюра визирає з-під нього.' },
       ] },
       { title: 'Поява при скролі', items: [
-        { type: 'check', key: 'entrance', label: 'Скріни випрямляються, телефон вилітає' },
+        { type: 'check', key: 'entrance', label: 'Сцена входить з нахилу, телефон вилітає' },
+        { type: 'buttons', items: [{ label: 'Програти появу', primary: true, run: () => {
+          // drop only the WAAPI entrance animations; the CSS ones (scroll-driven rest lean, swap) stay
+          for (const el of [root.querySelector('.hero__screens'), root.querySelector('.hero__screen--phone')]) el.getAnimations().forEach(a => { if (!(a instanceof CSSAnimation) && !(a instanceof CSSTransition)) a.cancel(); });
+          hero.enter();
+        } }], when: s => s.entrance },
         { type: 'range', key: 'tiltIn', label: 'Початковий нахил', min: 0, max: 30, step: 1, unit: '°', when: s => s.entrance },
+        { type: 'range', key: 'perspective', label: 'Перспектива (менше = сильніше)', min: 300, max: 2000, step: 50, unit: 'px', when: s => s.entrance },
+        { type: 'range', key: 'tiltRest', label: 'Залишковий нахил, сходить при скролі', min: 0, max: 6, step: 0.5, unit: '°', when: s => s.entrance },
         { type: 'range', key: 'fly', label: 'Телефон стартує правіше на', min: 0, max: 200, step: 10, unit: 'px', when: s => s.entrance },
-        { type: 'note', text: 'Керується скролом (animation-timeline: view()), без JS. Прокрути сцену вниз-вгору у фреймі, щоб побачити. Safari 26+, Chrome 115+; старіші браузери бачать кінцевий стан.' },
+        { type: 'note', text: 'Як на sketch.com: один раз, коли сцена з’являється у в’юпорті, 0.8 с. Залишковий нахил керується скролом (animation-timeline: view()), у браузерах без підтримки його просто немає.' },
       ] },
       { title: 'Вкладки', items: [
         { type: 'select', key: 'view', label: 'Активна вкладка', options: VIEWS.map((v, i) => [i, v.label]) },

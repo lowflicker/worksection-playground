@@ -25,6 +25,7 @@
      hero.prev() / next()    step through the views, wraps around
      hero.show('phone')      make the phone (or 'desktop') the main screenshot
      hero.toggle()           swap main and thumb
+     hero.enter()            replay the entrance (stage fades in from a lean, phone flies in)
      hero.setOptions(patch)  change any option on the fly
      hero.destroy()          remove the listeners
      Hero.defaults           the option set
@@ -49,8 +50,10 @@
     overshoot: 0.2,      // the picture that grows: 0 = same curve as easing, 0.4 = a clear bounce
     tilt: 3,             // deg, how much the pictures lean at mid-flight; 0 = none
     lift: true,          // extra shadow under the phone while it moves
-    entrance: true,      // on scroll: the screens straighten from a lean, the phone flies in from the right
-    tiltIn: 14,          // deg, the lean the screens start from
+    entrance: true,      // first time in view: the stage fades in from a lean, the phone flies in from the right
+    tiltIn: 12,          // deg, the lean the stage starts from
+    tiltRest: 2,         // deg, the residual lean that settles to zero on scroll
+    perspective: 800,    // px, depth of the lean; smaller is stronger
     fly: 80,             // px, how far right the phone starts
     fade: 650,           // ms, screenshot change on a tab change
     strength: 0.6,       // how much blur / travel / scale the change uses (1 = full)
@@ -223,9 +226,10 @@
       // overshoot 0 falls back to the plain curve; otherwise a back-out whose bounce grows with the value
       s.setProperty('--hero-ease-grow', o.overshoot > 0 ? `cubic-bezier(.3, ${1 + o.overshoot}, .4, 1)` : o.easing);
       s.setProperty('--hero-tilt', o.tilt + 'deg');
-      s.setProperty('--hero-tilt-in', o.tiltIn + 'deg');
-      s.setProperty('--hero-fly', o.fly + 'px');
-      this.root.classList.toggle('hero--no-entrance', !o.entrance);
+      s.setProperty('--hero-tilt-rest', o.tiltRest + 'deg');
+      s.setProperty('--hero-perspective', o.perspective + 'px');
+      this.root.classList.toggle('hero--entrance', !!o.entrance);
+      this._watchEntrance(!!o.entrance);
       s.setProperty('--hero-fade', o.fade + 'ms');
       this.root.classList.toggle('hero--no-swap', !o.swap);
       this.root.classList.toggle('hero--no-hint', !o.hint);
@@ -234,7 +238,34 @@
       if ('main' in patch) this.show(o.main);
     }
 
+    /* ---------- entrance ---------- */
+    // plays once, the first time a fifth of the stage is on screen; enter() replays it
+    _watchEntrance(on) {
+      if (!on || this._io || 'shown' in this.screens.dataset || !('IntersectionObserver' in window)) {
+        if (!on && this._io) { this._io.disconnect(); this._io = null; }
+        return;
+      }
+      this._io = new IntersectionObserver(entries => {
+        if (!entries.some(e => e.isIntersecting)) return;
+        this._io.disconnect();
+        this._io = null;
+        this.enter();
+      }, { threshold: 0.2 });
+      this._io.observe(this.screens);
+    }
+    enter() {
+      const st = this.screens, o = this.options;
+      st.dataset.shown = '';
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      st.animate([{ opacity: 0, '--hero-lean': o.tiltIn + 'deg' }, { opacity: 1, '--hero-lean': '0deg' }],
+        { duration: 800, easing: 'cubic-bezier(.785, .135, .15, .86)', fill: 'both' });
+      const phone = st.querySelector('.hero__screen--phone');
+      if (phone) phone.animate([{ opacity: 0, '--hero-fly-x': o.fly + 'px' }, { opacity: 1, '--hero-fly-x': '0px' }],
+        { duration: 900, delay: 250, easing: 'cubic-bezier(.19, 1, .22, 1)', fill: 'both' });
+    }
+
     destroy() {
+      if (this._io) this._io.disconnect();
       for (const t of ['pointerenter', 'pointerdown', 'focusin']) this.root.removeEventListener(t, this._onIntent, true);
       this.root.removeEventListener('click', this._onClick);
       this.root.removeEventListener('keydown', this._onKey);
