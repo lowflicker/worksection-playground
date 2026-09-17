@@ -62,6 +62,8 @@
   --hero-tilt: 3deg;                                 /* lean at mid-flight, 0 to switch off */
   --hero-fade: 300ms;
   --hero-perspective: 800px;                         /* entrance: depth of the lean, smaller = stronger */
+  --hero-tilt-in: 12deg;                             /* entrance: the lean the stage starts from */
+  --hero-fade-from: .5;                              /* entrance: the stage starts at this opacity, never 0 (see below) */
   --hero-tilt-rest: 2deg;                            /* entrance: the residual lean that settles on scroll */
 
   /* narrow composition, in cqw. *-w/x/y: the picture as the main one,
@@ -524,8 +526,14 @@
 .hero__view { perspective: var(--hero-perspective); }
 .hero__screens { --hero-lean: 0deg; --hero-rest: 0deg; transform: rotateX(calc(var(--hero-lean) + var(--hero-rest))); }
 .hero__screen--phone { --hero-fly-x: 0px; }
-/* hero.js adds hero--entrance, then data-shown when the stage is in view: nothing is hidden without JS */
-.hero--entrance .hero__screens:not([data-shown]) { opacity: 0; }
+/* Before the entrance. hero.js adds hero--entrance, then data-shown on .hero__view when it comes
+   into view, so nothing is hidden without JS. The stage waits leaning and half transparent, not
+   invisible: the desktop screenshot is the LCP element and Chrome only counts a painted element
+   with opacity above zero, so starting from 0 would push LCP back by the whole entrance. The tabs
+   are small and may start from nothing. Everything moves on opacity and transforms only: no CLS */
+.hero--entrance .hero__view:not([data-shown]) .hero__screens { opacity: var(--hero-fade-from); --hero-lean: var(--hero-tilt-in); }
+.hero--entrance .hero__view:not([data-shown]) .hero__tab,
+.hero--entrance .hero__view:not([data-shown]) .hero__arrow { opacity: 0; }
 @supports (animation-timeline: view()) {
   .hero__screens { view-timeline-name: --hero-stage; }
   .hero--entrance .hero__screens {

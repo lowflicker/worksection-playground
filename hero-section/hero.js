@@ -25,7 +25,7 @@
      hero.prev() / next()    step through the views, wraps around
      hero.show('phone')      make the phone (or 'desktop') the main screenshot
      hero.toggle()           swap main and thumb
-     hero.enter()            replay the entrance (stage fades in from a lean, phone flies in)
+     hero.enter()            replay the entrance (tabs step in, the stage settles from a lean, the phone flies in)
      hero.setOptions(patch)  change any option on the fly
      hero.destroy()          remove the listeners
      Hero.defaults           the option set
@@ -52,6 +52,7 @@
     lift: true,          // extra shadow under the phone while it moves
     entrance: true,      // first time in view: the stage fades in from a lean, the phone flies in from the right
     tiltIn: 12,          // deg, the lean the stage starts from
+    fadeFrom: 0.5,       // the stage starts at this opacity; keep it above 0 or the LCP screenshot counts as unpainted
     tiltRest: 2,         // deg, the residual lean that settles to zero on scroll
     perspective: 800,    // px, depth of the lean; smaller is stronger
     fly: 80,             // px, how far right the phone starts
@@ -227,6 +228,8 @@
       s.setProperty('--hero-ease-grow', o.overshoot > 0 ? `cubic-bezier(.3, ${1 + o.overshoot}, .4, 1)` : o.easing);
       s.setProperty('--hero-tilt', o.tilt + 'deg');
       s.setProperty('--hero-tilt-rest', o.tiltRest + 'deg');
+      s.setProperty('--hero-tilt-in', o.tiltIn + 'deg');
+      s.setProperty('--hero-fade-from', o.fadeFrom);
       s.setProperty('--hero-perspective', o.perspective + 'px');
       this.root.classList.toggle('hero--entrance', !!o.entrance);
       this._watchEntrance(!!o.entrance);
@@ -239,9 +242,10 @@
     }
 
     /* ---------- entrance ---------- */
-    // plays once, the first time a fifth of the stage is on screen; enter() replays it
+    // plays once, the first time the view (tabs + stage) shows a sixth of itself; enter() replays it
     _watchEntrance(on) {
-      if (!on || this._io || 'shown' in this.screens.dataset || !('IntersectionObserver' in window)) {
+      const view = this.root.querySelector('.hero__view') || this.screens;
+      if (!on || this._io || 'shown' in view.dataset || !('IntersectionObserver' in window)) {
         if (!on && this._io) { this._io.disconnect(); this._io = null; }
         return;
       }
@@ -250,18 +254,22 @@
         this._io.disconnect();
         this._io = null;
         this.enter();
-      }, { threshold: 0.2 });
-      this._io.observe(this.screens);
+      }, { threshold: 0.15 });
+      this._io.observe(view);
     }
     enter() {
-      const st = this.screens, o = this.options;
-      st.dataset.shown = '';
+      const st = this.screens, o = this.options, view = this.root.querySelector('.hero__view') || st;
+      view.dataset.shown = '';
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      st.animate([{ opacity: 0, '--hero-lean': o.tiltIn + 'deg' }, { opacity: 1, '--hero-lean': '0deg' }],
-        { duration: 800, easing: 'cubic-bezier(.785, .135, .15, .86)', fill: 'both' });
+      const out = 'cubic-bezier(.19, 1, .22, 1)';
+      // tabs and arrows first, one after another
+      this.root.querySelectorAll('.hero__tabs .hero__arrow, .hero__tab').forEach((el, i) =>
+        el.animate([{ opacity: 0, translate: '0 10px' }, { opacity: 1, translate: '0 0' }], { duration: 550, delay: i * 45, easing: out, fill: 'both' }));
+      st.animate([{ opacity: o.fadeFrom, '--hero-lean': o.tiltIn + 'deg' }, { opacity: 1, '--hero-lean': '0deg' }],
+        { duration: 800, delay: 120, easing: 'cubic-bezier(.785, .135, .15, .86)', fill: 'both' });
       const phone = st.querySelector('.hero__screen--phone');
       if (phone) phone.animate([{ opacity: 0, '--hero-fly-x': o.fly + 'px' }, { opacity: 1, '--hero-fly-x': '0px' }],
-        { duration: 900, delay: 250, easing: 'cubic-bezier(.19, 1, .22, 1)', fill: 'both' });
+        { duration: 900, delay: 370, easing: out, fill: 'both' });
     }
 
     destroy() {
