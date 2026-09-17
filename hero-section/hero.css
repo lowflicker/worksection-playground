@@ -487,7 +487,7 @@
 
 /* the tab label slides in from the side the views move to (--hero-dir is set by hero.js) */
 @keyframes hero-tab-in {
-  from { opacity: 0; transform: translateX(calc(var(--hero-dir, 1) * 12px)); }
+  from { opacity: .4; transform: translateX(calc(var(--hero-dir, 1) * 8px)); }
 }
 /* the same lean in both directions, two names so a change of data-main restarts it */
 @keyframes hero-tilt-cw  { 50% { rotate: var(--tilt); } }

@@ -53,17 +53,11 @@
     switch: 'fade',      // 'fade' | 'slide' | 'zoom': how the pictures change on a tab change
   };
 
-  // keyframes of a view change: [outgoing clone, incoming picture]; dir is +1 forward, -1 back
+  // how the incoming picture appears over the old one on a view change; dir is +1 forward, -1 back
   const SWITCH = {
-    fade: () => [[{ opacity: 1 }, { opacity: 0 }], [{ opacity: 0 }, { opacity: 1 }]],
-    slide: dir => [
-      [{ opacity: 1, translate: '0 0' }, { opacity: 0, translate: `${-6 * dir}% 0` }],
-      [{ opacity: 0, translate: `${6 * dir}% 0`, scale: '.985' }, { opacity: 1, translate: '0 0', scale: '1' }],
-    ],
-    zoom: () => [
-      [{ opacity: 1, scale: '1' }, { opacity: 0, scale: '.97' }],
-      [{ opacity: 0, scale: '.97' }, { opacity: 1, scale: '1' }],
-    ],
+    fade: () => [{ opacity: 0 }, { opacity: 1 }],
+    slide: dir => [{ opacity: 0, translate: `${6 * dir}% 0`, scale: '.985' }, { opacity: 1, translate: '0 0', scale: '1' }],
+    zoom: () => [{ opacity: 0, scale: '.97' }, { opacity: 1, scale: '1' }],
   };
 
   class Hero {
@@ -131,7 +125,7 @@
     _srcOf(which, d) { return [d[which] || '', d[which + 'Srcset'] || '', d[which + 'Avif'] || '']; }
     // a detached <picture> with the same sources and sizes, so the browser fetches exactly the
     // candidate the real one will use, and it is warm in the cache when it is shown
-    _load(which, d) {
+    _load(which, d, priority) {
       const [src, srcset, avif] = this._srcOf(which, d);
       const img = this.img[which];
       const pic = document.createElement('picture');
@@ -142,7 +136,7 @@
       pic.append(pre);
       if (img.sizes) pre.sizes = img.sizes;
       if (srcset) pre.srcset = srcset;
-      if ('fetchPriority' in pre) pre.fetchPriority = 'low';
+      if ('fetchPriority' in pre) pre.fetchPriority = priority || 'low';
       pre.src = src;
       this._warmed.add(src);
       return pre;
@@ -154,31 +148,33 @@
       const pic = this._pic(which), source = pic && pic.querySelector('source[type="image/avif"]');
       if (img.getAttribute('src') === src && (img.getAttribute('srcset') || '') === srcset && (!source || (source.getAttribute('srcset') || '') === avif)) return;
       // decode off screen first, so the crossfade never shows a half-loaded picture
-      const pre = this._load(which, d);
+      const pre = this._load(which, d, 'high');
       this._pending[which] = pre;
-      const ready = pre.decode ? pre.decode().catch(() => {}) : Promise.resolve();
-      ready.then(() => {
-        if (this._pending[which] !== pre) return; // a newer tab won
-        const ms = this.options.fade;
-        // the old picture stays as a ghost on top and slides out while the new one slides in
-        // underneath; the ghost is a clone, so the markup keeps one picture per screen
-        if (ms > 0) {
-          const old = this._ghost[which];
-          if (old) old.remove();
-          const ghost = (pic || img).cloneNode(true);
-          ghost.className = 'hero__ghost';
-          ghost.querySelectorAll('[fetchpriority]').forEach(n => n.removeAttribute('fetchpriority'));
-          (pic || img).after(ghost);
-          this._ghost[which] = ghost;
-          const [out, into] = SWITCH[this.options.switch] ? SWITCH[this.options.switch](dir) : SWITCH.fade(dir);
-          const ease = 'cubic-bezier(.22, 1, .36, 1)';
-          ghost.animate(out, { duration: ms, easing: ease, fill: 'forwards' })
-            .finished.then(() => { if (this._ghost[which] === ghost) this._ghost[which] = null; ghost.remove(); }, () => {});
-          img.animate(into, { duration: ms, easing: ease });
-        }
+      const decoded = el => (el.decode ? el.decode() : Promise.resolve()).catch(() => {});
+      const commit = () => {
         if (source) source.srcset = avif;
         if (srcset) img.srcset = srcset; else img.removeAttribute('srcset');
         img.src = src;
+      };
+      decoded(pre).then(() => {
+        if (this._pending[which] !== pre) return; // a newer tab won
+        const ms = this.options.fade;
+        if (!(ms > 0)) { commit(); return; }
+        // the visible picture is never touched while anything moves: the new one, already
+        // decoded, is laid on top and shown; only once it is fully opaque does the real
+        // picture take the new sources underneath, and the layer goes away after that has
+        // decoded too. So there is no frame with a blank or half-ready picture
+        const layer = pre.parentElement;
+        layer.className = 'hero__ghost';
+        (pic || img).after(layer);
+        const layers = this._ghost[which] = (this._ghost[which] || []).concat(layer);
+        layer.animate((SWITCH[this.options.switch] || SWITCH.fade)(dir), { duration: ms, easing: 'cubic-bezier(.22, 1, .36, 1)', fill: 'forwards' }).finished.then(async () => {
+          if (this._pending[which] !== pre) return; // superseded; the newer layer will clean up
+          commit();
+          await decoded(img);
+          for (const l of layers) l.remove();
+          this._ghost[which] = null;
+        }, () => {});
       });
     }
     _warm(i) {
