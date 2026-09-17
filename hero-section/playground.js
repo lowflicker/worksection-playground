@@ -111,7 +111,11 @@
   </div>
 </section>`;
 
-  const snippet = s => `<link rel="stylesheet" href="hero.css">
+  const snippet = s => `<!-- у <head>: LCP-картинка стартує до того, як парсер дійде до <img>,
+     повз шрифти, скрипти й шапку. Той самий srcset/sizes, що й у <source> -->
+<link rel="preload" as="image" type="image/avif" fetchpriority="high"
+      imagesrcset="${srcset('', 'dashboard', 'avif')}" imagesizes="${SIZES}">
+<link rel="stylesheet" href="hero.css">
 
 <!-- кожна вкладка несе свою пару скріншотів у data-desktop / data-phone;
      без hero.js блок теж рендериться: перша вкладка і композиція з data-main -->

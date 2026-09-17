@@ -10,10 +10,11 @@ VIEWS = ['dashboard', 'tasks', 'gantt', 'communication', 'reports', 'time-tracki
 def fit(im, w):
     im = im.convert('RGB')
     return im if im.width == w else im.resize((w, round(im.height * w / im.width)), Image.LANCZOS)
-def save(im, name):
-    im.save(f'{OUT}/{name}.avif', 'AVIF', quality=60, speed=4)
-    im.save(f'{OUT}/{name}.webp', 'WEBP', quality=78, method=6)
+# the phone-facing files (1280 desktop, phone) render at half their pixels or less, so they take a lower quality
+def save(im, name, q=60, qw=78):
+    im.save(f'{OUT}/{name}.avif', 'AVIF', quality=q, speed=4)
+    im.save(f'{OUT}/{name}.webp', 'WEBP', quality=qw, method=6)
 for v in VIEWS:
     d, p = fit(Image.open(f'{SRC_DIR}/{SRC[v]}-hero-desk.png'), 2496), fit(Image.open(f'{SRC_DIR}/{SRC[v]}-hero-phone.png'), 804)
-    save(d, v); save(d.resize((1280, round(d.height * 1280 / d.width)), Image.LANCZOS), f'{v}-1280'); save(p, f'{v}-phone')
+    save(d, v); save(d.resize((1280, round(d.height * 1280 / d.width)), Image.LANCZOS), f'{v}-1280', 50, 72); save(p, f'{v}-phone', 52, 72)
     print(v, 'ok')

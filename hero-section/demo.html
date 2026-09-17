@@ -11,6 +11,10 @@
 <body>
 
 <!-- Every tab carries its own pictures in data-desktop / data-phone (+ -srcset, -avif). -->
+<!-- у <head>: LCP-картинка стартує до того, як парсер дійде до <img>,
+     повз шрифти, скрипти й шапку. Той самий srcset/sizes, що й у <source> -->
+<link rel="preload" as="image" type="image/avif" fetchpriority="high"
+      imagesrcset="img/dashboard-1280.avif 1280w, img/dashboard.avif 2496w" imagesizes="(max-width: 639px) 140vw, 1280px">
 <link rel="stylesheet" href="hero.css">
 
 <!-- кожна вкладка несе свою пару скріншотів у data-desktop / data-phone;
