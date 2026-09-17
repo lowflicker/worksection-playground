@@ -25,7 +25,7 @@
      hero.prev() / next()    step through the views, wraps around
      hero.show('phone')      make the phone (or 'desktop') the main screenshot
      hero.toggle()           swap main and thumb
-     hero.enter()            replay the entrance (tabs step in, the stage settles from a lean, the phone flies in)
+     hero.enter()            replay the entrance (tabs brighten in a ripple, the stage settles from a lean, the phone flies in)
      hero.setOptions(patch)  change any option on the fly
      hero.destroy()          remove the listeners
      Hero.defaults           the option set
@@ -265,14 +265,18 @@
       // no entrance on phones: nothing to gain there and nothing to risk in the load metrics
       if (this._swappable() || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       const out = 'cubic-bezier(.19, 1, .22, 1)';
-      // tabs and arrows first, one after another
-      this.root.querySelectorAll('.hero__tabs .hero__arrow, .hero__tab').forEach((el, i) =>
-        el.animate([{ opacity: 0, translate: '0 10px' }, { opacity: 1, translate: '0 0' }], { duration: 550, delay: i * 45, easing: out, fill: 'both' }));
+      // fill: backwards everywhere: the end state is the natural one, so finished animations
+      // are dropped and the elements give their compositor layers back
+      // tabs: a soft ripple, from the same dimmed state hero.css holds them in before the entrance
+      // (never from zero, a flash from nothing is what hurts the eyes); the arrows are display: none here
+      const from = parseFloat(getComputedStyle(this.root).getPropertyValue('--hero-tabs-from')) || .3;
+      this.tabs.forEach((el, i) =>
+        el.animate([{ opacity: from, translate: '0 5px' }, { opacity: 1, translate: '0 0' }], { duration: 750, delay: i * 30, easing: out, fill: 'backwards' }));
       st.animate([{ opacity: o.fadeFrom, '--hero-lean': o.tiltIn + 'deg' }, { opacity: 1, '--hero-lean': '0deg' }],
-        { duration: 800, delay: 120, easing: 'cubic-bezier(.785, .135, .15, .86)', fill: 'both' });
+        { duration: 800, delay: 120, easing: 'cubic-bezier(.785, .135, .15, .86)', fill: 'backwards' });
       const phone = st.querySelector('.hero__screen--phone');
       if (phone) phone.animate([{ opacity: 0, '--hero-fly-x': o.fly + 'px' }, { opacity: 1, '--hero-fly-x': '0px' }],
-        { duration: 900, delay: 370, easing: out, fill: 'both' });
+        { duration: 900, delay: 370, easing: out, fill: 'backwards' });
     }
 
     destroy() {

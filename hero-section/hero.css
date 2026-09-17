@@ -64,6 +64,7 @@
   --hero-perspective: 800px;                         /* entrance: depth of the lean, smaller = stronger */
   --hero-tilt-in: 12deg;                             /* entrance: the lean the stage starts from */
   --hero-fade-from: .8;                              /* entrance: the stage starts at this opacity, never 0 (see below) */
+  --hero-tabs-from: .3;                              /* entrance: the tabs wait at this opacity, not hidden */
   --hero-tilt-rest: 2deg;                            /* entrance: the residual lean that settles on scroll */
 
   /* narrow composition, in cqw. *-w/x/y: the picture as the main one,
@@ -530,12 +531,12 @@
    into view, so nothing is hidden without JS. The stage waits leaning and a little faded, not
    invisible: the desktop screenshot is the LCP element and Chrome only counts a painted element
    with opacity above zero, so starting from 0 would push LCP back by the whole entrance. The tabs
-   are small and may start from nothing. Everything moves on opacity and transforms only: no CLS.
+   wait dimmed, not hidden: they stay painted (nothing for the load metrics to wait for) and their
+   ripple is a brightening, not a flash. Everything moves on opacity and transforms only: no CLS.
    None of this exists in the narrow composition: phones get the final state straight away */
 @container (min-width: 640px) {
   .hero--entrance .hero__view:not([data-shown]) .hero__screens { opacity: var(--hero-fade-from); --hero-lean: var(--hero-tilt-in); }
-  .hero--entrance .hero__view:not([data-shown]) .hero__tab,
-  .hero--entrance .hero__view:not([data-shown]) .hero__arrow { opacity: 0; }
+  .hero--entrance .hero__view:not([data-shown]) .hero__tab { opacity: var(--hero-tabs-from); }
   @supports (animation-timeline: view()) {
     .hero__screens { view-timeline-name: --hero-stage; }
     .hero--entrance .hero__screens {
