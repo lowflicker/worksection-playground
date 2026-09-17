@@ -126,6 +126,6 @@ sheet, collapsible groups. localStorage prefix `ws-playground:`.
 
 - 2026-09-16: shell rewrite done, 5 modules on the new contract, pushed.
 - 2026-09-16: `hero-section/` added (Figma hero, tap-to-swap screenshots on
-  phones). Demo has only the Dashboard screenshot pair; other views reuse it.
+  phones). Only Dashboard screenshots are real; other views are tinted copies.
 - Old folder `Desktop/vis-effects-for-ui` is superseded; work from this repo.
 - `.claude/launch.json` runs `python3` (no bare `python` on this Mac).

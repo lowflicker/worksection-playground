@@ -64,13 +64,13 @@
 
   let hero = null, root = null;
 
-  /* the block's markup. In the demo every tab points at the one screenshot pair we have;
-     the snippet shows a pair per view, which is how a site would do it */
+  /* the block's markup. Only Dashboard has real screenshots; the other views are
+     hue-shifted, labelled copies of it so the switch is visible in the demo */
   // the desktop picture has a 1280 px variant for phones (it renders at ~560 CSS px there)
   const SIZES = '(max-width: 639px) 140vw, 1280px';
   const srcset = (base, d) => `${base}img/${d}-1280.webp 1280w, ${base}img/${d}.webp 2496w`;
-  const tab = (v, i, base, demo) => {
-    const d = demo ? 'dashboard' : v.id;
+  const tab = (v, i, base) => {
+    const d = v.id;
     return `<button type="button" class="hero__tab" role="tab" aria-selected="${i === 0}" data-desktop="${base}img/${d}.webp" data-desktop-srcset="${srcset(base, d)}" data-phone="${base}img/${d}-phone.webp">${ICONS[v.icon]}${v.label}</button>`;
   };
   const markup = (s, base, demo) => `<section class="hero" id="hero">
@@ -90,7 +90,7 @@
       <div class="hero__tabs">
         <button type="button" class="hero__arrow hero__arrow--prev" aria-label="Previous view">${ICONS.chevL}</button>
         <div class="hero__tablist" role="tablist" aria-label="Product views">
-          ${VIEWS.map((v, i) => tab(v, i, base, demo)).join('\n          ')}
+          ${VIEWS.map((v, i) => tab(v, i, base)).join('\n          ')}
         </div>
         <button type="button" class="hero__arrow hero__arrow--next" aria-label="Next view">${ICONS.chevR}</button>
       </div>
@@ -169,7 +169,7 @@ ${markup(s, '', false)}
         { type: 'select', key: 'view', label: 'Активна вкладка', options: VIEWS.map((v, i) => [i, v.label]) },
         { type: 'range', key: 'fade', label: 'Кросфейд скріншота', min: 0, max: 1000, step: 50, unit: 'ms' },
         { type: 'buttons', items: [{ label: '← Попередня', run: () => hero.prev() }, { label: 'Наступна →', primary: true, run: () => hero.next() }] },
-        { type: 'note', text: 'У демо є лише скріншоти Dashboard, тож усі вкладки показують одну пару. На сайті кожна вкладка несе свої data-desktop / data-phone.' },
+        { type: 'note', text: 'Справжні скріншоти є лише для Dashboard; решта вкладок показують його перефарбовані копії з підписом. На сайті кожна вкладка несе свої data-desktop / data-phone. На телефоні вкладки гортаються і свайпом по скріншотах.' },
       ] },
       { title: 'Композиція (< 640 px)', items: [
         { type: 'range', key: 'stageH', label: 'Висота сцени', min: 70, max: 150, step: 0.5, unit: 'cqw' },
