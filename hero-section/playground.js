@@ -129,6 +129,9 @@ ${markup(s, '', false)}
     overshoot: ${s.overshoot},
     tilt: ${s.tilt},
     lift: ${s.lift},
+    entrance: ${s.entrance},
+    tiltIn: ${s.tiltIn},
+    fly: ${s.fly},
     fade: ${s.fade},
     switch: '${s.switch}',
     strength: ${s.strength},
@@ -176,6 +179,12 @@ ${markup(s, '', false)}
         { type: 'check', key: 'lift', label: 'Тінь-підйом під телефоном' },
         { type: 'buttons', items: [{ label: 'Свапнути', primary: true, run: () => hero.toggle() }] },
         { type: 'note', text: 'Свап живе лише у вузькій композиції (< 640 px). Постав ширину фрейму 390 або 320. Телефон завжди зверху, десктоп-мініатюра визирає з-під нього.' },
+      ] },
+      { title: 'Поява при скролі', items: [
+        { type: 'check', key: 'entrance', label: 'Скріни випрямляються, телефон вилітає' },
+        { type: 'range', key: 'tiltIn', label: 'Початковий нахил', min: 0, max: 30, step: 1, unit: '°', when: s => s.entrance },
+        { type: 'range', key: 'fly', label: 'Телефон стартує правіше на', min: 0, max: 200, step: 10, unit: 'px', when: s => s.entrance },
+        { type: 'note', text: 'Керується скролом (animation-timeline: view()), без JS. Прокрути сцену вниз-вгору у фреймі, щоб побачити. Safari 26+, Chrome 115+; старіші браузери бачать кінцевий стан.' },
       ] },
       { title: 'Вкладки', items: [
         { type: 'select', key: 'view', label: 'Активна вкладка', options: VIEWS.map((v, i) => [i, v.label]) },

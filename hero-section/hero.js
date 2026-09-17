@@ -49,6 +49,9 @@
     overshoot: 0.2,      // the picture that grows: 0 = same curve as easing, 0.4 = a clear bounce
     tilt: 3,             // deg, how much the pictures lean at mid-flight; 0 = none
     lift: true,          // extra shadow under the phone while it moves
+    entrance: true,      // on scroll: the screens straighten from a lean, the phone flies in from the right
+    tiltIn: 14,          // deg, the lean the screens start from
+    fly: 80,             // px, how far right the phone starts
     fade: 650,           // ms, screenshot change on a tab change
     strength: 0.6,       // how much blur / travel / scale the change uses (1 = full)
     switch: 'blur',      // 'fade' | 'slide' | 'zoom' | 'wipe' | 'circle' | 'blur': how the pictures change on a tab change
@@ -220,6 +223,9 @@
       // overshoot 0 falls back to the plain curve; otherwise a back-out whose bounce grows with the value
       s.setProperty('--hero-ease-grow', o.overshoot > 0 ? `cubic-bezier(.3, ${1 + o.overshoot}, .4, 1)` : o.easing);
       s.setProperty('--hero-tilt', o.tilt + 'deg');
+      s.setProperty('--hero-tilt-in', o.tiltIn + 'deg');
+      s.setProperty('--hero-fly', o.fly + 'px');
+      this.root.classList.toggle('hero--no-entrance', !o.entrance);
       s.setProperty('--hero-fade', o.fade + 'ms');
       this.root.classList.toggle('hero--no-swap', !o.swap);
       this.root.classList.toggle('hero--no-hint', !o.hint);
