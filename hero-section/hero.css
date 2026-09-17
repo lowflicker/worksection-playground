@@ -224,6 +224,7 @@
   transition: color .3s;
 }
 .hero__tab svg { width: 24px; height: 24px; flex: none; }
+.hero__tab span { white-space: nowrap; }
 /* glow above the underline */
 .hero__tab::before {
   content: '';
@@ -340,7 +341,7 @@
   .hero__inner { --hero-pad: 48px; }
   .hero__title { font-size: 60px; line-height: 64px; letter-spacing: -1.1px; }
   .hero__tablist { gap: 2px; }
-  .hero__tab { padding: 16px 10px; font-size: 15px; }
+  .hero__tab { padding: 16px 8px; font-size: 15px; }
 }
 
 /* ---------- tablet ---------- */
@@ -348,8 +349,21 @@
   .hero__inner { --hero-pad: 40px; padding-top: 56px; padding-bottom: 56px; }
   .hero__title { font-size: 52px; line-height: 56px; letter-spacing: -1px; }
   .hero__lead { font-size: 18px; line-height: 26px; }
-  .hero__tablist { gap: 12px; }
-  .hero__tab { padding: 16px 12px; }
+  /* one row, always: the tabs collapse to icons and only the active one (or a hovered one)
+     unfolds its label. The label stays in the DOM, so the name is still read out */
+  .hero__tablist { flex-wrap: nowrap; gap: 4px; }
+  .hero__tab { gap: 0; padding: 14px 10px; }
+  .hero__tab span {
+    max-width: 0;
+    margin-left: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-width .35s var(--hero-ease), margin-left .35s var(--hero-ease), opacity .25s;
+  }
+  .hero__tab[aria-selected="true"] span { max-width: 160px; margin-left: 8px; opacity: 1; }
+  @media (hover: hover) {
+    .hero__tab:hover span { max-width: 160px; margin-left: 8px; opacity: 1; }
+  }
   /* less overhang, so the phone stays inside the 40 px side padding */
   .hero__screen--phone { left: 83%; }
 }
@@ -372,6 +386,7 @@
   /* one tab at a time, with arrows */
   .hero__tabs { justify-content: space-between; gap: 8px; }
   .hero__tab { display: none; padding: 8px; gap: 4px; font-size: 15px; }
+  .hero__tab span { max-width: none; margin-left: 0; opacity: 1; }
   .hero__tab[aria-selected="true"] { display: inline-flex; animation: hero-tab-in var(--hero-fade) var(--hero-ease) both; }
   .hero__tab::before { height: 100%; }
   .hero__tab::after { border-radius: 4px; }

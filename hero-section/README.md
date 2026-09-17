@@ -39,10 +39,10 @@
         <div class="hero__tablist" role="tablist">
           <button type="button" class="hero__tab" role="tab" aria-selected="true"
                   data-desktop="img/dashboard.webp" data-desktop-srcset="…" data-desktop-avif="…"
-                  data-phone="img/dashboard-phone.webp" data-phone-avif="img/dashboard-phone.avif"><svg>…</svg>Dashboard</button>
+                  data-phone="img/dashboard-phone.webp" data-phone-avif="img/dashboard-phone.avif"><svg>…</svg><span>Dashboard</span></button>
           <button type="button" class="hero__tab" role="tab" aria-selected="false"
                   data-desktop="img/tasks.webp" data-desktop-srcset="…" data-desktop-avif="…"
-                  data-phone="img/tasks-phone.webp" data-phone-avif="img/tasks-phone.avif"><svg>…</svg>Tasks</button>
+                  data-phone="img/tasks-phone.webp" data-phone-avif="img/tasks-phone.avif"><svg>…</svg><span>Tasks</span></button>
           …
         </div>
         <button type="button" class="hero__arrow hero__arrow--next" aria-label="Next view">…</button>
@@ -80,6 +80,7 @@
 - у `<img>` потрібні `width` і `height` (реальні пікселі файлу): з них браузер знає пропорції до завантаження, і сцена не стрибає;
 - `aria-selected="true"` на першій вкладці і `data-main="desktop"` на сцені: без JS блок теж рендериться правильно;
 - замість `.hero__lead` можна покласти чек-лист `<ul class="hero__list"><li>…</li></ul>` (варіант із мобільного макета);
+- підпис вкладки живе у `<span>` після іконки: на планшеті він згортається до нуля у неактивних вкладок;
 - `<br>` у заголовку на вузьких екранах ховається, тому перед ним потрібен пробіл.
 
 Зміна вкладки без мерехтіння: видима картинка не чіпається, поки щось рухається. Нова, вже завантажена й декодована, кладеться шаром поверх старої і проявляється: `wipe` відкриває її діагональною шторкою з боку гортання (`clip-path`), `circle` розкриває колом з того ж боку, `blur` проявляє нову крізь легке розмиття, яке зникає на 70 % переходу, стара під нею лишається різкою (розмивається лише `<img>` усередині `<picture>` з `overflow: clip`, тому рамка й тінь телефона, які сидять на `<picture>`, лишаються різкими, а ореол не вилазить за межі), `slide` в’їжджає на 6 % у бік гортання, `zoom` виростає з масштабу .97, `fade` просто кросфейд. Телефон стартує на `stagger` мс пізніше за десктоп. Лише коли шар повністю непрозорий, справжня картинка під ним отримує нові `src`, і після її `decode()` шар прибирається. Тож у жодному кадрі немає порожньої чи напівготової картинки. Шар додає `hero.js`, розмітка лишається з одним `<picture>` на скрін. Напрямок гортання (`--hero-dir`) використовує підпис вкладки на телефоні.
@@ -90,7 +91,7 @@
 
 - **≥ 1280 px**: макет Figma для 1920. Рамка `max-width: 1280px`, телефон абсолютно спозиціонований у відсотках від рамки.
 - **1024–1279 px**: менший заголовок, щільніші вкладки, щоб сім вкладок лишались в один ряд.
-- **640–1023 px**: планшет, вкладки можуть переноситись на два ряди.
+- **640–1023 px**: планшет. Вкладки ніколи не переносяться на другий ряд: вони згортаються до іконок, підпис розкриває лише активна (і та, на яку навели). Підпис лишається в DOM, тож скрінрідер його читає.
 - **< 640 px**: вузька композиція. Вкладки показуються по одній зі стрілками. Сцена скріншотів `height: var(--hero-stage-h)`, обидва скріншоти `position: absolute`, розміри та позиції в `cqw` (1 % ширини блоку), тому композиція масштабується пропорційно на будь-якому телефоні.
 
 Свап. Кожен скріншот верстається у своєму *головному* розмірі й позиції (`--hero-*-w/x/y`). Стан «мініатюра» це `transform: translate(…) scale(…)` поверх цього (`--hero-*-s/tx/ty`). Атрибут `data-main="desktop|phone"` на `.hero__screens` каже, хто зараз головний, CSS-перехід на `transform` робить решту. Тому:

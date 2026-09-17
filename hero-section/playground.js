@@ -69,7 +69,7 @@
     const d = v.id;
     return `<button type="button" class="hero__tab" role="tab" aria-selected="${i === 0}"
                   data-desktop="${base}img/${d}.webp" data-desktop-srcset="${srcset(base, d, 'webp')}" data-desktop-avif="${srcset(base, d, 'avif')}"
-                  data-phone="${base}img/${d}-phone.webp" data-phone-avif="${base}img/${d}-phone.avif">${ICONS[v.icon]}${v.label}</button>`;
+                  data-phone="${base}img/${d}-phone.webp" data-phone-avif="${base}img/${d}-phone.avif">${ICONS[v.icon]}<span>${v.label}</span></button>`;
   };
   const pictures = base => `<button type="button" class="hero__screen hero__screen--desktop" data-screen="desktop" aria-label="Show the desktop version">
           <picture>
