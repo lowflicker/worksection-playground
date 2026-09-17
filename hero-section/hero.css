@@ -279,12 +279,21 @@
   cursor: default;
   -webkit-tap-highlight-color: transparent;
 }
+.hero__screen picture { display: block; border-radius: inherit; }
 .hero__screen img {
   display: block;
   width: 100%;
   height: auto;
   border-radius: inherit;
   background: #fff;
+}
+/* the outgoing picture during a view change: a clone hero.js lays over the real one and fades out */
+.hero__screen .hero__ghost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
 }
 .hero__screen--desktop {
   position: relative;
@@ -476,8 +485,9 @@
   .hero__screen:focus-visible { outline: 3px solid var(--hero-accent); outline-offset: 3px; }
 }
 
+/* the tab label slides in from the side the views move to (--hero-dir is set by hero.js) */
 @keyframes hero-tab-in {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateX(calc(var(--hero-dir, 1) * 12px)); }
 }
 /* the same lean in both directions, two names so a change of data-main restarts it */
 @keyframes hero-tilt-cw  { 50% { rotate: var(--tilt); } }

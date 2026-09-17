@@ -10,11 +10,15 @@
      new Hero('#hero', { view: 0, main: 'desktop' });
 
    Markup: see the header of hero.css or demo.html. Each tab carries the
-   pictures of its view in data-desktop / data-phone (plus optional
-   data-desktop-srcset / data-phone-srcset; the <img> keeps its own
-   `sizes`); a tab without them keeps the pictures that are already shown.
+   pictures of its view in data-desktop / data-phone, plus optional
+   data-<which>-srcset (WebP candidates) and data-<which>-avif (AVIF
+   candidates for the <source>); the <img> keeps its own `sizes`. A tab
+   without them keeps the pictures that are already shown.
+   Loading: only the first view loads with the page. The others are fetched
+   on intent (hover or focus on a tab, a touch on the pictures, a switch)
+   and always decoded off screen before the crossfade, so nothing flashes.
    On touch screens a horizontal swipe over the screenshots steps through
-   the views; the neighbouring views' pictures are prefetched when idle.
+   the views.
 
    Public API:
      hero.select(i)          show view i: the tab and both screenshots
@@ -45,7 +49,7 @@
     overshoot: 0.2,      // the picture that grows: 0 = same curve as easing, 0.4 = a clear bounce
     tilt: 3,             // deg, how much the pictures lean at mid-flight; 0 = none
     lift: true,          // extra shadow under the phone while it moves
-    fade: 300,           // ms, screenshot crossfade on a tab change
+    fade: 450,           // ms, screenshot crossfade on a tab change
   };
 
   class Hero {
@@ -61,76 +65,113 @@
       };
       this.index = -1;
       this._pending = {};
-      this._warm = new Set();
+      this._ghost = {};
+      this._warmed = new Set();
       // one delegated listener each: tabs, arrows and screenshots all live under the root
       this._onClick = e => this._click(e);
       this._onKey = e => this._key(e);
       this._onDown = e => this._down(e);
       this._onUp = e => this._up(e);
+      this._onIntent = e => this._intent(e);
       this.root.addEventListener('click', this._onClick);
       this.root.addEventListener('keydown', this._onKey);
       this.screens.addEventListener('pointerdown', this._onDown);
       this.screens.addEventListener('pointerup', this._onUp);
       this.screens.addEventListener('pointercancel', this._onUp);
+      // a hover, a touch or keyboard focus on the controls or the pictures: fetch what is likely next
+      for (const t of ['pointerenter', 'pointerdown', 'focusin']) this.root.addEventListener(t, this._onIntent, true);
       this.setOptions(Object.assign({}, DEFAULTS, options));
     }
 
     /* ---------- views ---------- */
-    select(i) {
+    // dir: +1 forward, -1 back; the pictures and the tab label slide that way
+    select(i, dir) {
       const n = this.tabs.length;
       if (!n) return;
       i = ((i % n) + n) % n;
       if (i === this.index) return;
+      const first = this.index < 0;
+      dir = dir || (first ? 1 : Math.sign(i - this.index));
+      this.root.style.setProperty('--hero-dir', dir);
       this.index = i;
       this.tabs.forEach((tab, k) => {
         tab.setAttribute('aria-selected', k === i);
         tab.tabIndex = k === i ? 0 : -1;
       });
       const d = this.tabs[i].dataset;
-      this._swapImage('desktop', d.desktop, d.desktopSrcset);
-      this._swapImage('phone', d.phone, d.phoneSrcset);
+      this._swapImage('desktop', d, dir);
+      this._swapImage('phone', d, dir);
       this.root.dispatchEvent(new CustomEvent('hero:view', { detail: { index: i } }));
-      // warm the neighbours while nothing else is going on, so the next step is instant
-      const idle = window.requestIdleCallback || (fn => setTimeout(fn, 300));
-      idle(() => { if (this.index === i) { this._prefetch(i - 1); this._prefetch(i + 1); } });
+      // someone who just switched will likely switch again: warm the next step, but not on page load
+      if (!first) this._warmAround(i);
     }
-    prev() { this.select(this.index - 1); }
-    next() { this.select(this.index + 1); }
+    prev() { this.select(this.index - 1, -1); }
+    next() { this.select(this.index + 1, 1); }
 
-    // a detached <img> with the same sizes picks the same srcset candidate the real one will
-    _load(which, src, srcset) {
+    /* ---------- pictures ----------
+       Each screen is <picture><source type="image/avif" srcset><img src srcset sizes></picture>
+       (or a bare <img>). A tab carries the same set in data-<which>, data-<which>-srcset,
+       data-<which>-avif. Nothing beyond the first view loads on page load; the rest is
+       fetched on intent (hover, touch, a switch) and always decoded before it is shown. */
+    _pic(which) { const p = this.img[which].parentElement; return p && p.tagName === 'PICTURE' ? p : null; }
+    _srcOf(which, d) { return [d[which] || '', d[which + 'Srcset'] || '', d[which + 'Avif'] || '']; }
+    // a detached <picture> with the same sources and sizes, so the browser fetches exactly the
+    // candidate the real one will use, and it is warm in the cache when it is shown
+    _load(which, d) {
+      const [src, srcset, avif] = this._srcOf(which, d);
+      const img = this.img[which];
+      const pic = document.createElement('picture');
+      if (avif) { const s = document.createElement('source'); s.type = 'image/avif'; s.srcset = avif; if (img.sizes) s.sizes = img.sizes; pic.append(s); }
       const pre = new Image();
-      if (this.img[which] && this.img[which].sizes) pre.sizes = this.img[which].sizes;
+      // into the picture before any source is set, or the img would start on the WebP
+      // fallback and the AVIF on top of it
+      pic.append(pre);
+      if (img.sizes) pre.sizes = img.sizes;
       if (srcset) pre.srcset = srcset;
+      if ('fetchPriority' in pre) pre.fetchPriority = 'low';
       pre.src = src;
-      this._warm.add(src);
+      this._warmed.add(src);
       return pre;
     }
-    _swapImage(which, src, srcset) {
+    _swapImage(which, d, dir) {
       const img = this.img[which];
-      srcset = srcset || '';
-      if (!img || !src || (img.getAttribute('src') === src && (img.getAttribute('srcset') || '') === srcset)) return;
+      const [src, srcset, avif] = this._srcOf(which, d);
+      if (!img || !src) return;
+      const pic = this._pic(which), source = pic && pic.querySelector('source[type="image/avif"]');
+      if (img.getAttribute('src') === src && (img.getAttribute('srcset') || '') === srcset && (!source || (source.getAttribute('srcset') || '') === avif)) return;
       // decode off screen first, so the crossfade never shows a half-loaded picture
-      const pre = this._load(which, src, srcset);
+      const pre = this._load(which, d);
       this._pending[which] = pre;
       const ready = pre.decode ? pre.decode().catch(() => {}) : Promise.resolve();
       ready.then(() => {
         if (this._pending[which] !== pre) return; // a newer tab won
+        const ms = this.options.fade;
+        // the old picture stays as a ghost on top and slides out while the new one slides in
+        // underneath; the ghost is a clone, so the markup keeps one picture per screen
+        if (ms > 0) {
+          const old = this._ghost[which];
+          if (old) old.remove();
+          const ghost = (pic || img).cloneNode(true);
+          ghost.className = 'hero__ghost';
+          ghost.querySelectorAll('[fetchpriority]').forEach(n => n.removeAttribute('fetchpriority'));
+          (pic || img).after(ghost);
+          this._ghost[which] = ghost;
+          const ease = 'cubic-bezier(.22, 1, .36, 1)';
+          ghost.animate([{ opacity: 1, translate: '0 0' }, { opacity: 0, translate: `${-6 * dir}% 0` }], { duration: ms, easing: ease, fill: 'forwards' })
+            .finished.then(() => { if (this._ghost[which] === ghost) this._ghost[which] = null; ghost.remove(); }, () => {});
+          img.animate([{ opacity: 0, translate: `${6 * dir}% 0`, scale: '.985' }, { opacity: 1, translate: '0 0', scale: '1' }], { duration: ms, easing: ease });
+        }
+        if (source) source.srcset = avif;
         if (srcset) img.srcset = srcset; else img.removeAttribute('srcset');
         img.src = src;
-        if (this.options.fade > 0) img.animate([{ opacity: 0 }, { opacity: 1 }], { duration: this.options.fade, easing: 'ease-out' });
       });
     }
-    _prefetch(i) {
+    _warm(i) {
       const n = this.tabs.length;
       const d = this.tabs[((i % n) + n) % n].dataset;
-      for (const which of ['desktop', 'phone']) {
-        const src = d[which];
-        if (!src || this._warm.has(src)) continue;
-        this._warm.add(src);
-        this._load(which, src, d[which + 'Srcset']);
-      }
+      for (const which of ['desktop', 'phone']) if (d[which] && !this._warmed.has(d[which])) this._load(which, d);
     }
+    _warmAround(i) { this._warm(i - 1); this._warm(i + 1); }
 
     /* ---------- main / thumb ---------- */
     show(main) {
@@ -161,6 +202,7 @@
     }
 
     destroy() {
+      for (const t of ['pointerenter', 'pointerdown', 'focusin']) this.root.removeEventListener(t, this._onIntent, true);
       this.root.removeEventListener('click', this._onClick);
       this.root.removeEventListener('keydown', this._onKey);
       this.screens.removeEventListener('pointerdown', this._onDown);
@@ -169,6 +211,14 @@
     }
 
     /* ---------- events ---------- */
+    // pointerenter does not bubble, so this listens in the capture phase on the root
+    _intent(e) {
+      const t = e.target.closest && e.target.closest('.hero__tab, .hero__arrow, .hero__screens');
+      // hovering the pictures is not intent (the cursor often just rests there on load); a touch on them is
+      if (!t || (e.type === 'pointerenter' && t.classList.contains('hero__screens'))) return;
+      if (t.classList.contains('hero__tab')) this._warm(this.tabs.indexOf(t));
+      else this._warmAround(this.index);
+    }
     _click(e) {
       const t = e.target.closest('.hero__tab, .hero__arrow, .hero__screen');
       if (!t || !this.root.contains(t)) return;

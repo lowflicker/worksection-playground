@@ -8,7 +8,7 @@
 |---|---|
 | `hero.css` | увесь блок: типографіка, вкладки, обидві композиції скріншотів, анімація свапу |
 | `hero.js` | контролер `Hero`: вкладки, стрілки, тап по мініатюрі. ~2 KB gzip з коментарями, ~1 KB мініфікований |
-| `img/` | скріншоти для демо (WebP): справжні лише Dashboard, решта вкладок це його перефарбовані копії з підписом, щоб перемикання було видно |
+| `img/` | скріншоти для демо, AVIF + WebP: справжні лише Dashboard, решта вкладок це його перефарбовані копії, щоб перемикання було видно |
 | `demo.html` | приклад підключення |
 | `playground.js` | опис для плейграунду: контроли, пресети, сніпет. На сайт не потрібен |
 
@@ -38,19 +38,28 @@
         <button type="button" class="hero__arrow hero__arrow--prev" aria-label="Previous view">…</button>
         <div class="hero__tablist" role="tablist">
           <button type="button" class="hero__tab" role="tab" aria-selected="true"
-                  data-desktop="img/dashboard.webp" data-phone="img/dashboard-phone.webp"><svg>…</svg>Dashboard</button>
+                  data-desktop="img/dashboard.webp" data-desktop-srcset="…" data-desktop-avif="…"
+                  data-phone="img/dashboard-phone.webp" data-phone-avif="img/dashboard-phone.avif"><svg>…</svg>Dashboard</button>
           <button type="button" class="hero__tab" role="tab" aria-selected="false"
-                  data-desktop="img/tasks.webp" data-phone="img/tasks-phone.webp"><svg>…</svg>Tasks</button>
+                  data-desktop="img/tasks.webp" data-desktop-srcset="…" data-desktop-avif="…"
+                  data-phone="img/tasks-phone.webp" data-phone-avif="img/tasks-phone.avif"><svg>…</svg>Tasks</button>
           …
         </div>
         <button type="button" class="hero__arrow hero__arrow--next" aria-label="Next view">…</button>
       </div>
       <div class="hero__screens" data-main="desktop">
         <button type="button" class="hero__screen hero__screen--desktop" data-screen="desktop" aria-label="Show the desktop version">
-          <img src="img/dashboard.webp" width="2496" height="1528" alt="…" fetchpriority="high">
+          <picture>
+            <source type="image/avif" srcset="img/dashboard-1280.avif 1280w, img/dashboard.avif 2496w" sizes="(max-width: 639px) 140vw, 1280px">
+            <img src="img/dashboard.webp" srcset="img/dashboard-1280.webp 1280w, img/dashboard.webp 2496w" sizes="(max-width: 639px) 140vw, 1280px"
+                 width="2496" height="1528" alt="…" fetchpriority="high" decoding="async">
+          </picture>
         </button>
         <button type="button" class="hero__screen hero__screen--phone" data-screen="phone" aria-label="Show the mobile version">
-          <img src="img/dashboard-phone.webp" width="804" height="1748" alt="…">
+          <picture>
+            <source type="image/avif" srcset="img/dashboard-phone.avif">
+            <img src="img/dashboard-phone.webp" width="804" height="1748" alt="…" loading="lazy" decoding="async">
+          </picture>
         </button>
       </div>
     </div>
@@ -65,12 +74,15 @@
 
 Що важливо в розмітці:
 
-- кожна вкладка несе свою пару скріншотів у `data-desktop` / `data-phone`, за потреби ще `data-desktop-srcset` / `data-phone-srcset`. Вкладка без них лишає поточні картинки;
-- `sizes` живе на самому `<img>` і не міняється. У демо десктопний скрін має варіант 1280 px (60 KB замість 143): на телефоні він рендериться у ~560 CSS px, тож `sizes="(max-width: 639px) 140vw, 1280px"`;
+- кожен скрін це `<picture>` з `<source type="image/avif">` і `<img>` у WebP як фолбек. Кожна вкладка несе той самий набір у `data-desktop`, `data-desktop-srcset` (WebP-кандидати), `data-desktop-avif` (AVIF-кандидати для `<source>`), `data-phone`, `data-phone-avif`. Вкладка без них лишає поточні картинки;
+- `sizes` живе на самому `<img>` і `<source>` і не міняється. Десктопний скрін має варіант 1280 px: на телефоні він рендериться у ~560 CSS px, тож `sizes="(max-width: 639px) 140vw, 1280px"`. На телефоні перша пара важить 40 + 34 KB в AVIF;
+- десктопний `<img>` має `fetchpriority="high"` (це LCP), телефонний `loading="lazy"`;
 - у `<img>` потрібні `width` і `height` (реальні пікселі файлу): з них браузер знає пропорції до завантаження, і сцена не стрибає;
 - `aria-selected="true"` на першій вкладці і `data-main="desktop"` на сцені: без JS блок теж рендериться правильно;
 - замість `.hero__lead` можна покласти чек-лист `<ul class="hero__list"><li>…</li></ul>` (варіант із мобільного макета);
 - `<br>` у заголовку на вузьких екранах ховається, тому перед ним потрібен пробіл.
+
+Зміна вкладки: стара картинка лишається клоном поверх нової, з’їжджає на 6 % у бік гортання і тане, нова під’їжджає з протилежного боку з ледь помітним масштабом. Клон додає `hero.js`, розмітка лишається з одним `<img>` на скрін. Напрямок (`--hero-dir`) той самий для підпису вкладки на телефоні.
 
 ## Як це працює
 
@@ -105,7 +117,7 @@ const hero = new Hero('#hero', {
   overshoot: 0.2,      // переліт того, що росте: 0 = та сама крива, 0.4 = помітний відскок
   tilt: 3,             // deg, нахил у польоті; 0 = без нахилу
   lift: true,          // додаткова тінь під телефоном у польоті
-  fade: 300,           // ms, кросфейд скріншота при зміні вкладки
+  fade: 450,           // ms, кросфейд скріншота при зміні вкладки
 });
 
 hero.select(2);          // вкладка за індексом (з обгортанням)
@@ -120,7 +132,7 @@ hero.destroy();
 
 Клавіатура: стрілки ліворуч/праворуч у списку вкладок перемикають вкладки, Enter/Space на мініатюрі робить свап.
 
-Дотик: горизонтальний свайп по сцені зі скріншотами перемикає вкладки (поріг 40 px, вертикальний скрол лишається нативним через `touch-action: pan-y`, миша не рахується). Після тапу по мініатюрі сцена підтягується у в’юпорт (`scrollIntoView`, `block: nearest`), бо телефон росте вниз. Картинки сусідніх вкладок підвантажуються в `requestIdleCallback`, тож наступний крок миттєвий.
+Дотик: горизонтальний свайп по сцені зі скріншотами перемикає вкладки (поріг 40 px, вертикальний скрол лишається нативним через `touch-action: pan-y`, миша не рахується). Після тапу по мініатюрі сцена підтягується у в’юпорт (`scrollIntoView`, `block: nearest`), бо телефон росте вниз. Завантаження: із сторінкою вантажиться лише перша пара. Решта підтягується за наміром: наведення або фокус на вкладці, дотик до стрілок чи скріншотів, а після кожного перемикання ще й сусідні вкладки, з `fetchpriority="low"`. Перед показом картинка завжди декодується поза екраном (`decode()`), стара лишається на місці до готовності, тому мерехтіння немає ні за яких умов, у найгіршому разі перемикання трохи запізнюється за підписом вкладки.
 
 ## Змінні
 
@@ -140,7 +152,7 @@ hero.destroy();
   --hero-ease: cubic-bezier(.22, 1, .36, 1);        /* той, що зменшується */
   --hero-ease-grow: cubic-bezier(.3, 1.2, .4, 1);   /* той, що росте */
   --hero-tilt: 3deg;
-  --hero-fade: 300ms;
+  --hero-fade: 450ms;
 
   /* вузька композиція, cqw. *-w/x/y: скрін як головний, *-s/tx/ty: він же як мініатюра */
   --hero-stage-h: 124cqw;
@@ -155,7 +167,7 @@ hero.destroy();
 
 ## Що ще варто знати
 
-- Скріншоти в `img/` це WebP з Figma у 2x/3x плюс 1280 px варіант десктопа для телефонів. Телефонний скрін (804 px) на мобільному і так рендериться у ~210 CSS px, окремий варіант йому не потрібен.
+- Скріншоти в `img/` це AVIF (q60) з WebP-фолбеком (q78) із PNG Figma у 2x/3x, плюс 1280 px варіант десктопа для телефонів. Телефонний скрін (804 px) на мобільному і так рендериться у ~210 CSS px, окремий варіант йому не потрібен. AVIF дає ~35 % економії проти WebP: 74 KB замість 120 за десктоп.
 - Заголовок на вузьких екранах флюїдний: `clamp(34px, 10.3cqw, 40px)`, тобто 34 px на 320 і 40 px (як у Figma) від 390.
 - Ширина сцени у вузькій композиції дорівнює ширині блоку, а десктопний скріншот виходить за правий край: `.hero` має `overflow: clip`, тому горизонтального скролу не буде.
 - `prefers-reduced-motion: reduce` вимикає переходи, свап стає миттєвим.

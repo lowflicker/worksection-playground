@@ -65,14 +65,29 @@
   let hero = null, root = null;
 
   /* the block's markup. Only Dashboard has real screenshots; the other views are
-     hue-shifted, labelled copies of it so the switch is visible in the demo */
-  // the desktop picture has a 1280 px variant for phones (it renders at ~560 CSS px there)
+     hue-shifted copies of it so the switch is visible in the demo */
+  // every picture is AVIF with a WebP fallback; the desktop one also has a 1280 px
+  // candidate for phones, where it renders at ~560 CSS px
   const SIZES = '(max-width: 639px) 140vw, 1280px';
-  const srcset = (base, d) => `${base}img/${d}-1280.webp 1280w, ${base}img/${d}.webp 2496w`;
+  const srcset = (base, d, ext) => `${base}img/${d}-1280.${ext} 1280w, ${base}img/${d}.${ext} 2496w`;
   const tab = (v, i, base) => {
     const d = v.id;
-    return `<button type="button" class="hero__tab" role="tab" aria-selected="${i === 0}" data-desktop="${base}img/${d}.webp" data-desktop-srcset="${srcset(base, d)}" data-phone="${base}img/${d}-phone.webp">${ICONS[v.icon]}${v.label}</button>`;
+    return `<button type="button" class="hero__tab" role="tab" aria-selected="${i === 0}"
+                  data-desktop="${base}img/${d}.webp" data-desktop-srcset="${srcset(base, d, 'webp')}" data-desktop-avif="${srcset(base, d, 'avif')}"
+                  data-phone="${base}img/${d}-phone.webp" data-phone-avif="${base}img/${d}-phone.avif">${ICONS[v.icon]}${v.label}</button>`;
   };
+  const pictures = base => `<button type="button" class="hero__screen hero__screen--desktop" data-screen="desktop" aria-label="Show the desktop version">
+          <picture>
+            <source type="image/avif" srcset="${srcset(base, 'dashboard', 'avif')}" sizes="${SIZES}">
+            <img src="${base}img/dashboard.webp" srcset="${srcset(base, 'dashboard', 'webp')}" sizes="${SIZES}" width="2496" height="1528" alt="Worksection dashboard on desktop" fetchpriority="high" decoding="async">
+          </picture>
+        </button>
+        <button type="button" class="hero__screen hero__screen--phone" data-screen="phone" aria-label="Show the mobile version">
+          <picture>
+            <source type="image/avif" srcset="${base}img/dashboard-phone.avif">
+            <img src="${base}img/dashboard-phone.webp" width="804" height="1748" alt="Worksection dashboard on a phone" loading="lazy" decoding="async">
+          </picture>
+        </button>`;
   const markup = (s, base, demo) => `<section class="hero" id="hero">
   <div class="hero__inner">
     <div class="hero__head">
@@ -95,8 +110,7 @@
         <button type="button" class="hero__arrow hero__arrow--next" aria-label="Next view">${ICONS.chevR}</button>
       </div>
       <div class="hero__screens" data-main="${s.main}">
-        <button type="button" class="hero__screen hero__screen--desktop" data-screen="desktop" aria-label="Show the desktop version"><img src="${base}img/dashboard.webp" srcset="${srcset(base, 'dashboard')}" sizes="${SIZES}" width="2496" height="1528" alt="Worksection dashboard on desktop" fetchpriority="high" decoding="async"></button>
-        <button type="button" class="hero__screen hero__screen--phone" data-screen="phone" aria-label="Show the mobile version"><img src="${base}img/dashboard-phone.webp" width="804" height="1748" alt="Worksection dashboard on a phone" decoding="async"></button>
+        ${pictures(base)}
       </div>
     </div>
   </div>
@@ -169,7 +183,7 @@ ${markup(s, '', false)}
         { type: 'select', key: 'view', label: 'Активна вкладка', options: VIEWS.map((v, i) => [i, v.label]) },
         { type: 'range', key: 'fade', label: 'Кросфейд скріншота', min: 0, max: 1000, step: 50, unit: 'ms' },
         { type: 'buttons', items: [{ label: '← Попередня', run: () => hero.prev() }, { label: 'Наступна →', primary: true, run: () => hero.next() }] },
-        { type: 'note', text: 'Справжні скріншоти є лише для Dashboard; решта вкладок показують його перефарбовані копії з підписом. На сайті кожна вкладка несе свої data-desktop / data-phone. На телефоні вкладки гортаються і свайпом по скріншотах.' },
+        { type: 'note', text: 'Справжні скріншоти є лише для Dashboard; решта вкладок показують його перефарбовані копії без підписів. На сайті кожна вкладка несе свої data-desktop / data-phone. На телефоні вкладки гортаються і свайпом по скріншотах.' },
       ] },
       { title: 'Композиція (< 640 px)', items: [
         { type: 'range', key: 'stageH', label: 'Висота сцени', min: 70, max: 150, step: 0.5, unit: 'cqw' },
