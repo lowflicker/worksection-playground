@@ -50,14 +50,24 @@
     tilt: 3,             // deg, how much the pictures lean at mid-flight; 0 = none
     lift: true,          // extra shadow under the phone while it moves
     fade: 450,           // ms, screenshot crossfade on a tab change
-    switch: 'fade',      // 'fade' | 'slide' | 'zoom': how the pictures change on a tab change
+    switch: 'wipe',      // 'fade' | 'slide' | 'zoom' | 'wipe' | 'circle' | 'blur': how the pictures change on a tab change
+    stagger: 90,         // ms, the phone follows the desktop by this much on a tab change (depth)
   };
 
-  // how the incoming picture appears over the old one on a view change; dir is +1 forward, -1 back
+  // how the incoming picture appears over the old one on a view change: [layer keyframes, old picture
+  // keyframes or null]; dir is +1 forward, -1 back. The old picture's animation is fill: none, so it
+  // is back to normal under the fully opaque layer before the sources swap
   const SWITCH = {
-    fade: () => [{ opacity: 0 }, { opacity: 1 }],
-    slide: dir => [{ opacity: 0, translate: `${6 * dir}% 0`, scale: '.985' }, { opacity: 1, translate: '0 0', scale: '1' }],
-    zoom: () => [{ opacity: 0, scale: '.97' }, { opacity: 1, scale: '1' }],
+    fade: () => [[{ opacity: 0 }, { opacity: 1 }]],
+    slide: dir => [[{ opacity: 0, translate: `${6 * dir}% 0`, scale: '.985' }, { opacity: 1, translate: '0 0', scale: '1' }]],
+    zoom: () => [[{ opacity: 0, scale: '.97' }, { opacity: 1, scale: '1' }]],
+    // a diagonal edge sweeps across from the side the views move to
+    wipe: dir => [dir > 0
+      ? [{ clipPath: 'polygon(120% 0, 200% 0, 200% 100%, 100% 100%)', translate: '2% 0' }, { clipPath: 'polygon(0 0, 200% 0, 200% 100%, -20% 100%)', translate: '0 0' }]
+      : [{ clipPath: 'polygon(-100% 0, -20% 0, 0 100%, -100% 100%)', translate: '-2% 0' }, { clipPath: 'polygon(-100% 0, 100% 0, 120% 100%, -100% 100%)', translate: '0 0' }]],
+    circle: dir => [[{ clipPath: `circle(0% at ${dir > 0 ? 85 : 15}% 50%)` }, { clipPath: `circle(125% at ${dir > 0 ? 85 : 15}% 50%)` }]],
+    blur: () => [[{ opacity: 0, filter: 'blur(14px)', scale: '1.04' }, { opacity: 1, filter: 'blur(0)', scale: '1' }],
+                 [{ filter: 'blur(0)' }, { filter: 'blur(6px)' }]],
   };
 
   class Hero {
@@ -107,8 +117,8 @@
         tab.tabIndex = k === i ? 0 : -1;
       });
       const d = this.tabs[i].dataset;
-      this._swapImage('desktop', d, dir);
-      this._swapImage('phone', d, dir);
+      this._swapImage('desktop', d, dir, 0);
+      this._swapImage('phone', d, dir, this.options.stagger);
       this.root.dispatchEvent(new CustomEvent('hero:view', { detail: { index: i } }));
       // someone who just switched will likely switch again: warm the next step, but not on page load
       if (!first) this._warmAround(i);
@@ -141,7 +151,7 @@
       this._warmed.add(src);
       return pre;
     }
-    _swapImage(which, d, dir) {
+    _swapImage(which, d, dir, delay) {
       const img = this.img[which];
       const [src, srcset, avif] = this._srcOf(which, d);
       if (!img || !src) return;
@@ -168,7 +178,10 @@
         layer.className = 'hero__ghost';
         (pic || img).after(layer);
         const layers = this._ghost[which] = (this._ghost[which] || []).concat(layer);
-        layer.animate((SWITCH[this.options.switch] || SWITCH.fade)(dir), { duration: ms, easing: 'cubic-bezier(.22, 1, .36, 1)', fill: 'forwards' }).finished.then(async () => {
+        const [into, out] = (SWITCH[this.options.switch] || SWITCH.fade)(dir);
+        const ease = 'cubic-bezier(.22, 1, .36, 1)';
+        if (out) (pic || img).animate(out, { duration: ms, easing: ease, delay: delay || 0 });
+        layer.animate(into, { duration: ms, easing: ease, delay: delay || 0, fill: 'both' }).finished.then(async () => {
           if (this._pending[which] !== pre) return; // superseded; the newer layer will clean up
           commit();
           await decoded(img);
