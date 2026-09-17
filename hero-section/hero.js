@@ -68,10 +68,9 @@
       ? [{ clipPath: 'polygon(120% 0, 200% 0, 200% 100%, 100% 100%)', translate: '2% 0' }, { clipPath: 'polygon(0 0, 200% 0, 200% 100%, -20% 100%)', translate: '0 0' }]
       : [{ clipPath: 'polygon(-100% 0, -20% 0, 0 100%, -100% 100%)', translate: '-2% 0' }, { clipPath: 'polygon(-100% 0, 100% 0, 120% 100%, -100% 100%)', translate: '0 0' }]],
     circle: dir => [[{ clipPath: `circle(0% at ${dir > 0 ? 85 : 15}% 50%)` }, { clipPath: `circle(125% at ${dir > 0 ? 85 : 15}% 50%)` }]],
-    // the old screen softens under the new one; the new one is sharp at 80 % so the last stretch
-    // is opacity only. Both blur the img inside a clipping picture: the frame never blurs
-    blur: (dir, k) => [[{ opacity: 0, filter: `blur(${14 * k}px)`, scale: 1 + .04 * k }, { filter: 'blur(0)', scale: '1', offset: .8 }, { opacity: 1, filter: 'blur(0)', scale: '1' }],
-                       [{ filter: 'blur(0)' }, { filter: `blur(${6 * k}px)` }]],
+    // only the incoming screen is soft, and only at first: the old one stays sharp underneath,
+    // otherwise the two blurred pictures in the middle of the change turn to mud
+    blur: (dir, k) => [[{ opacity: 0, filter: `blur(${5 * k}px)` }, { filter: 'blur(0)', offset: .7 }, { opacity: 1, filter: 'blur(0)' }]],
   };
 
   class Hero {
