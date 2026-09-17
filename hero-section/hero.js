@@ -50,6 +50,20 @@
     tilt: 3,             // deg, how much the pictures lean at mid-flight; 0 = none
     lift: true,          // extra shadow under the phone while it moves
     fade: 450,           // ms, screenshot crossfade on a tab change
+    switch: 'fade',      // 'fade' | 'slide' | 'zoom': how the pictures change on a tab change
+  };
+
+  // keyframes of a view change: [outgoing clone, incoming picture]; dir is +1 forward, -1 back
+  const SWITCH = {
+    fade: () => [[{ opacity: 1 }, { opacity: 0 }], [{ opacity: 0 }, { opacity: 1 }]],
+    slide: dir => [
+      [{ opacity: 1, translate: '0 0' }, { opacity: 0, translate: `${-6 * dir}% 0` }],
+      [{ opacity: 0, translate: `${6 * dir}% 0`, scale: '.985' }, { opacity: 1, translate: '0 0', scale: '1' }],
+    ],
+    zoom: () => [
+      [{ opacity: 1, scale: '1' }, { opacity: 0, scale: '.97' }],
+      [{ opacity: 0, scale: '.97' }, { opacity: 1, scale: '1' }],
+    ],
   };
 
   class Hero {
@@ -156,10 +170,11 @@
           ghost.querySelectorAll('[fetchpriority]').forEach(n => n.removeAttribute('fetchpriority'));
           (pic || img).after(ghost);
           this._ghost[which] = ghost;
+          const [out, into] = SWITCH[this.options.switch] ? SWITCH[this.options.switch](dir) : SWITCH.fade(dir);
           const ease = 'cubic-bezier(.22, 1, .36, 1)';
-          ghost.animate([{ opacity: 1, translate: '0 0' }, { opacity: 0, translate: `${-6 * dir}% 0` }], { duration: ms, easing: ease, fill: 'forwards' })
+          ghost.animate(out, { duration: ms, easing: ease, fill: 'forwards' })
             .finished.then(() => { if (this._ghost[which] === ghost) this._ghost[which] = null; ghost.remove(); }, () => {});
-          img.animate([{ opacity: 0, translate: `${6 * dir}% 0`, scale: '.985' }, { opacity: 1, translate: '0 0', scale: '1' }], { duration: ms, easing: ease });
+          img.animate(into, { duration: ms, easing: ease });
         }
         if (source) source.srcset = avif;
         if (srcset) img.srcset = srcset; else img.removeAttribute('srcset');

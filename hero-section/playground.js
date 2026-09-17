@@ -134,6 +134,7 @@ ${markup(s, '', false)}
     tilt: ${s.tilt},
     lift: ${s.lift},
     fade: ${s.fade},
+    switch: '${s.switch}',
   });
 <\/script>
 
@@ -180,7 +181,8 @@ ${markup(s, '', false)}
       ] },
       { title: 'Вкладки', items: [
         { type: 'select', key: 'view', label: 'Активна вкладка', options: VIEWS.map((v, i) => [i, v.label]) },
-        { type: 'range', key: 'fade', label: 'Кросфейд скріншота', min: 0, max: 1000, step: 50, unit: 'ms' },
+        { type: 'seg', key: 'switch', label: 'Ефект зміни скріншота', options: [['fade', 'Fade'], ['slide', 'Slide'], ['zoom', 'Zoom']] },
+        { type: 'range', key: 'fade', label: 'Тривалість зміни', min: 0, max: 1000, step: 50, unit: 'ms' },
         { type: 'buttons', items: [{ label: '← Попередня', run: () => hero.prev() }, { label: 'Наступна →', primary: true, run: () => hero.next() }] },
         { type: 'note', text: 'Кожна вкладка несе свою пару скріншотів у data-desktop / data-phone (AVIF + WebP). На телефоні вкладки гортаються і свайпом по скріншотах.' },
       ] },
