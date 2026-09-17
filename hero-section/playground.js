@@ -178,7 +178,7 @@ ${markup(s, '', false)}
       ] },
       { title: 'Вкладки', items: [
         { type: 'select', key: 'view', label: 'Активна вкладка', options: VIEWS.map((v, i) => [i, v.label]) },
-        { type: 'select', key: 'switch', label: 'Ефект зміни скріншота', options: [['wipe', 'Wipe: діагональна шторка'], ['circle', 'Circle: розкриття колом'], ['blur', 'Blur: крізь розмиття'], ['slide', 'Slide: зсув'], ['zoom', 'Zoom: з масштабу'], ['fade', 'Fade: чистий кросфейд']] },
+        { type: 'select', key: 'switch', label: 'Ефект зміни скріншота', options: [['blur', 'Blur: крізь розмиття'], ['wipe', 'Wipe: діагональна шторка'], ['circle', 'Circle: розкриття колом'], ['slide', 'Slide: зсув'], ['zoom', 'Zoom: з масштабу'], ['fade', 'Fade: чистий кросфейд']] },
         { type: 'range', key: 'fade', label: 'Тривалість зміни', min: 0, max: 1200, step: 50, unit: 'ms' },
         { type: 'range', key: 'stagger', label: 'Телефон запізнюється на', min: 0, max: 300, step: 10, unit: 'ms' },
         { type: 'buttons', items: [{ label: '← Попередня', run: () => hero.prev() }, { label: 'Наступна →', primary: true, run: () => hero.next() }] },

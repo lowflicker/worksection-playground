@@ -50,7 +50,7 @@
     tilt: 3,             // deg, how much the pictures lean at mid-flight; 0 = none
     lift: true,          // extra shadow under the phone while it moves
     fade: 450,           // ms, screenshot crossfade on a tab change
-    switch: 'wipe',      // 'fade' | 'slide' | 'zoom' | 'wipe' | 'circle' | 'blur': how the pictures change on a tab change
+    switch: 'blur',      // 'fade' | 'slide' | 'zoom' | 'wipe' | 'circle' | 'blur': how the pictures change on a tab change
     stagger: 90,         // ms, the phone follows the desktop by this much on a tab change (depth)
   };
 
@@ -66,7 +66,9 @@
       ? [{ clipPath: 'polygon(120% 0, 200% 0, 200% 100%, 100% 100%)', translate: '2% 0' }, { clipPath: 'polygon(0 0, 200% 0, 200% 100%, -20% 100%)', translate: '0 0' }]
       : [{ clipPath: 'polygon(-100% 0, -20% 0, 0 100%, -100% 100%)', translate: '-2% 0' }, { clipPath: 'polygon(-100% 0, 100% 0, 120% 100%, -100% 100%)', translate: '0 0' }]],
     circle: dir => [[{ clipPath: `circle(0% at ${dir > 0 ? 85 : 15}% 50%)` }, { clipPath: `circle(125% at ${dir > 0 ? 85 : 15}% 50%)` }]],
-    blur: () => [[{ opacity: 0, filter: 'blur(14px)', scale: '1.04' }, { opacity: 1, filter: 'blur(0)', scale: '1' }],
+    // the old screen softens under the new one; the new one is sharp at 80 % so the last stretch
+    // is opacity only. Both blur the img inside a clipping picture: the frame never blurs
+    blur: () => [[{ opacity: 0, filter: 'blur(14px)', scale: '1.04' }, { filter: 'blur(0)', scale: '1', offset: .8 }, { opacity: 1, filter: 'blur(0)', scale: '1' }],
                  [{ filter: 'blur(0)' }, { filter: 'blur(6px)' }]],
   };
 
@@ -180,7 +182,7 @@
         const layers = this._ghost[which] = (this._ghost[which] || []).concat(layer);
         const [into, out] = (SWITCH[this.options.switch] || SWITCH.fade)(dir);
         const ease = 'cubic-bezier(.22, 1, .36, 1)';
-        if (out) (pic || img).animate(out, { duration: ms, easing: ease, delay: delay || 0 });
+        if (out) img.animate(out, { duration: ms, easing: ease, delay: delay || 0 }); // the img only: the picture keeps the frame sharp and clips the blur
         layer.animate(into, { duration: ms, easing: ease, delay: delay || 0, fill: 'both' }).finished.then(async () => {
           if (this._pending[which] !== pre) return; // superseded; the newer layer will clean up
           commit();

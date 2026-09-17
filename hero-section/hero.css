@@ -279,7 +279,9 @@
   cursor: default;
   -webkit-tap-highlight-color: transparent;
 }
-.hero__screen picture { display: block; border-radius: inherit; }
+/* the picture holds the frame and shadow and clips what is inside, so a blurred img
+   (view change) never blurs the frame and never bleeds past the box */
+.hero__screen picture { display: block; border-radius: inherit; overflow: clip; }
 .hero__screen img {
   display: block;
   width: 100%;
@@ -296,12 +298,13 @@
   pointer-events: none;
 }
 /* the frame and shadow belong to the picture underneath; the layer carries only the new screen */
-.hero__screen .hero__ghost img { box-shadow: none; background: none; }
+.hero__screen .hero__ghost { box-shadow: none; }
+.hero__screen .hero__ghost img { background: none; }
 .hero__screen--desktop {
   position: relative;
   width: 100%;
 }
-.hero__screen--desktop img {
+.hero__screen--desktop picture {
   box-shadow: 0 0 0 1px rgba(38, 54, 54, .06), 0 4px 4px -2px rgba(15, 28, 41, .15), 0 12px 12px -6px rgba(38, 54, 54, .06), 0 24px 24px -12px rgba(38, 54, 54, .06);
 }
 .hero__screen--phone {
@@ -311,7 +314,7 @@
   width: 21%;
   border-radius: clamp(12px, 2.2cqw, 28px);
 }
-.hero__screen--phone img {
+.hero__screen--phone picture {
   /* the first ring is the bezel */
   box-shadow: 0 0 0 clamp(3px, .47cqw, 6px) rgba(15, 28, 41, .15), 0 8px 8px -4px rgba(15, 28, 41, .15), 0 16px 16px -6px rgba(15, 28, 41, .15), 0 32px 24px -12px rgba(38, 54, 54, .06);
 }
@@ -426,7 +429,7 @@
     translate: var(--hero-desk-x) var(--hero-desk-y);
     border-radius: 7px;
   }
-  .hero__screen--desktop img {
+  .hero__screen--desktop picture {
     box-shadow: 0 0 0 .6px rgba(38, 54, 54, .06), 0 2px 2px -1px rgba(15, 28, 41, .15), 0 7px 7px -3.5px rgba(38, 54, 54, .06), 0 14px 14px -7px rgba(38, 54, 54, .06);
   }
   .hero__screen--phone {
@@ -435,7 +438,7 @@
     translate: var(--hero-phone-x) var(--hero-phone-y);
     border-radius: 22px;
   }
-  .hero__screen--phone img {
+  .hero__screen--phone picture {
     box-shadow: 0 0 0 4px rgba(15, 28, 41, .15), 0 8px 8px -4px rgba(15, 28, 41, .15), 0 16px 16px -6px rgba(15, 28, 41, .15), 0 32px 24px -12px rgba(38, 54, 54, .06);
   }
   .hero__screens[data-main="desktop"] .hero__screen--phone {
@@ -450,12 +453,12 @@
      picture, around its centre, on top of the button's transform; two names per
      direction so a change of data-main restarts them. Gated on data-swapped, which
      hero.js sets on the first swap, so nothing moves on page load */
-  .hero__screen img { --tilt: calc(var(--hero-tilt) * .5); }
-  .hero__screen--phone img { --tilt: var(--hero-tilt); }
-  .hero__screens[data-swapped][data-main="phone"] .hero__screen--phone img,
-  .hero__screens[data-swapped][data-main="phone"] .hero__screen--desktop img { animation: hero-tilt-ccw var(--hero-swap) var(--hero-ease); }
-  .hero__screens[data-swapped][data-main="desktop"] .hero__screen--phone img,
-  .hero__screens[data-swapped][data-main="desktop"] .hero__screen--desktop img { animation: hero-tilt-cw var(--hero-swap) var(--hero-ease); }
+  .hero__screen picture { --tilt: calc(var(--hero-tilt) * .5); }
+  .hero__screen--phone picture { --tilt: var(--hero-tilt); }
+  .hero__screens[data-swapped][data-main="phone"] .hero__screen--phone picture,
+  .hero__screens[data-swapped][data-main="phone"] .hero__screen--desktop picture { animation: hero-tilt-ccw var(--hero-swap) var(--hero-ease); }
+  .hero__screens[data-swapped][data-main="desktop"] .hero__screen--phone picture,
+  .hero__screens[data-swapped][data-main="desktop"] .hero__screen--desktop picture { animation: hero-tilt-cw var(--hero-swap) var(--hero-ease); }
   .hero__screen--phone::before {
     content: '';
     position: absolute;
@@ -503,5 +506,5 @@
 .hero--no-hint .hero__screen::after { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero__screen, .hero__screen::before, .hero__screen::after, .hero__screen img, .hero__tab, .hero__tab::before, .hero__tab::after { transition: none; animation: none; }
+  .hero__screen, .hero__screen::before, .hero__screen::after, .hero__screen picture, .hero__screen img, .hero__tab, .hero__tab::before, .hero__tab::after { transition: none; animation: none; }
 }
