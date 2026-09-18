@@ -123,7 +123,9 @@ ${vars.join('\n')}
     defaults,
     presets: [{ label: 'worksection.com', patch: Object.assign({}, defaults) }],
     acceptance: [
-      { id: 'compact-class-toggles', run: () => root.classList.add('site-header--compact'), expect: () => compacted() },
+      // the proofs before this row re-created the scroll observer (sticky on/off); its first notification would
+      // take a hand-added class off again, so let it land before the class goes on
+      { id: 'compact-class-toggles', run: () => new Promise(res => setTimeout(() => { root.classList.add('site-header--compact'); res(); }, 150)), expect: () => compacted() },
       { id: 'sheet-opens-and-closes', run: () => bar.open(), expect: () => bar.isOpen ? (bar.close(), !bar.isOpen) : 'did not open' },
       { id: 'copies-follow-the-master', run: ctx => ctx.set({ radius: 12, alpha: 50 }), expect: () => {
         const bars = [...document.querySelectorAll('.site-header')];
