@@ -221,16 +221,18 @@ body.no-panel .panel { display: none; }
 .notes { position: absolute; inset: 0; z-index: var(--z-notes); pointer-events: none; overflow: hidden; }
 .notes > * { position: absolute; top: 0; left: 0; will-change: translate; }
 .notes.is-picking { pointer-events: auto; cursor: crosshair; }
-/* the pin: 22 px of accent with a ring, and a 36 px hit area around it so it is easy to catch */
+/* the pin: 22 px of accent with a ring, sitting on the element's top-left corner from above, its
+   sharp corner (bottom-left) the tail that points at the element; a 36 px hit area so it is easy to
+   catch. The hover is spelled out because the shell's generic button:hover would wash it out. */
 .note-pin {
-  pointer-events: auto; position: relative; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 11px 11px 11px 3px;
-  background: var(--note-pin); color: #fff;
+  pointer-events: auto; position: relative; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 11px 11px 11px 2px;
+  background: var(--note-pin); color: #fff; transform-origin: 0 100%;
   box-shadow: 0 0 0 2px var(--note-pin-ring), 0 10px 24px -6px oklab(from var(--note-pin) l a b / .7), 0 2px 6px -2px rgba(0,0,0,.4);
   font-size: 11px; font-weight: 600; line-height: 22px; font-variant-numeric: tabular-nums; cursor: pointer;
   transition: scale .12s, opacity .12s, background .12s;
 }
 .note-pin::before { content: ""; position: absolute; inset: -7px; border-radius: 50%; }
-.note-pin:hover { scale: 1.12; }
+.note-pin:hover { scale: 1.12; background: var(--note-pin); color: #fff; border: 0; }
 .note-pin:active { scale: 1.04; }
 .note-pin.is-open { scale: 1.12; box-shadow: 0 0 0 2px var(--note-pin-ring), 0 0 0 4px var(--note-pin), 0 10px 24px -6px oklab(from var(--note-pin) l a b / .7); }
 .note-pin.is-done { background: oklab(0.5 0 0); opacity: .7; }

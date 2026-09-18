@@ -1087,7 +1087,7 @@
   // anything scrolled out of the stage's window hidden with it
   const ptr = { x: -1, y: -1 };
   document.addEventListener('pointermove', e => { ptr.x = e.clientX; ptr.y = e.clientY; }, { passive: true });
-  const overPin = r => ptr.x >= r.left - 18 && ptr.x <= r.left + 18 && ptr.y >= r.top - 18 && ptr.y <= r.top + 18; // the 22 px pin plus its hit area, centred on the corner
+  const overPin = r => ptr.x >= r.left - 7 && ptr.x <= r.left + 29 && ptr.y >= r.top - 29 && ptr.y <= r.top + 7; // the 22 px pin above the corner, plus its hit area
   function drawNotes(m) {
     const n = m.notes, layer = m.els.notes;
     const on = tools.notes || !!n.pick || !!n.compose;
@@ -1123,7 +1123,7 @@
       p.box.hidden = !show || !(p.hover || n.open === p.row.id);
       if (p.card) p.card.hidden = !show;
       if (!show) continue;
-      put(p.el, r, -11, -11);
+      put(p.el, r, 0, -22); // bottom-left corner of the pin on the element's top-left corner
       if (live) fit(p.box, live);
       if (p.card) beside(p.card, r);
     }
