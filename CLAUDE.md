@@ -151,8 +151,9 @@ list lives in localStorage), notes pinned to a module's elements (table
 `notes`, a CSS path from the frame + text; the `.notes` layer over the stage,
 the bar at the bottom of the stage: toggle `N`, prev / next, new `Shift+N`,
 Markdown copy; list in the panel with a kind filter, link `#<id>?n=<note>` that
-restores the module's state; a note is a thread: kind, the element's styles,
-replies, `@name` mentions; the bell by the home button lists replies and
+restores the module's state; a note points at an element or a dragged region
+(`area`, fractions of the element), a lost one is pointed again from the list;
+a note is a thread: kind, the element's styles, replies, `@name` mentions; the bell by the home button lists replies and
 mentions for the signed-in person — table `notifications`, written by a
 trigger; same sign-in), the optional plate under the block
 (`stage.bg`; off by default, the block sits on the canvas), theme, panel hide, shortcuts (`?`), mobile

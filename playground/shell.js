@@ -177,8 +177,10 @@
     body.append(hint);
     // the notes layer sits over the body, outside its stacking context: no module z-index reaches it
     const notes = h('div', 'notes'); notes.hidden = true;
-    notes.addEventListener('pointermove', e => pickMove(m, e));
-    notes.addEventListener('click', e => { if (m.notes.pick && !e.target.closest('.note-card, .note-pin')) pickChoose(m, e); });
+    notes.addEventListener('pointerdown', e => pickDown(m, e));
+    notes.addEventListener('pointermove', e => { pickMove(m, e); pickDrag(m, e); });
+    notes.addEventListener('pointerup', e => pickUp(m, e));
+    notes.addEventListener('click', e => { if (m.notes.pick && !m.notes.pick.drag && !m.notes.pick.wasDrag && !e.target.closest('.note-card, .note-pin')) pickChoose(m, e); m.notes.pick && (m.notes.pick.wasDrag = false); });
     stage.append(body, notes);
     m.notes = { rows: null, pins: [], open: null, pick: null, compose: null };
     const panel = h('aside', 'panel');
@@ -989,6 +991,15 @@
     field.addEventListener('blur', () => setTimeout(() => { box.hidden = true; }, 150));
   }
   const noteLabel = sel => sel.split(' > ').pop().replace(/:nth-of-type\(\d+\)/, '');
+  // a region: fractions of the element's box, so it follows the element through any width
+  const areaOf = (r, box) => ({ x: +((box.left - r.left) / r.width).toFixed(4), y: +((box.top - r.top) / r.height).toFixed(4), w: +(box.width / r.width).toFixed(4), h: +(box.height / r.height).toFixed(4) });
+  const rectOf = (r, a) => { if (!a) return r; const left = r.left + r.width * a.x, top = r.top + r.height * a.y, width = r.width * a.w, height = r.height * a.h; return { left, top, width, height, right: left + width, bottom: top + height }; };
+  const noteRect = (m, row) => { const t = noteTarget(m, row.selector); return t ? rectOf(t.getBoundingClientRect(), row.area) : null; };
+  const noteName = row => (row.area ? 'область у ' : '') + (row.label || noteLabel(row.selector));
+  // what has been looked at in this browser: a pin gets a dot when a note has replies it has not shown yet
+  const SEEN_KEY = STORE + 'seen';
+  const seenReplies = id => store.get(SEEN_KEY, {})[id] || 0;
+  const markSeen = row => { const all = store.get(SEEN_KEY, {}); all[row.id] = (row.note_replies || []).length; store.set(SEEN_KEY, all); };
   const noteMine = row => !REMOTE.url || (auth.user && row.owner === auth.user.id);
 
   async function loadNotes(m) {
@@ -1009,6 +1020,7 @@
     for (const p of n.pins) { p.el.remove(); p.box.remove(); if (p.card) p.card.remove(); if (p.peek) p.peek.remove(); }
     n.pins = n.rows.map((row, i) => {
       const el = h('button', 'note-pin', String(i + 1)); el.type = 'button'; el.dataset.kind = row.kind || 'change';
+      el.classList.toggle('has-new', (row.note_replies || []).length > seenReplies(row.id));
       const box = h('div', 'note-box');
       el.addEventListener('pointerenter', () => { p.hover = true; if (!p.card && !p.peek) { p.peek = notePeek(m, p); layer.append(p.peek); } });
       el.addEventListener('pointerleave', () => { p.hover = false; if (p.peek) { p.peek.remove(); p.peek = null; } });
@@ -1028,6 +1040,7 @@
     const p = pinOf(m, id); if (!p) return;
     n.open = id;
     p.el.classList.add('is-open');
+    p.el.classList.remove('has-new'); markSeen(p.row);
     if (p.peek) { p.peek.remove(); p.peek = null; }
     p.card = noteCard(m, p);
     m.els.notes.append(p.card);
@@ -1045,6 +1058,7 @@
     if (!tools.notes) setTool('notes', true);
     const p = pinOf(m, id); if (!p) return;
     const t = noteTarget(m, p.row.selector);
+    if (!t) { notesStatus(m, 'Елемента цієї нотатки вже нема — «Вказати» прив\'яже її знову', true); return; }
     if (t) t.scrollIntoView({ block: 'center', inline: 'center' });
     if (m.notes.open !== id) toggleNote(m, id);
   }
@@ -1074,7 +1088,7 @@
           <button type="button" class="icon" data-do="close" title="Закрити (Esc)">${ICON.close}</button></span></div>
         <div class="note-card__menu" hidden><button type="button" data-do="link">${ICON.link}Скопіювати посилання</button>${row.snapshot ? `<button type="button" data-do="state">${ICON.reset}Показати стан нотатки</button>` : ''}${mine ? `<button type="button" data-do="edit">${NOTE_ICON.pen}Редагувати</button><button type="button" class="is-bad" data-do="del">${NOTE_ICON.trash}Видалити</button>` : ''}</div>
         <div class="note-card__text">${mentions(row.text)}</div>
-        <div class="note-card__chips"><span class="note-card__kind" data-kind="${esc(row.kind || 'change')}">${esc(kindLabel(row.kind))}</span><code class="note-card__sel" title="${esc(row.selector)}">${esc(row.label || noteLabel(row.selector))}</code></div>
+        <div class="note-card__chips"><span class="note-card__kind" data-kind="${esc(row.kind || 'change')}">${esc(kindLabel(row.kind))}</span><code class="note-card__sel" title="${esc(row.selector)}">${esc(noteName(row))}</code></div>
         ${row.styles && Object.keys(row.styles).length ? `<details class="note-card__styles"><summary>Стилі елемента <small>${Object.keys(row.styles).length}</small></summary><dl>${Object.entries(row.styles).sort((a, b) => STYLE_PROPS.indexOf(a[0]) - STYLE_PROPS.indexOf(b[0])).map(([k, v]) => `<dt>${esc(k)}</dt><dd title="${esc(v)}">${esc(v)}</dd>`).join('')}</dl></details>` : ''}
         ${(row.note_replies || []).length ? `<div class="note-card__thread">${row.note_replies.map(r => `<div class="note-card__reply" data-reply="${esc(r.id)}"><div class="note-card__head">${person(r.author, r.created_at)}${!REMOTE.url || (auth.user && r.owner === auth.user.id) ? `<button type="button" class="icon" data-do="unreply" title="Видалити відповідь">${ICON.close}</button>` : ''}</div><div class="note-card__text">${mentions(r.text)}</div></div>`).join('')}</div>` : ''}
         <form class="note-card__answer"><input type="text" placeholder="Відповісти…" maxlength="600" autocomplete="off"><button type="submit" class="icon" title="Надіслати (Enter)">${NOTE_ICON.send}</button></form>`;
@@ -1087,6 +1101,7 @@
         try {
           const r = await notesDb.reply(row.id, { text, author: auth.user ? auth.user.name : store.get(STORE + 'author', '') || null });
           row.note_replies = (row.note_replies || []).concat([r]);
+          markSeen(row);
           render(); renderNotesList(m); $('input', card).focus();
         } catch (err) { notesStatus(m, 'Не вдалося відповісти: ' + err.message, true); }
       });
@@ -1136,20 +1151,60 @@
   // a glance at a pin: the text, without opening the thread
   function notePeek(m, p) {
     const el = h('div', 'note-peek');
-    el.innerHTML = `<b>${esc(p.row.author || '')}</b>${esc(p.row.text)}${(p.row.note_replies || []).length ? `<small>${p.row.note_replies.length} відп.</small>` : ''}`;
+    const nr = (p.row.note_replies || []).length, unseen = nr > seenReplies(p.row.id);
+    el.innerHTML = `<div class="note-card__head">${person(p.row.author, p.row.created_at)}</div><div class="note-peek__text">${esc(p.row.text)}</div>${nr ? `<small${unseen ? ' class="is-new"' : ''}>${nr} відп.${unseen ? ' · є нові' : ''}</small>` : ''}`;
     return el;
   }
 
   // a new note: pick an element under the pointer, then say what about it
-  function startPick(m) {
+  function startPick(m, rebind) {
     const n = m.notes;
     cancelPick(m);
     if (!tools.notes) setTool('notes', true);
     if (!tools.notebar) setTool('notebar', true);
-    n.pick = { el: null, box: h('div', 'note-box note-box--pick'), tag: h('div', 'note-tag') };
+    n.pick = { el: null, box: h('div', 'note-box note-box--pick'), tag: h('div', 'note-tag'), rebind: rebind || null, down: null, drag: null };
     m.els.notes.append(n.pick.box, n.pick.tag);
     m.els.notes.classList.add('is-picking');
-    notesStatus(m, 'Клацни елемент, який хочеш прокоментувати. Esc — скасувати');
+    notesStatus(m, (rebind ? `Вкажи заново, до чого нотатка «${rebind.text.slice(0, 30)}»: ` : '') + 'клацни елемент або обведи область. Esc — скасувати');
+  }
+  // the region being drawn: from the point the button went down to the pointer
+  function pickDown(m, e) {
+    const n = m.notes; if (!n.pick || e.button !== 0 || e.target.closest('.note-card')) return;
+    n.pick.down = { x: e.clientX, y: e.clientY };
+  }
+  function pickDrag(m, e) {
+    const n = m.notes; if (!n.pick || !n.pick.down) return;
+    const d = n.pick.down, dx = e.clientX - d.x, dy = e.clientY - d.y;
+    if (!n.pick.drag && Math.hypot(dx, dy) < 5) return;
+    const sr = m.els.stage.getBoundingClientRect();
+    const left = Math.min(d.x, e.clientX), top = Math.min(d.y, e.clientY);
+    n.pick.drag = { left, top, width: Math.abs(dx), height: Math.abs(dy), right: left + Math.abs(dx), bottom: top + Math.abs(dy) };
+    n.pick.tag.textContent = `${Math.round(n.pick.drag.width)} × ${Math.round(n.pick.drag.height)}`;
+    void sr;
+  }
+  function pickUp(m, e) {
+    const n = m.notes; if (!n.pick || !n.pick.down) return;
+    const drag = n.pick.drag; n.pick.down = null; n.pick.drag = null;
+    if (!drag) return; // a click: the click handler takes the element
+    n.pick.wasDrag = true;
+    if (drag.width < 8 || drag.height < 8) return;
+    // the region belongs to the smallest element that holds it whole, so it follows that element's box
+    let el = underPointer(m, drag.left + drag.width / 2, drag.top + drag.height / 2) || m.els.frame.firstElementChild;
+    const holds = x => { const r = x.getBoundingClientRect(); return r.left <= drag.left + 1 && r.top <= drag.top + 1 && r.right >= drag.right - 1 && r.bottom >= drag.bottom - 1; };
+    while (el && el !== m.els.frame && !holds(el)) el = el.parentElement;
+    if (!el || el === m.els.frame) el = m.els.frame.firstElementChild;
+    if (!el) return;
+    const area = areaOf(el.getBoundingClientRect(), drag);
+    if (n.pick.rebind) rebindNote(m, n.pick.rebind, el, area); else startCompose(m, el, '', area);
+  }
+  async function rebindNote(m, row, el, area) {
+    const selector = pathTo(el, m.els.frame), label = noteLabel(selector);
+    try {
+      await notesDb.update(row.id, { selector, label, area: area || null });
+      Object.assign(row, { selector, label, area: area || null });
+      cancelPick(m); buildPins(m); renderNotesList(m); openNote(m, row.id);
+      notesStatus(m, 'Нотатку перев\'язано');
+    } catch (e) { notesStatus(m, 'Не вдалося перев\'язати: ' + e.message, true); }
   }
   function cancelPick(m) {
     const n = m.notes;
@@ -1177,9 +1232,9 @@
   function pickChoose(m, e) {
     const n = m.notes; if (!n.pick) return;
     const el = underPointer(m, e.clientX, e.clientY); if (!el) return;
-    startCompose(m, el);
+    if (n.pick.rebind) rebindNote(m, n.pick.rebind, el, null); else startCompose(m, el);
   }
-  function startCompose(m, el, text) {
+  function startCompose(m, el, text, area) {
     const n = m.notes;
     cancelPick(m);
     m.els.notes.classList.add('is-picking'); // still a modal moment on the stage
@@ -1189,12 +1244,13 @@
       <textarea rows="3" placeholder="Що тут не так, як на сайті, або на що звернути увагу. @ім'я — сказати комусь" maxlength="600"></textarea>
       <code class="note-card__sel"></code>
       <div class="note-card__row"><button type="button" data-do="up" title="Взяти батьківський елемент">Ширше</button><span class="note-card__tools"><button type="button" data-do="cancel">Скасувати</button><button type="button" class="primary" data-do="save">Зберегти</button></span></div>`;
-    n.compose = { el, card, box: h('div', 'note-box note-box--pick'), hover: false, last: null };
+    n.compose = { el, card, box: h('div', 'note-box note-box--pick'), hover: false, last: null, area: area || null };
     card.addEventListener('pointerenter', () => { n.compose.hover = true; });
     card.addEventListener('pointerleave', () => { n.compose.hover = false; });
     const sel = () => pathTo(n.compose.el, m.els.frame);
     const label = $('code', card), ta = $('textarea', card);
-    const relabel = () => { label.textContent = noteLabel(sel()); label.title = sel(); };
+    const relabel = () => { label.textContent = (n.compose.area ? 'область у ' : '') + noteLabel(sel()); label.title = sel(); };
+    if (area) $('[data-do="up"]', card).hidden = true; // a region is already what it is
     relabel();
     if (text) ta.value = text;
     mentionable(ta, card);
@@ -1205,7 +1261,7 @@
       const b = e.target.closest('[data-do]'); if (!b) return;
       if (b.dataset.do === 'cancel') cancelPick(m);
       else if (b.dataset.do === 'up') { const up = n.compose.el.parentElement; if (up && up !== m.els.frame) { n.compose.el = up; relabel(); } }
-      else if (b.dataset.do === 'save') saveNote(m, { selector: sel(), label: noteLabel(sel()), text: ta.value.trim(), kind: n.compose.kind, styles: snapStyles(n.compose.el), snapshot: snapshot(m) });
+      else if (b.dataset.do === 'save') saveNote(m, { selector: sel(), label: noteLabel(sel()), area: n.compose.area, text: ta.value.trim(), kind: n.compose.kind, styles: n.compose.area ? null : snapStyles(n.compose.el), snapshot: snapshot(m) });
     });
     ta.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); $('[data-do="save"]', card).click(); } if (e.key === 'Escape') { e.stopPropagation(); cancelPick(m); } });
     m.els.notes.append(n.compose.box, card);
@@ -1215,7 +1271,7 @@
     if (!note.text) { notesStatus(m, 'Напиши, що тут не так', true); return; }
     if (REMOTE.url && !auth.user) { openSignIn(m, { note }); return; }
     try {
-      const row = await notesDb.save({ module: m.id, selector: note.selector, label: note.label, text: note.text, kind: note.kind || 'change', styles: note.styles || null, snapshot: note.snapshot || null, author: auth.user ? auth.user.name : store.get(STORE + 'author', '') || null });
+      const row = await notesDb.save({ module: m.id, selector: note.selector, label: note.label, area: note.area || null, text: note.text, kind: note.kind || 'change', styles: note.styles || null, snapshot: note.snapshot || null, author: auth.user ? auth.user.name : store.get(STORE + 'author', '') || null });
       people = null; // a new author may be among the handles now
       cancelPick(m);
       m.notes.rows = (m.notes.rows || []).concat([row]);
@@ -1242,17 +1298,35 @@
     // multiplies whatever `transform` holds (the offset would fly by 12 %), while `translate` comes first
     const put = (el, r, dx, dy) => { el.style.translate = `${Math.round(r.left - sr.left + (dx || 0))}px ${Math.round(r.top - sr.top + (dy || 0))}px`; };
     const fit = (box, r) => { put(box, r); box.style.width = r.width + 'px'; box.style.height = r.height + 'px'; };
-    const beside = (card, r) => {
-      // under the element, left-aligned; flipped above or pulled left when the stage runs out
-      const w = card.offsetWidth || 260, hh = card.offsetHeight || 80;
-      let x = r.left - sr.left, y = r.bottom - sr.top + 8;
-      if (x + w > sr.width - 8) x = Math.max(8, sr.width - 8 - w);
-      if (y + hh > sr.height - 8) y = Math.max(8, r.top - sr.top - 8 - hh);
+    // the card stands beside what it is about, never over it: to the right, else left, else under,
+    // else above; the wire then runs from the pin to the card's nearest edge
+    const beside = (card, r, pinAt) => {
+      const w = card.offsetWidth || 288, hh = card.offsetHeight || 80, G = 14;
+      const L = r.left - sr.left, T = r.top - sr.top, R = r.right - sr.left, B = r.bottom - sr.top;
+      let x, y;
+      if (R + G + w <= sr.width - 8) { x = R + G; y = T - 8; }
+      else if (L - G - w >= 8) { x = L - G - w; y = T - 8; }
+      else if (B + G + hh <= sr.height - 8) { x = L; y = B + G; }
+      else { x = L; y = T - G - hh; }
+      x = Math.min(Math.max(8, x), Math.max(8, sr.width - 8 - w));
+      y = Math.min(Math.max(8, y), Math.max(8, sr.height - 8 - hh));
       card.style.translate = `${Math.round(x)}px ${Math.round(y)}px`;
+      if (!pinAt) return;
+      // the wire: from the pin's centre to the middle of the card's edge that faces it
+      const px = pinAt.x - sr.left, py = pinAt.y - sr.top;
+      const ex = px < x ? x : px > x + w ? x + w : px, ey = py < y ? y : py > y + hh ? y + hh : py;
+      const cx = Math.min(Math.max(px, x), x + w), cy = Math.min(Math.max(py, y), y + hh);
+      wire(px, py, px < x || px > x + w ? ex : cx, py < y || py > y + hh ? ey : cy);
     };
+    let wireEl = layer.querySelector('.note-wire');
+    if (!wireEl) { wireEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); wireEl.setAttribute('class', 'note-wire'); layer.prepend(wireEl); }
+    wireEl.setAttribute('viewBox', `0 0 ${sr.width} ${sr.height}`); wireEl.style.width = sr.width + 'px'; wireEl.style.height = sr.height + 'px';
+    let wired = false;
+    const wire = (x1, y1, x2, y2) => { wired = true; wireEl.innerHTML = `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/><circle cx="${x2}" cy="${y2}" r="2.5"/>`; };
     for (const p of n.pins) {
       const t = noteTarget(m, p.row.selector);
-      const live = t && t.getBoundingClientRect();
+      const elRect = t && t.getBoundingClientRect();
+      const live = t && rectOf(elRect, p.row.area);
       // A pin overlaps its element, so pointing at it ends the element's hover; if the element moves
       // on hover (a lifted card, a scaled screenshot), the pin would slide out from under the pointer,
       // the hover would return, and so on — a flicker. So while the pointer is inside the pin (its
@@ -1260,29 +1334,38 @@
       // stays where it was; the outline keeps following the element.
       const held = (p.last && overPin(p.last)) || p.cardHover;
       const r = held && p.last ? p.last : live;
-      if (!held) p.last = live;
+      // a region's card keeps clear of the whole element the region sits in, so neighbours stay visible
+      const avoidLive = p.row.area ? elRect : live;
+      const avoid = held && p.lastAvoid ? p.lastAvoid : avoidLive;
+      if (!held) { p.last = live; p.lastAvoid = avoidLive; }
       const show = !!r && seen(r) && !(r.width === 0 && r.height === 0);
       p.el.hidden = !show;
       p.box.hidden = !show || !(p.hover || n.open === p.row.id);
       if (p.card) p.card.hidden = !show;
       if (!show) continue;
       put(p.el, r, 0, -22); // bottom-left corner of the pin on the element's top-left corner
+      p.box.classList.toggle('note-box--area', !!p.row.area);
       if (live) fit(p.box, live);
-      if (p.card) beside(p.card, r);
+      // a region's card keeps clear of the whole element the region sits in, so neighbours stay visible
+      if (p.card) beside(p.card, avoid || r, { x: r.left + 11, y: r.top - 11 });
       if (p.peek) beside(p.peek, r);
     }
     if (n.pick) {
-      const r = n.pick.el && n.pick.el.getBoundingClientRect();
+      const r = n.pick.drag || (n.pick.el && n.pick.el.getBoundingClientRect());
       n.pick.box.hidden = !r; n.pick.tag.hidden = !r;
+      n.pick.box.classList.toggle('note-box--area', !!n.pick.drag);
       if (r) { fit(n.pick.box, r); put(n.pick.tag, r, 0, -22); }
     }
     if (n.compose) {
-      const live = n.compose.el.getBoundingClientRect();
+      const elRect = n.compose.el.getBoundingClientRect(), live = rectOf(elRect, n.compose.area);
       const r = n.compose.hover && n.compose.last ? n.compose.last : live; // same hold while typing
-      if (!n.compose.hover) n.compose.last = live;
+      const avoid = n.compose.hover && n.compose.lastAvoid ? n.compose.lastAvoid : (n.compose.area ? elRect : live);
+      if (!n.compose.hover) { n.compose.last = live; n.compose.lastAvoid = n.compose.area ? elRect : live; }
+      n.compose.box.classList.toggle('note-box--area', !!n.compose.area);
       fit(n.compose.box, live);
-      beside(n.compose.card, r);
+      beside(n.compose.card, avoid, { x: r.left, y: r.top });
     }
+    if (!wired) wireEl.innerHTML = '';
   }
   function notesLoop() {
     if (active && !active.els.app.hidden && active.notes) drawNotes(active);
@@ -1302,7 +1385,7 @@
     box.innerHTML = rows.length ? rows.map((r, i) => {
       if (f !== 'all' && (r.kind || 'change') !== f) return '';
       const lost = !noteTarget(m, r.selector);
-      return `<div class="notes__row${r.done ? ' is-done' : ''}${lost ? ' is-lost' : ''}" data-id="${esc(r.id)}" data-kind="${esc(r.kind || 'change')}"><button type="button" class="notes__item" data-do="open" title="${esc(lost ? 'Елемент не знайдено: ' + r.selector : r.selector)}"><b>${i + 1}</b><span>${esc(r.text)}</span><small>${esc([r.label || noteLabel(r.selector), r.author, (r.note_replies || []).length ? r.note_replies.length + ' відп.' : '', lost ? 'елемента вже нема' : ''].filter(Boolean).join(' · '))}</small></button>${noteMine(r) ? `<button type="button" class="icon" data-do="del" title="Видалити">${ICON.close}</button>` : ''}</div>`;
+      return `<div class="notes__row${r.done ? ' is-done' : ''}${lost ? ' is-lost' : ''}" data-id="${esc(r.id)}" data-kind="${esc(r.kind || 'change')}"><button type="button" class="notes__item" data-do="open" title="${esc(lost ? 'Елемент не знайдено: ' + r.selector : r.selector)}"><b>${i + 1}</b><span>${esc(r.text)}</span><small>${esc([noteName(r), r.author, (r.note_replies || []).length ? r.note_replies.length + ' відп.' : '', lost ? 'елемента вже нема' : ''].filter(Boolean).join(' · '))}</small></button>${lost ? `<button type="button" class="notes__rebind" data-do="rebind" title="Вказати елемент або область заново">Вказати</button>` : ''}${noteMine(r) ? `<button type="button" class="icon" data-do="del" title="Видалити">${ICON.close}</button>` : ''}</div>`;
     }).join('') : '<p class="shared__empty">Ще нема нотаток: «Нотатка» внизу сцени — і клацни елемент</p>';
     if (m === active) syncNotebar();
   }
@@ -1330,11 +1413,12 @@
     if (act === 'new') return startPick(m);
     if (act === 'copy') {
       const rows = m.notes.rows || [];
-      const md = rows.map((r, i) => `- [${r.done ? 'x' : ' '}] ${i + 1}. \`${r.label || noteLabel(r.selector)}\` — ${r.text}${r.author ? ` (${r.author})` : ''}`).join('\n');
+      const md = rows.map((r, i) => `- [${r.done ? 'x' : ' '}] ${i + 1}. \`${noteName(r)}\` — ${r.text}${r.author ? ` (${r.author})` : ''}`).join('\n');
       try { await navigator.clipboard.writeText(`## ${m.def.title}\n${md}`); notesStatus(m, 'Список скопійовано як Markdown'); } catch (e) { prompt('Скопіюй', md); }
       return;
     }
     if (act === 'open') return openNote(m, id);
+    if (act === 'rebind') { const row = (m.notes.rows || []).find(r => r.id === id); if (row) startPick(m, row); return; }
     if (act === 'del') {
       if (!confirm('Видалити цю нотатку для всіх?')) return;
       try { await notesDb.remove(id); if (m.notes.open === id) closeNote(m); m.notes.rows = m.notes.rows.filter(r => r.id !== id); buildPins(m); renderNotesList(m); syncToolbar(); }

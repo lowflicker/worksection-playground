@@ -264,6 +264,15 @@ body.no-panel .panel { display: none; }
 .note-pin.is-done { background: oklab(0.5 0 0); opacity: .7; }
 .note-box { pointer-events: none; border-radius: 4px; box-shadow: 0 0 0 1.5px var(--note-fg), 0 0 0 3px oklab(0 0 0 / .55); }
 .note-box--pick { box-shadow: 0 0 0 1.5px var(--accent), 0 0 0 3px oklab(1 0 0 / .8); background: oklab(from var(--accent) l a b / .08); }
+/* a region: a dashed frame with a faint fill, so it reads as «this area», not «this element» */
+.note-box--area { border-radius: 3px; box-shadow: none; outline: 1.5px dashed var(--note-fg); outline-offset: 0; background: oklab(0 0 0 / .06); filter: drop-shadow(0 0 1px oklab(0 0 0 / .6)); }
+.note-box--pick.note-box--area { outline-color: var(--accent); background: oklab(from var(--accent) l a b / .1); filter: none; }
+/* the wire from a pin to its card */
+.note-wire { pointer-events: none; overflow: visible; }
+.note-wire line { stroke: var(--note-pin); stroke-width: 1.5; stroke-dasharray: 3 3; opacity: .9; }
+.note-wire circle { fill: var(--note-pin); }
+/* a pin whose thread has replies not yet looked at */
+.note-pin.has-new::after { content: ""; position: absolute; top: -3px; right: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--kind-bug); box-shadow: 0 0 0 2px var(--note-pin-ring); }
 .note-tag { pointer-events: none; padding: 2px 7px; border-radius: 6px; background: var(--note-bg); color: var(--note-fg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); font: 500 10px/16px ui-monospace, "SF Mono", Menlo, Consolas, monospace; white-space: nowrap; box-shadow: 0 8px 20px -8px rgba(0,0,0,.6); }
 .note-card {
   pointer-events: auto; width: 288px; padding: 12px 12px 10px; border-radius: 14px;
@@ -341,8 +350,12 @@ body.no-panel .panel { display: none; }
 .note-card textarea::placeholder { color: var(--note-faint); }
 /* a glance at a pin: a small dark chip with the text */
 .note-peek { pointer-events: none; max-width: 240px; padding: 7px 10px; border-radius: 10px; background: var(--note-bg); color: var(--note-fg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); box-shadow: 0 12px 32px -12px rgba(0,0,0,.6); font-size: 12px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.note-peek b { display: block; font-size: 10.5px; font-weight: 600; color: var(--note-muted); margin-bottom: 1px; }
-.note-peek small { display: block; margin-top: 2px; font-size: 10.5px; color: var(--note-faint); }
+.note-peek { display: flex; flex-direction: column; gap: 5px; -webkit-line-clamp: unset; }
+.note-peek .note-card__avatar { width: 20px; height: 20px; font-size: 8.5px; }
+.note-peek .note-card__who b { font-size: 11.5px; }
+.note-peek__text { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.note-peek small { font-size: 10.5px; color: var(--note-faint); }
+.note-peek small.is-new { color: #ff9c9c; }
 /* the panel's list */
 .notes__filter { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px; }
 .notes__filter button { height: 22px; padding: 0 7px; font-size: 11px; border-color: transparent; background: transparent; color: var(--muted); }
@@ -353,7 +366,8 @@ body.no-panel .panel { display: none; }
 .notes__row[data-kind="question"] .notes__item b { color: var(--kind-question); }
 .notes__row[data-kind="bug"] .notes__item b { color: var(--kind-bug); }
 .notes__list { display: flex; flex-direction: column; gap: 2px; }
-.notes__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px; align-items: center; }
+.notes__row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 2px; align-items: center; }
+.notes__rebind { height: 24px; padding: 0 8px; font-size: 11px; }
 .notes__row .icon { width: 26px; height: 26px; padding: 0; border: 0; background: transparent; color: var(--muted); border-radius: 6px; opacity: 0; transition: opacity 120ms; }
 .notes__row:hover .icon, .notes__row:focus-within .icon { opacity: 1; }
 .notes__row .icon:hover { background: var(--panel-2); color: var(--text); }

@@ -170,3 +170,6 @@ create trigger notify_on_reply after insert on public.note_replies for each row 
 create or replace view public.note_people with (security_invoker = true) as
   select distinct author as handle from public.notes where author is not null
   union select distinct author from public.note_replies where author is not null;
+
+-- A note may point at a region instead of an element: fractions { x, y, w, h } of the element the selector names.
+alter table public.notes add column if not exists area jsonb;
