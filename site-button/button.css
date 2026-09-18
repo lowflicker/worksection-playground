@@ -64,3 +64,13 @@
    The accent (green) one keeps semibold: it is the call to action. */
 .btn.btn-32 span, .btn.btn-36 span { font: var(--font-body-med-xs); }
 .btn.btn-32.btn-accent span, .btn.btn-36.btn-accent span { font: var(--font-body-semi-xs); }
+
+/* --- label typography ---------------------------------------------------------
+   Two more changes to the site (2026-09). The label is centred by its cap
+   height, not by the line box: text-box trims the half-leading and the
+   descender space, so caps sit exactly in the middle of the button (browsers
+   without text-box keep the line-box centring, as the site has). The dark
+   button tracks its label a touch wider — light type on dark reads tighter
+   than the same type on light. */
+.btn span { text-box: trim-both cap alphabetic; }
+.btn.btn-primary:not(.btn-white) span { letter-spacing: .02em; }
