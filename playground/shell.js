@@ -763,9 +763,19 @@
   function openSignIn(m, extra) {
     if (!signInEl) {
       signInEl = h('div', 'modal');
-      signInEl.innerHTML = `<div class="modal__backdrop"></div><form class="modal__card"><h3>Увійди, щоб зберегти</h3><p>Збережене бачать усі, зберігати можуть люди з @${esc(REMOTE.domain)}. На пошту прийде посилання для входу — відкрий його в цьому ж браузері, повернешся сюди.</p><input type="email" placeholder="ім'я@${esc(REMOTE.domain)}" autocomplete="email" required><p class="modal__status save__status"></p><div class="modal__row"><button type="button" data-do="cancel">Скасувати</button><button type="submit" class="primary">Надіслати посилання</button></div></form>`;
+      signInEl.innerHTML = `<div class="modal__backdrop"></div>
+      <form class="modal__card">
+        <div class="modal__mark"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="3"/><path d="m4 8 8 5.5L20 8"/></svg></div>
+        <h3>Увійди, щоб зберегти</h3>
+        <p class="modal__lead">Збережене бачать усі, а зберігати можуть люди з <b>@${esc(REMOTE.domain)}</b>. На пошту прийде посилання для входу — відкрий його в цьому ж браузері, і повернешся сюди.</p>
+        <label class="modal__field"><span>Робоча пошта</span><input type="email" placeholder="ім'я@${esc(REMOTE.domain)}" autocomplete="email" spellcheck="false" required></label>
+        <p class="modal__sent"><b></b>Відкрий посилання з листа — він може йти хвилину. Ця вкладка почекає.</p>
+        <p class="modal__status"></p>
+        <button type="submit" class="modal__primary">Надіслати посилання</button>
+        <button type="button" class="modal__ghost" data-do="cancel">Скасувати</button>
+      </form>`;
       document.body.append(signInEl);
-      const form = $('form', signInEl), input = $('input', signInEl), status = $('.modal__status', signInEl);
+      const form = $('form', signInEl), card = $('.modal__card', signInEl), input = $('input', signInEl), status = $('.modal__status', signInEl);
       const close = () => { signInEl.hidden = true; };
       $('.modal__backdrop', signInEl).addEventListener('click', close);
       $('[data-do="cancel"]', signInEl).addEventListener('click', close);
@@ -774,13 +784,21 @@
         e.preventDefault();
         const mod = signInEl.module;
         store.set(STORE + 'auth-pending', Object.assign({ module: mod.id, name: mod.sharedNameEl.value.trim() }, signInEl.extra || {}));
-        try { const email = await auth.signIn(input.value); status.textContent = `Лист надіслано на ${email} — відкрий посилання з нього. Лист може йти хвилину.`; status.classList.remove('is-dirty'); input.value = ''; }
-        catch (err) { status.textContent = err.message; status.classList.add('is-dirty'); input.focus(); }
+        status.textContent = '';
+        try {
+          const email = await auth.signIn(input.value);
+          $('.modal__sent b', signInEl).textContent = `Лист пішов на ${email}.`;
+          card.classList.add('is-sent');
+          $('[data-do="cancel"]', signInEl).textContent = 'Закрити';
+          input.value = '';
+        } catch (err) { status.textContent = err.message; input.focus(); }
       });
     }
     signInEl.module = m;
     signInEl.extra = extra || null;
     $('.modal__status', signInEl).textContent = '';
+    $('.modal__card', signInEl).classList.remove('is-sent');
+    $('[data-do="cancel"]', signInEl).textContent = 'Скасувати';
     signInEl.hidden = false;
     $('input', signInEl).focus();
   }
