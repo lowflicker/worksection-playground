@@ -108,6 +108,12 @@
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
     del(k) { try { localStorage.removeItem(k); } catch (e) {} },
   };
+  // Named saves for the developers live in Supabase (table `presets`, see playground/presets.sql). The anon key is
+  // made for browsers — row-level security decides what it may do. Without a url the saves stay in this browser.
+  const REMOTE = {
+    url: 'https://mczdzxxqowefduehllnu.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jemR6eHhxb3dlZmR1ZWhsbG51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3NDIwMzUsImV4cCI6MjEwNTMxODAzNX0.L9aLRgy3wPA_tpJskasQWoQD2sBouRBesYWB_TI7GG0',
+  };
   const b64e = str => btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   const b64d = str => decodeURIComponent(escape(atob(str.replace(/-/g, '+').replace(/_/g, '/'))));
   const stamp = () => new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
@@ -255,6 +261,7 @@
     caret: '<svg class="i" viewBox="0 0 16 16"><path d="m4 6 4 4 4-4"/></svg>',
     code: '<svg class="i" viewBox="0 0 16 16"><path d="M6 4 2 8l4 4M10 4l4 4-4 4"/></svg>',
     link: '<svg class="i" viewBox="0 0 16 16"><path d="M6.5 9.5 9.5 6.5M7 4.5l1-1a2.5 2.5 0 0 1 3.5 3.5l-1 1M9 11.5l-1 1a2.5 2.5 0 0 1-3.5-3.5l1-1"/></svg>',
+    close: '<svg class="i" viewBox="0 0 16 16"><path d="m4.5 4.5 7 7M11.5 4.5l-7 7"/></svg>',
   };
 
   function buildPanel(m) {
@@ -284,6 +291,17 @@
     foot.innerHTML = `<button type="button" class="primary" data-do="code" title="Код блоку з поточними значеннями (C)">${ICON.code}Код</button><button type="button" data-do="link" title="Посилання з поточними налаштуваннями">${ICON.link}Посилання</button>`;
     foot.addEventListener('click', e => { const b = e.target.closest('[data-do]'); if (!b) return; if (b.dataset.do === 'code') openDrawer(); else saveAction(m, 'link'); });
     panel.append(foot);
+
+    // shared saves: the list, a name and the save button
+    const sh = h('div', 'shared');
+    sh.innerHTML = `<div class="shared__list"><p class="shared__empty">…</p></div><div class="shared__add"><input type="text" placeholder="Назва збереження" maxlength="80" autocomplete="off"><button type="button" data-do="save">Зберегти для розробника</button></div><span class="save__status shared__status"></span>`;
+    m.sharedListEl = $('.shared__list', sh);
+    m.sharedNameEl = $('input', sh);
+    m.sharedStatusEl = $('.shared__status', sh);
+    sh.addEventListener('click', e => { const b = e.target.closest('[data-do]'); if (!b) return; const row = b.closest('.shared__row'); sharedAction(m, b.dataset.do, row && row.dataset.id); });
+    m.sharedNameEl.addEventListener('keydown', e => { if (e.key === 'Enter') sharedAction(m, 'save'); });
+    scroll.append(group(m, { title: 'Збережені для розробника' }, sh));
+    renderShared(m);
 
     // presets, random, reset
     if (def.presets || def.random) {
@@ -624,6 +642,87 @@
         const saved = store.get(STORE + m.id, null);
         if (saved) { restoreSnapshot(m, saved); saveStatus(m, 'Відновлено збережене'); }
       } catch (e) { saveStatus(m, 'Не вдалося прочитати збережене'); }
+    }
+  }
+
+  /* ===== Shared saves: a named snapshot for the developers, with a short link (#<id>?p=<save>) =====
+     One interface, two backends: Supabase's REST (plain fetch, no SDK) when REMOTE is set, else this
+     browser's storage — so the panel and the links behave the same either way. A row is
+     { id, module, name, author, snapshot, created_at }. */
+  const SHARED_KEY = STORE + 'shared';
+  const localShared = {
+    all: () => store.get(SHARED_KEY, []),
+    async list(module) { return localShared.all().filter(p => p.module === module); },
+    async get(id) { return localShared.all().find(p => p.id === id) || null; },
+    async save(p) {
+      const item = Object.assign({ id: Math.random().toString(36).slice(2, 10), created_at: new Date().toISOString() }, p);
+      store.set(SHARED_KEY, [item].concat(localShared.all()));
+      return item;
+    },
+    async remove(id) { store.set(SHARED_KEY, localShared.all().filter(p => p.id !== id)); },
+  };
+  const remoteShared = {
+    async call(query, opts) {
+      const headers = { apikey: REMOTE.anonKey, Authorization: 'Bearer ' + REMOTE.anonKey, 'Content-Type': 'application/json', Prefer: 'return=representation' };
+      const r = await fetch(`${REMOTE.url}/rest/v1/presets${query}`, Object.assign({ headers }, opts));
+      if (!r.ok) throw new Error('Supabase ' + r.status);
+      return r.status === 204 ? null : r.json();
+    },
+    list: module => remoteShared.call(`?module=eq.${encodeURIComponent(module)}&select=id,module,name,author,created_at&order=created_at.desc`),
+    get: async id => (await remoteShared.call(`?id=eq.${encodeURIComponent(id)}&select=*`))[0] || null,
+    save: async p => (await remoteShared.call('', { method: 'POST', body: JSON.stringify(p) }))[0],
+    remove: id => remoteShared.call(`?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  };
+  const shared = REMOTE.url && REMOTE.anonKey ? remoteShared : localShared;
+  const sharedLink = (m, id) => `${location.origin}${location.pathname}#${m.id}?p=${id}`;
+  const when = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }); };
+
+  function sharedStatus(m, text, bad) {
+    if (!m.sharedStatusEl) return;
+    m.sharedStatusEl.textContent = text || '';
+    m.sharedStatusEl.classList.toggle('is-dirty', !!bad);
+  }
+  async function renderShared(m) {
+    const box = m.sharedListEl; if (!box) return;
+    let rows;
+    try { rows = await shared.list(m.id); } catch (e) { box.innerHTML = ''; sharedStatus(m, 'Не вдалося прочитати збережені: ' + e.message, true); return; }
+    box.innerHTML = rows.length ? rows.map(p => `<div class="shared__row" data-id="${esc(p.id)}"><button type="button" class="shared__item" data-do="open" title="Відкрити"><b>${esc(p.name)}</b><small>${esc([p.author, when(p.created_at)].filter(Boolean).join(' · '))}</small></button><button type="button" class="icon" data-do="link" title="Скопіювати посилання">${ICON.link}</button><button type="button" class="icon" data-do="del" title="Видалити">${ICON.close}</button></div>`).join('') : '<p class="shared__empty">Ще нічого не збережено</p>';
+  }
+  async function openShared(m, id) {
+    try {
+      const item = await shared.get(id);
+      if (!item) { sharedStatus(m, 'Такого збереження вже нема', true); return false; }
+      restoreSnapshot(m, item.snapshot);
+      history.replaceState(null, '', sharedLink(m, id));
+      sharedStatus(m, `Відкрито «${item.name}»`);
+      return true;
+    } catch (e) { sharedStatus(m, 'Не вдалося відкрити: ' + e.message, true); return false; }
+  }
+  async function sharedAction(m, act, id) {
+    if (act === 'open') return openShared(m, id);
+    if (act === 'link') {
+      const url = sharedLink(m, id);
+      try { await navigator.clipboard.writeText(url); sharedStatus(m, 'Посилання скопійовано'); } catch (e) { prompt('Скопіюй посилання', url); }
+      return;
+    }
+    if (act === 'del') {
+      if (!confirm('Видалити це збереження для всіх?')) return;
+      try { await shared.remove(id); sharedStatus(m, 'Видалено'); renderShared(m); } catch (e) { sharedStatus(m, 'Не вдалося видалити: ' + e.message, true); }
+      return;
+    }
+    if (act === 'save') {
+      const name = m.sharedNameEl.value.trim();
+      if (!name) { m.sharedNameEl.focus(); sharedStatus(m, 'Дай збереженню назву', true); return; }
+      // the author is asked once per browser; a shared list without names is useless to the developers
+      let author = store.get(STORE + 'author', '');
+      if (!author) { author = (prompt('Як тебе підписати в списку збережень?') || '').trim(); if (author) store.set(STORE + 'author', author); }
+      try {
+        const item = await shared.save({ module: m.id, name, author, snapshot: snapshot(m) });
+        m.sharedNameEl.value = '';
+        history.replaceState(null, '', sharedLink(m, item.id));
+        sharedStatus(m, `Збережено «${item.name}», посилання в адресному рядку`);
+        renderShared(m);
+      } catch (e) { sharedStatus(m, 'Не вдалося зберегти: ' + e.message, true); }
     }
   }
 
@@ -1061,7 +1160,13 @@
     modules.forEach(bindSheet);
     setSheet(sheet.state);
     byId[hashView] ? show(hashView) : home();
-    window.addEventListener('hashchange', () => { const id = location.hash.slice(1).split('?')[0]; if (byId[id]) show(id); else if (!id) home(); });
+    // a shared save arrives after the module is up: it is fetched, then laid over the state
+    const sharedOf = q => q && new URLSearchParams(q).get('p');
+    if (byId[hashView] && sharedOf(hashQuery)) openShared(byId[hashView], sharedOf(hashQuery));
+    window.addEventListener('hashchange', () => {
+      const [id, q] = location.hash.slice(1).split('?');
+      if (byId[id]) { show(id); if (sharedOf(q)) openShared(byId[id], sharedOf(q)); } else if (!id) home();
+    });
   }
 
   /* ---------- dev helpers: cheap answers from the console instead of reading files or taking screenshots ---------- */

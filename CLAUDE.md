@@ -38,6 +38,7 @@ Live: https://lowflicker.github.io/worksection-playground/ (Pages, `main`).
 index.html              static page: shell, then each module's css/js + its playground.js. No build.
 playground/shell.js     the shell. Header comment = the module contract. ~750 lines, sectioned.
 playground/shell.css    shell styles; tokens on :root / :root[data-theme="dark"].
+playground/presets.sql  the Supabase table + policies behind «Збережені для розробника». Run once.
 <module>/<name>.css/js  the exported effect. API and options in the file header + README.
 <module>/playground.js  adapter: Playground.register({...}), declarative, 150–380 lines.
 <module>/demo.html      standalone page with the module (works from file://).
@@ -141,7 +142,10 @@ playback?, onShow?, onHide? })`
 
 Shell owns (never reimplement in an adapter): pause / speed, frame width,
 zoom, frame height (`stage.resizableH`), grid, guides, fps, code drawer + copy,
-save / share link (`#<id>?s=<base64>`), the optional plate under the block
+save / share link (`#<id>?s=<base64>`), shared saves for the developers
+(named snapshots in Supabase over plain REST, `REMOTE` in `shell.js`, table in
+`playground/presets.sql`, short link `#<id>?p=<save>`; without `REMOTE` the same
+list lives in localStorage), the optional plate under the block
 (`stage.bg`; off by default, the block sits on the canvas), theme, panel hide, shortcuts (`?`), mobile
 sheet, collapsible groups, the catalogue (`Playground.home()`, key `H`) and the crumb pill with the module switch. localStorage prefix `ws-playground:`.
 Layering is the shell's too: `.stage__body` is a stacking context, so a module
