@@ -60,15 +60,28 @@ select:where(:not(.frame *)), input[type=text]:where(:not(.frame *)) {
 select:focus-visible, input:focus-visible, button:where(:not(.frame *)):focus-visible { outline: 2px solid color-mix(in oklab, var(--accent) 60%, transparent); outline-offset: 1px; }
 kbd.k { display: inline-block; min-width: 18px; padding: 1px 5px; border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 4px; font: 10.5px/14px ui-monospace, Menlo, monospace; color: var(--text); text-align: center; background: var(--panel-2); }
 
-/* --- crumb and actions: two glass pills over the stage, where the topbar used to be --- */
+/* --- the top row: three glass pills over the stage, where the topbar used to be ---
+   One row at every width. The sides keep their natural width, the tool pill in the
+   middle takes what is left and scrolls inside itself only when even that is not
+   enough — so nothing ever wraps to a second row and no control is dropped. */
+.topbar {
+  position: absolute; top: var(--gutter); left: var(--gutter); right: var(--gutter); z-index: 3;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center; gap: 8px; min-width: 0; pointer-events: none;
+}
+.topbar > * { pointer-events: auto; }
 .crumb, .actions {
-  position: absolute; top: var(--gutter); z-index: 3; height: var(--toolbar-h); padding: 0 4px;
+  height: var(--toolbar-h); padding: 0 4px; min-width: 0;
   display: flex; align-items: center; gap: 2px;
   background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
   border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 8px 24px -12px rgba(0,0,0,.35);
 }
-.crumb { left: var(--gutter); }
-.actions { right: var(--gutter); }
+.crumb { position: relative; justify-self: start; }
+.actions { justify-self: end; }
+/* a long module name gives way before anything else does, and never eats
+   more than a fifth of a narrow row — the tools need that space more */
+#crumb-label { min-width: 0; max-width: clamp(70px, 22vw, 320px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crumb__title { min-width: 0; }
 .crumb button, .actions button { height: 26px; border: 0; background: transparent; color: var(--muted); padding: 0 7px; }
 .crumb button:hover, .actions button:hover { background: var(--panel-2); color: var(--text); }
 .actions button.is-on { color: var(--text); background: var(--panel-2); }
@@ -169,14 +182,18 @@ body.no-panel .panel { display: none; }
 
 /* --- tool pill: playback, speed, frame width, zoom, overlays, fps --- */
 .tb {
-  position: absolute; top: var(--gutter); left: 50%; transform: translateX(-50%); z-index: 3;
-  max-width: calc(100% - 280px);
+  justify-self: center; max-width: 100%; min-width: 0;
   display: flex; align-items: center; gap: 4px; height: var(--toolbar-h); padding: 0 6px;
   background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
   border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 8px 24px -12px rgba(0,0,0,.35);
   overflow-x: auto; scrollbar-width: none;
 }
 .tb::-webkit-scrollbar { display: none; }
+/* when the pill scrolls, the overflowing side fades out, so it reads as "more this way" */
+.tb.can-l { --tb-fade: linear-gradient(90deg, transparent 0, #000 14px); }
+.tb.can-r { --tb-fade: linear-gradient(90deg, #000 calc(100% - 14px), transparent 100%); }
+.tb.can-l.can-r { --tb-fade: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%); }
+.tb.can-l, .tb.can-r { mask-image: var(--tb-fade); -webkit-mask-image: var(--tb-fade); }
 .tb__group { flex: none; display: flex; align-items: center; gap: 1px; }
 .tb button { flex: none; height: 24px; padding: 0 7px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 .tb button:hover { color: var(--text); background: var(--panel-2); }
@@ -365,10 +382,8 @@ pre.code .ln--muted { color: var(--muted); }
   .home { height: var(--vh); padding: 24px 16px 48px; }
   .home__brand { font-size: 17px; }
   .stage { height: 100%; }
-  /* two rows: crumb + actions, then the tool pill */
-  .tb { top: calc(var(--gutter) * 2 + var(--toolbar-h)); left: var(--gutter); right: var(--gutter); transform: none; max-width: none; justify-content: flex-start; }
-  .stage__body { gap: 16px; padding: calc(var(--toolbar-h) * 2 + var(--gutter) * 3) 16px calc(var(--sheet-peek) + 24px); }
-  .stage--fill .stage__body { padding-top: calc(var(--toolbar-h) * 2 + var(--gutter) * 3); }
+  .stage__body { gap: 16px; padding: calc(var(--toolbar-h) + var(--gutter) * 2) 16px calc(var(--sheet-peek) + 24px); }
+  .stage--fill .stage__body { padding-top: calc(var(--toolbar-h) + var(--gutter) * 2); }
   .stage__body > :first-child { margin-top: 0; }
   .stage__body > :last-child { margin-bottom: 0; }
   .rz__handle { display: none; }
@@ -407,5 +422,11 @@ pre.code .ln--muted { color: var(--muted); }
   button { height: 36px; }
   .tabs button, .tb button, .seg button, .group__tools button { height: 28px; }
   .drawer__sheet { width: 100%; }
-  .help { right: 8px; left: 8px; width: auto; top: calc(var(--gutter) * 2 + var(--toolbar-h)); }
+  .help { right: 8px; left: 8px; width: auto; top: calc(var(--gutter) + var(--toolbar-h) + 6px); }
+}
+
+/* --- narrow: the row keeps every control, so the pure read-outs step aside --- */
+@media (max-width: 720px) {
+  :root { --gutter: 8px; }
+  .tb__fps { display: none; }
 }

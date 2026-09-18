@@ -4,8 +4,12 @@
     {
       "name": "playground",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "5174"],
-      "port": 5174
+      "runtimeArgs": [
+        "-c",
+        "import os, functools, http.server; port = int(os.environ.get('PORT', '5174')); handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=os.getcwd()); http.server.ThreadingHTTPServer.allow_reuse_address = True; print('serving', os.getcwd(), 'on', port, flush=True); http.server.ThreadingHTTPServer(('', port), handler).serve_forever()"
+      ],
+      "port": 5174,
+      "autoPort": true
     }
   ]
 }

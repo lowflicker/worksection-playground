@@ -115,7 +115,7 @@
 
   const els = {};
   function bindShell() {
-    ['views', 'home', 'catalog', 'crumb', 'btn-home', 'crumb-title', 'crumb-label', 'crumb-menu', 'actions', 'toolbar', 'tb-play', 'tb-rates', 'tb-width', 'tb-width-badge', 'tb-width-in', 'tb-width-sep', 'tb-zooms', 'tb-grid', 'tb-guides', 'tb-fps',
+    ['views', 'home', 'catalog', 'crumb', 'btn-home', 'crumb-title', 'crumb-label', 'crumb-menu', 'topbar', 'actions', 'toolbar', 'tb-play', 'tb-rates', 'tb-width', 'tb-width-badge', 'tb-width-in', 'tb-width-sep', 'tb-zooms', 'tb-grid', 'tb-guides', 'tb-fps',
      'drawer', 'drawer-tabs', 'drawer-code', 'drawer-copy', 'drawer-files', 'drawer-legend', 'drawer-readme',
      'btn-panel', 'btn-theme', 'btn-help', 'help'].forEach(id => { els[id] = document.getElementById(id); });
   }
@@ -626,7 +626,17 @@
   }
 
   /* ===== Stage toolbar ===== */
+  // The pill never wraps to a second row: when the row gets too narrow it scrolls
+  // inside itself, and the side that still has controls fades out as the hint.
+  function syncTbFade() {
+    const tb = els.toolbar, max = tb.scrollWidth - tb.clientWidth;
+    tb.classList.toggle('can-l', tb.scrollLeft > 1);
+    tb.classList.toggle('can-r', max > 1 && tb.scrollLeft < max - 1);
+  }
+
   function buildToolbar() {
+    els.toolbar.addEventListener('scroll', syncTbFade, { passive: true });
+    new ResizeObserver(syncTbFade).observe(els.toolbar);
     els['tb-play'].addEventListener('click', () => setPaused(!paused));
     els['tb-rates'].innerHTML = RATES.map(r => `<button type="button" data-rate="${r}">${r}×</button>`).join('');
     $$('[data-rate]', els['tb-rates']).forEach(b => b.addEventListener('click', () => setRate(+b.dataset.rate)));
@@ -673,6 +683,7 @@
     els['tb-guides'].classList.toggle('is-on', tools.guides);
     document.body.classList.toggle('is-paused', paused);
     syncWidth();
+    syncTbFade();
   }
 
   function syncWidth(force) {
@@ -911,7 +922,8 @@
     els.home.hidden = true;
     document.body.classList.remove('is-home');
     m.els.app.hidden = false;
-    m.els.stage.prepend(els.crumb, els.actions, els.toolbar);
+    els.topbar.append(els.actions);   // back from the catalogue head, at the row's right edge
+    m.els.stage.prepend(els.topbar);
     els['crumb-label'].textContent = m.def.tab || m.def.title;
     $$('[data-view]', els['crumb-menu']).forEach(b => b.classList.toggle('is-active', b.dataset.view === m.id));
     history.replaceState(null, '', '#' + m.id);

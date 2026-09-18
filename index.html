@@ -38,40 +38,17 @@
   </div>
 </section>
 
-<!-- crumb: back to the catalogue and a quick switch, floats over the stage; the actions pill sits at its right edge -->
+<!-- the top row over the stage: crumb on the left, tool pill in the middle, actions on the right.
+     One flexible row at every width: the middle pill takes whatever the sides leave. -->
+<div class="topbar" id="topbar">
+
+<!-- crumb: back to the catalogue and a quick switch -->
 <div class="crumb" id="crumb">
   <button type="button" class="crumb__home" id="btn-home" title="Каталог (H)" aria-label="Каталог">
     <svg class="i" viewBox="0 0 16 16"><path d="M2.5 7.5 8 2.5l5.5 5v6h-4v-4h-3v4h-4z"/></svg>
   </button>
   <button type="button" class="crumb__title" id="crumb-title" aria-haspopup="menu" aria-expanded="false"><span id="crumb-label"></span><svg class="i" viewBox="0 0 16 16"><path d="m4.5 6.5 3.5 3.5 3.5-3.5"/></svg></button>
   <div class="crumb__menu" id="crumb-menu" role="menu" hidden></div>
-</div>
-<div class="actions" id="actions">
-  <button type="button" class="only-desktop" id="btn-panel" title="Сховати або показати панель (\)" aria-label="Панель">
-    <svg class="i" viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M10 2.5v11"/></svg>
-  </button>
-  <button type="button" id="btn-theme" title="Світла або темна тема (T)" aria-label="Тема">
-    <svg class="i" data-icon="sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6 13 13M3 13l1.4-1.4M11.6 4.4 13 3"/></svg>
-    <svg class="i" data-icon="moon" viewBox="0 0 16 16"><path d="M13.5 10A6 6 0 0 1 6 2.5a6 6 0 1 0 7.5 7.5z"/></svg>
-  </button>
-  <button type="button" id="btn-help" title="Клавіші (?)" aria-label="Клавіші">?</button>
-</div>
-
-<div class="help" id="help" hidden>
-  <h3>Клавіші</h3>
-  <dl>
-    <dt><kbd class="k">Space</kbd></dt><dd>пауза / далі</dd>
-    <dt><kbd class="k">[</kbd> <kbd class="k">]</kbd></dt><dd>повільніше / швидше</dd>
-    <dt><kbd class="k">G</kbd></dt><dd>сітка 8 px</dd>
-    <dt><kbd class="k">L</kbd></dt><dd>центральні напрямні</dd>
-    <dt><kbd class="k">Z</kbd></dt><dd>масштаб 50 / 100 / 200 %</dd>
-    <dt><kbd class="k">C</kbd></dt><dd>код</dd>
-    <dt><kbd class="k">\</kbd></dt><dd>сховати панель</dd>
-    <dt><kbd class="k">T</kbd></dt><dd>тема</dd>
-    <dt><kbd class="k">H</kbd></dt><dd>каталог</dd>
-    <dt><kbd class="k">1</kbd>…<kbd class="k">9</kbd></dt><dd>модулі</dd>
-    <dt><kbd class="k">Esc</kbd></dt><dd>закрити</dd>
-  </dl>
 </div>
 
 <!-- stage toolbar: one element, moved into whichever stage is on screen -->
@@ -93,6 +70,37 @@
     <button type="button" id="tb-guides" title="Центральні напрямні (L)" aria-label="Напрямні"><svg class="i" viewBox="0 0 16 16"><path d="M8 1.5v13M1.5 8h13"/><circle cx="8" cy="8" r="2.5"/></svg></button>
   </div>
   <span class="tb__fps" id="tb-fps" title="Кадрів за секунду і час кадру">— fps</span>
+</div>
+
+<div class="actions" id="actions">
+  <button type="button" class="only-desktop" id="btn-panel" title="Сховати або показати панель (\)" aria-label="Панель">
+    <svg class="i" viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M10 2.5v11"/></svg>
+  </button>
+  <button type="button" id="btn-theme" title="Світла або темна тема (T)" aria-label="Тема">
+    <svg class="i" data-icon="sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6 13 13M3 13l1.4-1.4M11.6 4.4 13 3"/></svg>
+    <svg class="i" data-icon="moon" viewBox="0 0 16 16"><path d="M13.5 10A6 6 0 0 1 6 2.5a6 6 0 1 0 7.5 7.5z"/></svg>
+  </button>
+  <button type="button" id="btn-help" title="Клавіші (?)" aria-label="Клавіші">?</button>
+</div>
+
+</div><!-- /.topbar -->
+
+<!-- keyboard cheat-sheet, pinned under the top row -->
+<div class="help" id="help" hidden>
+  <h3>Клавіші</h3>
+  <dl>
+    <dt><kbd class="k">Space</kbd></dt><dd>пауза / далі</dd>
+    <dt><kbd class="k">[</kbd> <kbd class="k">]</kbd></dt><dd>повільніше / швидше</dd>
+    <dt><kbd class="k">G</kbd></dt><dd>сітка 8 px</dd>
+    <dt><kbd class="k">L</kbd></dt><dd>центральні напрямні</dd>
+    <dt><kbd class="k">Z</kbd></dt><dd>масштаб 50 / 100 / 200 %</dd>
+    <dt><kbd class="k">C</kbd></dt><dd>код</dd>
+    <dt><kbd class="k">\</kbd></dt><dd>сховати панель</dd>
+    <dt><kbd class="k">T</kbd></dt><dd>тема</dd>
+    <dt><kbd class="k">H</kbd></dt><dd>каталог</dd>
+    <dt><kbd class="k">1</kbd>…<kbd class="k">9</kbd></dt><dd>модулі</dd>
+    <dt><kbd class="k">Esc</kbd></dt><dd>закрити</dd>
+  </dl>
 </div>
 
 <!-- one .app per module, built by the shell -->
