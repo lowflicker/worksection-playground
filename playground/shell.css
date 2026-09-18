@@ -301,21 +301,23 @@ body.no-panel .panel { display: none; }
 .note-card__styles dt { color: var(--note-faint); }
 .note-card__styles dd { margin: 0; color: var(--note-fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .note-at { background: oklab(from var(--accent) l a b / .25); color: #9fd0ff; border-radius: 4px; padding: 0 2px; font-weight: 500; }
-/* the kind: a small dropdown — icon, word, caret; the list under it with the four, each in its colour */
+/* the kind: a dot in the kind's colour and a word, no box; the list under it is the same four rows */
 .note-kind { position: relative; margin-left: auto; }
-.note-kind__btn { height: 22px; padding: 0 5px 0 6px; gap: 4px; border-color: transparent; background: oklab(1 0 0 / .07); color: var(--note-fg); font-size: 11px; font-weight: 500; }
-.note-kind__btn:hover { background: oklab(1 0 0 / .13); border-color: transparent; }
-.note-kind__btn .i:first-child, .note-kind__menu .i { width: 13px; height: 13px; color: var(--kind-change); }
-.note-kind__btn .i:last-child { width: 11px; height: 11px; color: var(--note-faint); margin-left: -1px; }
+.note-kind__btn, .note-kind__menu button { height: 20px; padding: 0 4px; gap: 6px; border: 0; background: transparent; color: var(--note-muted); font-size: 11px; font-weight: 500; }
+.note-kind__btn:hover, .note-kind__menu button:hover { background: oklab(1 0 0 / .08); border: 0; color: var(--note-fg); }
+.note-kind__btn .i, .note-kind__menu .i { width: 12px; height: 12px; color: var(--kind-change); }
+.note-kind__btn .i:last-child { width: 10px; height: 10px; color: var(--note-faint); margin-left: -3px; }
 .note-kind__btn[data-kind="attention"] .i:first-child, .note-kind__menu [data-pick="attention"] .i { color: var(--kind-attention); }
 .note-kind__btn[data-kind="question"] .i:first-child, .note-kind__menu [data-pick="question"] .i { color: var(--kind-question); }
 .note-kind__btn[data-kind="bug"] .i:first-child, .note-kind__menu [data-pick="bug"] .i { color: var(--kind-bug); }
-.note-kind__menu { position: absolute; top: calc(100% + 4px); right: 0; z-index: 3; min-width: 132px; padding: 4px; border-radius: 9px; background: oklab(0.16 0 0 / .97); box-shadow: 0 12px 32px -8px rgba(0,0,0,.7), 0 0 0 1px var(--note-line) inset; display: flex; flex-direction: column; gap: 1px; }
-.note-kind__menu button { justify-content: flex-start; gap: 7px; height: 26px; padding: 0 7px; border: 0; border-radius: 6px; background: transparent; color: var(--note-fg); font-size: 11.5px; font-weight: 400; }
-.note-kind__menu button:hover { background: oklab(1 0 0 / .1); border: 0; }
-.note-kind__menu button.is-on { background: oklab(1 0 0 / .07); font-weight: 500; }
-.note-card__kind .i { width: 11px; height: 11px; margin-right: 3px; vertical-align: -2px; color: #fff; }
-.note-card__kind { display: inline-flex; align-items: center; }
+.note-kind__menu { position: absolute; top: calc(100% + 2px); right: 0; z-index: 3; min-width: 104px; padding: 3px; border-radius: 8px; background: oklab(0.14 0 0 / .96); box-shadow: 0 12px 28px -10px rgba(0,0,0,.7); display: flex; flex-direction: column; }
+.note-kind__menu button { justify-content: flex-start; width: 100%; height: 24px; padding: 0 6px; border-radius: 5px; font-weight: 400; }
+.note-kind__menu button.is-on { color: var(--note-fg); }
+.note-card__kind { display: inline-flex; align-items: center; gap: 5px; padding: 0; background: transparent !important; color: var(--note-muted); font-size: 10.5px; font-weight: 500; letter-spacing: 0; }
+.note-card__kind .i { width: 11px; height: 11px; margin: 0; vertical-align: 0; color: var(--kind-change); }
+.note-card__kind[data-kind="attention"] .i { color: var(--kind-attention); }
+.note-card__kind[data-kind="question"] .i { color: var(--kind-question); }
+.note-card__kind[data-kind="bug"] .i { color: var(--kind-bug); }
 .note-at__list { position: absolute; left: 12px; right: 12px; bottom: calc(100% - 4px); z-index: 2; display: flex; flex-wrap: wrap; gap: 3px; padding: 5px; border-radius: 8px; background: oklab(0.16 0 0 / .97); box-shadow: 0 12px 32px -8px rgba(0,0,0,.7), 0 0 0 1px var(--note-line) inset; }
 .note-card__answer { position: relative; }
 .note-card__answer .note-at__list { left: 0; right: auto; bottom: calc(100% + 4px); }
