@@ -49,7 +49,7 @@
 
 <script src="wall.js"></script>
 <script>
-  const wall = IntegrationsWall.create(document.getElementById('wall'), { columns: 7, rows: 9 });
+  const wall = IntegrationsWall.create(document.getElementById('wall'), { pan: 0.35 });
   document.addEventListener('keydown', e => { if (e.key === ' ') { e.preventDefault(); wall.o.paused ? wall.resume() : wall.pause(); } });
 </script>
 </body>

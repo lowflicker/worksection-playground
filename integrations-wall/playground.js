@@ -1,7 +1,7 @@
 /* Playground definition for the Integrations wall.
    Not part of the module: a site needs only wall.css + wall.js and its own
-   tiles. The stage shows the wall alone, in a box the size of a promo card;
-   the card itself (heading, link) is the site's business. */
+   tiles. The wall is the whole stage: no box, no card, that is the site's
+   business. */
 (function () {
   'use strict';
 
@@ -21,11 +21,10 @@
   const tile = l => `<figure class="iwall__tile"><img src="${src(l)}" alt="${l[1]}" title="${l[1]}" loading="lazy"></figure>`;
 
   const KEYS = Object.keys(IntegrationsWall.defaults).filter(k => !['respectReducedMotion', 'paused'].includes(k));
-  const defaults = Object.assign(Object.fromEntries(KEYS.map(k => [k, IntegrationsWall.defaults[k]])), { surface: '#ffffff', box: '#f4f2f0' });
+  const defaults = Object.assign(Object.fromEntries(KEYS.map(k => [k, IntegrationsWall.defaults[k]])), { surface: '#ffffff' });
 
   Playground.css(`
-    .iw-box { position: relative; width: min(100%, 460px); margin: 0 auto; aspect-ratio: 421 / 526; overflow: hidden; border-radius: 12px; background: var(--iw-box, #f4f2f0); }
-    .iw-box .iwall { position: absolute; inset: 0; }
+    .stage--iwall .iwall { flex: 1 1 auto; min-height: 320px; width: 100%; }
   `);
 
   let wall = null, root = null;
@@ -37,7 +36,7 @@
     if (s.surface !== defaults.surface) vars.push(`--iw-surface: ${s.surface};`);
     return `<link rel="stylesheet" href="wall.css">
 ${vars.length ? `<style>\n  .iwall { ${vars.join(' ')} }\n</style>\n` : ''}
-<!-- будь-яка кількість плиток: скрипт клонує їх по колу, щоб заповнити ${s.columns} × ${s.rows} клітинок -->
+<!-- будь-яка кількість плиток: скрипт клонує їх по колу, щоб заповнити ${s.columns || 'авто'} × ${s.rows || 'авто'} клітинок -->
 <div class="iwall" id="wall">
   <div class="iwall__sheet">
 ${LOGOS.slice(0, 6).map(l => '    ' + tile(l).replace(src(l), `logos/${l[0]}.svg`).replace(' loading="lazy"', '')).join('\n')}
@@ -67,26 +66,26 @@ ${LOGOS.slice(0, 6).map(l => '    ' + tile(l).replace(src(l), `logos/${l[0]}.svg
     defaults,
     presets: [
       { label: 'Ramp', patch: Object.assign({}, defaults) },
-      { label: 'Щільніше', patch: { columns: 10, rows: 12, tile: 48, gap: 14, radius: 10, logo: 22, pan: 0.5 } },
+      { label: 'Щільніше', patch: { columns: 0, rows: 0, tile: 48, gap: 14, radius: 10, logo: 22, pan: 0.5 } },
       { label: 'Спокійно', patch: { pan: 0.15, ease: 0.04, drift: 8, driftPeriod: 24, hoverScale: 1.04 } },
       { label: 'Рівна сітка', patch: { stagger: 0, maskRx: 70, maskRy: 62 } },
       { label: 'Без маски', patch: { mask: false, pan: 0.25 } },
     ],
     random() {
       const r = (a, b, d = 0) => +(a + Math.random() * (b - a)).toFixed(d);
-      return { columns: r(5, 11), rows: r(7, 13), tile: r(40, 80), gap: r(8, 36), stagger: Math.random() < 0.3 ? 0 : r(0.2, 0.5, 2), pan: r(-0.6, 0.8, 2), drift: r(0, 40), driftPeriod: r(6, 24) };
+      return { columns: 0, rows: 0, tile: r(40, 80), gap: r(8, 36), stagger: Math.random() < 0.3 ? 0 : r(0.2, 0.5, 2), pan: r(-0.6, 0.8, 2), drift: r(0, 40), driftPeriod: r(6, 24) };
     },
-    stage: { bg: '#e9e9e7' },
+    stage: { className: 'stage--fill stage--iwall', bg: '#f4f2f0' },
     controls: [
       { title: 'Сітка', items: [
-        { type: 'range', key: 'columns', label: 'Колонок', min: 3, max: 14, step: 1 },
-        { type: 'range', key: 'rows', label: 'Рядків', min: 3, max: 16, step: 1 },
+        { type: 'range', key: 'columns', label: 'Колонок', min: 0, max: 20, step: 1, fmt: v => v ? String(v) : 'авто' },
+        { type: 'range', key: 'rows', label: 'Рядків', min: 0, max: 20, step: 1, fmt: v => v ? String(v) : 'авто' },
         { type: 'range', key: 'tile', label: 'Плитка', min: 32, max: 96, step: 2, unit: 'px' },
         { type: 'range', key: 'gap', label: 'Відступ', min: 0, max: 48, step: 1, unit: 'px' },
         { type: 'range', key: 'stagger', label: 'Зсув непарних рядків', min: 0, max: 1, step: 0.05, fmt: v => Math.round(v * 100) + ' %' },
         { type: 'range', key: 'radius', label: 'Радіус плитки', min: 0, max: 48, step: 1, unit: 'px' },
         { type: 'range', key: 'logo', label: 'Логотип', min: 12, max: 64, step: 1, unit: 'px' },
-        { type: 'status', render: () => wall ? `Клітинок: <b>${wall.n}</b> · логотипів: <b>${LOGOS.length}</b> · аркуш <b>${wall.sheet.offsetWidth}×${wall.sheet.offsetHeight}</b> px` : '' },
+        { type: 'status', render: () => wall ? `Сітка <b>${wall.cols}×${wall.rowsN}</b>, клітинок <b>${wall.n}</b> · логотипів: <b>${LOGOS.length}</b> · аркуш <b>${wall.sheet.offsetWidth}×${wall.sheet.offsetHeight}</b> px` : '' },
       ] },
       { title: 'Рух', items: [
         { type: 'range', key: 'pan', label: 'Озирання за курсором', min: -1, max: 1, step: 0.05, fmt: v => v.toFixed(2) },
@@ -106,23 +105,25 @@ ${LOGOS.slice(0, 6).map(l => '    ' + tile(l).replace(src(l), `logos/${l[0]}.svg
       ] },
       { title: 'Вигляд', items: [
         { type: 'color', key: 'surface', label: 'Плитка' },
-        { type: 'color', key: 'box', label: 'Фон боксу', proof: ctx => ctx.frame.querySelector('.iw-box').style.getPropertyValue('--iw-box') },
       ] },
     ],
 
     acceptance: [
+      // the real cursor may sit on the stage and Chrome re-fires pointer events after a relayout, so the rows only ask for a move and an immediate reset
       { id: 'pointer-pans-the-sheet', run: ctx => {
           const r = root.getBoundingClientRect();
+          wall.x0 = wall.x;
           root.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: r.left + r.width * 0.9, clientY: r.top + r.height * 0.5 }));
-        }, wait: 400, expect: () => (wall.px > 0 && wall.x < -5) || `x=${wall.x.toFixed(1)} px=${wall.px}` },
-      { id: 'leave-returns-to-idle', run: () => root.dispatchEvent(new PointerEvent('pointerleave', { bubbles: true })), wait: 60, expect: () => wall.px === null || 'pointer still tracked' },
+        }, wait: 800, expect: () => (wall.px !== null && Math.abs(wall.x - wall.x0) > 5) || `x moved ${(wall.x - wall.x0).toFixed(1)} px, px=${wall.px}` },
+      { id: 'leave-returns-to-idle', run: () => root.dispatchEvent(new PointerEvent('pointerleave')), wait: 0, expect: () => wall.px === null || 'pointer still tracked' },
       { id: 'columns-rebuild-cells', run: ctx => ctx.set({ columns: 4, rows: 5 }), expect: () => (wall.n === 20 && wall.sheet.querySelectorAll('.iwall__tile:not([hidden])').length === 20) || `n=${wall.n}` },
+      { id: 'auto-grid-overhangs-the-box', run: ctx => ctx.set({ columns: 0, rows: 0 }), wait: 60, expect: () => (wall.sheet.offsetWidth > root.clientWidth && wall.sheet.offsetHeight > root.clientHeight) || `sheet ${wall.sheet.offsetWidth}×${wall.sheet.offsetHeight} in ${root.clientWidth}×${root.clientHeight}` },
       { id: 'mask-reaches-css', run: ctx => ctx.set({ mask: true, maskRx: 33 }), expect: () => getComputedStyle(root).getPropertyValue('--iw-rx').trim() === '33%' || 'no --iw-rx' },
       { id: 'loop-stops-when-hidden', run: () => Playground.show('integrations'), wait: 60, expect: () => !!wall.raf || 'not running while shown' },
     ],
 
     mount(ctx) {
-      ctx.frame.insertAdjacentHTML('beforeend', `<div class="iw-box"><div class="iwall"><div class="iwall__sheet">${LOGOS.map(tile).join('')}</div></div></div>`);
+      ctx.frame.insertAdjacentHTML('beforeend', `<div class="iwall"><div class="iwall__sheet">${LOGOS.map(tile).join('')}</div></div>`);
       root = ctx.frame.querySelector('.iwall');
       wall = IntegrationsWall.create(root, Object.assign({}, IntegrationsWall.defaults, defaults, { respectReducedMotion: false }));
       wall.stop(); // onShow starts the loop once the tab is on screen
@@ -135,11 +136,10 @@ ${LOGOS.slice(0, 6).map(l => '    ' + tile(l).replace(src(l), `logos/${l[0]}.svg
       for (const k of KEYS) if (k in patch) opts[k] = patch[k];
       wall.setOptions(opts);
       root.style.setProperty('--iw-surface', ctx.state.surface);
-      root.parentNode.style.setProperty('--iw-box', ctx.state.box);
     },
     hint(ctx) {
       return ctx.paused ? 'Пауза: аркуш стоїть, плитки під курсором ще піднімаються'
-        : ctx.state.pan ? 'Веди курсором по боксу, аркуш озирається за ним' : 'Аркуш лише дрейфує; додай «озирання», щоб він реагував на курсор';
+        : ctx.state.pan ? 'Веди курсором по сцені, аркуш озирається за ним' : 'Аркуш лише дрейфує; додай «озирання», щоб він реагував на курсор';
     },
     playback: {
       pause: () => wall.pause(),

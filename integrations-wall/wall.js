@@ -15,7 +15,7 @@
          …
        </div>
      </div>
-     const w = IntegrationsWall.create(document.getElementById('wall'), { columns: 7, rows: 9 });
+     const w = IntegrationsWall.create(document.getElementById('wall'), { pan: 0.35 });
      w.setOptions({ pan: 0.5 });
      w.pause(); w.resume(); w.destroy();
 
@@ -29,8 +29,8 @@
 
   var DEFAULTS = {
     // grid
-    columns: 7,             // cells across; the sheet is wider than the box, so keep it above what fits
-    rows: 9,                // cells down
+    columns: 0,             // cells across; 0 = enough to cover the box however far the pan and drift move it
+    rows: 0,                // cells down, same rule
     tile: 64,               // px, the square tile
     gap: 24,                // px between tiles
     stagger: 0.5,           // odd rows shift right by this fraction of a step (0 = straight grid)
@@ -76,18 +76,26 @@
     this.last = 0;
     this.visible = true;
     this._bind();
-    this.layout();
+    this.layout(true);
     this.applyVars();
     if (!this.o.paused) this.play();
   }
 
   Wall.prototype = {
     /* ---------- layout ---------- */
-    layout: function () {
+    // force: the cells themselves changed (tile, gap, stagger); otherwise only a changed count rebuilds
+    layout: function (force) {
       var o = this.o, sheet = this.sheet, src = this.source;
-      toArray(sheet.querySelectorAll('[data-iwall-clone]')).forEach(function (c) { c.parentNode.removeChild(c); });
-      var cells = Math.max(1, o.columns | 0) * Math.max(1, o.rows | 0);
       var step = o.tile + o.gap;
+      // auto: cover the box plus as far as the pan and the drift can move it, so an edge never shows
+      var W = this.el.clientWidth, H = this.el.clientHeight;
+      var over = function (size) { return Math.ceil((Math.abs(o.pan) * size / 2 + o.drift) / step) + 1; };
+      var cols = o.columns > 0 ? o.columns | 0 : Math.ceil(W / step) + 2 * over(W);
+      var rows = o.rows > 0 ? o.rows | 0 : Math.ceil(H / step) + 2 * over(H);
+      if (!force && cols === this.cols && rows === this.rowsN) return;
+      this.cols = cols; this.rowsN = rows;
+      toArray(sheet.querySelectorAll('[data-iwall-clone]')).forEach(function (c) { c.parentNode.removeChild(c); });
+      var cells = cols * rows;
       var shift = o.stagger * step;
       var n = src.length;
       this.n = n ? cells : 0;
@@ -99,15 +107,15 @@
           t.setAttribute('aria-hidden', 'true');
           sheet.appendChild(t);
         }
-        var r = Math.floor(i / o.columns), c = i % o.columns;
+        var r = Math.floor(i / this.cols), c = i % this.cols;
         t.hidden = false;
         t.style.setProperty('--x', (c * step + (r % 2 ? shift : 0)) + 'px');
         t.style.setProperty('--y', (r * step) + 'px');
       }
       // more tiles than cells: the extra authored ones stay out of the way
       for (var j = cells; j < n; j++) src[j].hidden = true;
-      sheet.style.width = (o.columns * step - o.gap + (o.rows > 1 ? shift : 0)) + 'px';
-      sheet.style.height = (o.rows * step - o.gap) + 'px';
+      sheet.style.width = (this.cols * step - o.gap + (this.rowsN > 1 ? shift : 0)) + 'px';
+      sheet.style.height = (this.rowsN * step - o.gap) + 'px';
     },
 
     applyVars: function () {
@@ -132,9 +140,10 @@
         if (!patch.hasOwnProperty(k)) continue;
         if (o[k] === patch[k]) continue;
         o[k] = patch[k];
-        if (k === 'columns' || k === 'rows' || k === 'tile' || k === 'gap' || k === 'stagger') relayout = true;
+        if (k === 'tile' || k === 'gap' || k === 'stagger') relayout = 'force';
+        else if ((k === 'columns' || k === 'rows' || k === 'pan' || k === 'drift') && !relayout) relayout = true;
       }
-      if (relayout) this.layout();
+      if (relayout) this.layout(relayout === 'force');
       this.applyVars();
       if ('paused' in patch) patch.paused ? this.pause() : this.resume();
     },
@@ -179,6 +188,11 @@
       this._leave = function () { self.px = self.py = null; };
       el.addEventListener('pointermove', this._move);
       el.addEventListener('pointerleave', this._leave);
+      // auto grids follow the box size
+      if (global.ResizeObserver) {
+        this.ro = new ResizeObserver(function () { if (!(self.o.columns > 0 && self.o.rows > 0)) self.layout(); });
+        this.ro.observe(el);
+      }
       // no work off screen
       if (global.IntersectionObserver) {
         this.io = new IntersectionObserver(function (es) {
@@ -194,6 +208,7 @@
       this.el.removeEventListener('pointermove', this._move);
       this.el.removeEventListener('pointerleave', this._leave);
       if (this.io) this.io.disconnect();
+      if (this.ro) this.ro.disconnect();
       toArray(this.sheet.querySelectorAll('[data-iwall-clone]')).forEach(function (c) { c.parentNode.removeChild(c); });
       this.sheet.style.transform = '';
     }
