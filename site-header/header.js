@@ -245,7 +245,7 @@
       }
       const foot = document.createElement('div');
       foot.className = 'site-header__sheet-foot';
-      for (const b of this.root.querySelectorAll('.site-header__actions > :not(.site-header__btn--primary):not(.site-header__burger)')) foot.append(b.cloneNode(true));
+      for (const b of this.root.querySelectorAll('.site-header__actions > :not(.btn-primary):not(.site-header__burger)')) foot.append(b.cloneNode(true));
       sheet.append(nav, foot);
       this.root.append(sheet);
       return sheet;

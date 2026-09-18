@@ -16,19 +16,19 @@
          <a class="site-header__brand" href="/"><svg …/><span>worksection</span></a>
          <nav class="site-header__menu" aria-label="…">
            <div class="site-header__group">
-             <button type="button" class="site-header__item" aria-expanded="false"><span>Продукт</span><svg …/></button>
+             <button type="button" class="site-header__item" aria-expanded="false"><span>Product</span><svg …/></button>
              <div class="site-header__panel"><a class="site-header__link" href="…">…</a>…</div>
            </div>
            …
-           <a class="site-header__item" href="…"><span>Ціни</span></a>
+           <a class="site-header__item" href="…"><span>Pricing</span></a>
          </nav>
        </div>
        <div class="site-header__actions">
          <button type="button" class="site-header__btn site-header__btn--plain site-header__lang">…</button>
-         <a class="site-header__btn site-header__btn--plain" href="…"><span>Увійти</span></a>
-         <a class="site-header__btn site-header__btn--accent" href="…"><span>Забронювати демо</span></a>
-         <a class="site-header__btn site-header__btn--primary" href="…"><span>Реєстрація</span></a>
-         <button type="button" class="site-header__burger" aria-expanded="false" aria-label="Меню"><svg …/><svg …/></button>
+         <a class="btn btn-36 btn-plain btn-rounded" href="…"><span>Log in</span></a>
+         <a class="btn btn-36 btn-accent btn-rounded" href="…"><span>Book a demo</span></a>
+         <a class="btn btn-36 btn-primary btn-rounded btn-beam beam" data-beam data-trigger="always" href="…"><span>Registration</span></a>
+         <button type="button" class="site-header__burger" aria-expanded="false" aria-label="Menu"><svg …/><svg …/></button>
        </div>
      </div>
    </header>
@@ -214,23 +214,8 @@
 .site-header__btn svg { width: 16px; height: 16px; flex: none; fill: currentColor; }
 .site-header__lang span { padding: 0; margin: 0 2px; }
 .site-header__btn--plain:hover { color: var(--sh-ink); }
-.site-header__btn--accent {
-  color: var(--sh-accent-ink);
-  background: var(--sh-accent);
-  box-shadow: 0 3px 1px -1px rgba(255, 255, 255, .5) inset, 0 -8px 28px 4px rgba(13, 28, 20, .14) inset, 0 0 0 1px var(--sh-accent-line), 0 1px 2px -.5px rgba(13, 28, 20, .14), 0 3px 4px -1.5px rgba(13, 28, 20, .14), 0 8px 10px -4px rgba(22, 34, 34, .09);
-}
-.site-header__btn--accent:hover {
-  background: var(--sh-accent-hover);
-  box-shadow: 0 0 0 1.5px var(--sh-accent-press), 0 1px 2px -.5px rgba(13, 28, 20, .14), 0 3px 4px -1.5px rgba(13, 28, 20, .14), 0 8px 10px -4px rgba(22, 34, 34, .09);
-}
-.site-header__btn--accent:active { background: var(--sh-accent-press); box-shadow: 0 0 0 1.5px var(--sh-accent-press); }
-.site-header__btn--primary {
-  color: #fff;
-  background: var(--sh-dark);
-  box-shadow: 0 0 0 1px var(--sh-dark-line), 0 2px 2px -1px rgba(5, 20, 15, .2), 0 4px 4px -2px rgba(5, 20, 15, .2), 0 6px 8px -3px rgba(13, 28, 20, .14);
-}
-.site-header__btn--primary:hover { background: var(--sh-dark-hover); box-shadow: 0 0 0 1px var(--sh-dark-hover), 0 2px 2px -1px rgba(5, 20, 15, .2), 0 4px 4px -2px rgba(5, 20, 15, .2), 0 6px 8px -3px rgba(13, 28, 20, .14); }
-.site-header__btn--primary:active { background: var(--sh-dark-press); box-shadow: 0 0 0 1px var(--sh-dark-press); }
+/* the three actions are the site's own .btn (buttons.css: btn-36 btn-plain / btn-accent / btn-primary, rounded);
+   the dark one may carry .btn-beam (button.css + border-beam/). Only the language button is drawn here */
 
 /* burger: two icons, aria-expanded picks one; hidden until the menu collapses */
 .site-header__burger {
@@ -333,7 +318,7 @@
 .site-header__sheet-link { display: block; padding: 6px 0; font: 500 15px/20px var(--sh-font); color: var(--sh-ink-2); text-decoration: none; }
 .site-header__sheet-link:hover { color: var(--sh-ink); }
 .site-header__sheet-foot { display: flex; align-items: center; gap: 8px; padding: 12px 36px; background: var(--sh-solid); box-shadow: 0 -1px 0 var(--sh-tint); }
-.site-header__sheet-foot .site-header__btn--accent { margin-left: auto; }
+.site-header__sheet-foot .btn-accent { margin-left: auto; }
 
 /* ---------- widths ---------- */
 /* Below 1240 px the menu and the secondary actions leave the bar: brand, sign-up and the
@@ -341,7 +326,7 @@
    a side; below 470 px the brand shrinks to 80 % */
 @container (max-width: 1239px) {
   .site-header__menu { display: none; }
-  .site-header__actions > :not(.site-header__btn--primary):not(.site-header__burger) { display: none; }
+  .site-header__actions > :not(.btn-primary):not(.site-header__burger) { display: none; }
   .site-header__burger { display: inline-flex; }
   .site-header__bar { max-width: 566px; }
   .site-header--open .site-header__bar { max-width: 100%; }

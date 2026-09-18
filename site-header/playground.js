@@ -36,7 +36,33 @@
           </div>`
     : `<a class="site-header__item" href="${m.href}"><span>${m.label}</span></a>`;
 
-  const markup = () => `<header class="site-header" id="header">
+  // the three actions are the site's button component (Button is the master, btn-36 as on the site): its markup
+  // in the snippet, its copies on the stage. The dark one takes the beam; the master's state drives it
+  const ACTIONS = [
+    { variant: 'plain', label: 'Log in', beam: false },
+    { variant: 'accent', label: 'Book a demo', beam: false },
+    { variant: 'primary', label: 'Registration' },
+  ];
+  const btnOpts = a => Object.assign({ size: 36, rounded: true }, a);
+  const action = a => {
+    const b = Playground.component('site-button');
+    return b ? b.markup(btnOpts(a), b.state()) : `<a class="btn btn-36 btn-${a.variant} btn-rounded" href="#"><span>${a.label}</span></a>`;
+  };
+  // on a stage the buttons are consumed copies. The master may register after this adapter, so a copy can
+  // arrive after the bar is read: each is put before the burger, and the sheet's foot (cloned from the
+  // actions by header.js) is filled again once the last one is in
+  const mountActions = el => {
+    const host = el.querySelector('.site-header__actions'), burger = host.querySelector('.site-header__burger');
+    let left = ACTIONS.length;
+    for (const a of ACTIONS) Playground.consume('site-button', host, btnOpts(a), h => {
+      host.insertBefore(h.el, burger);
+      if (--left) return;
+      const foot = el.querySelector('.site-header__sheet-foot');
+      if (foot) foot.replaceChildren(...[...host.querySelectorAll(':scope > :not(.btn-primary):not(.site-header__burger)')].map(b => b.cloneNode(true)));
+    });
+  };
+
+  const markup = live => `<header class="site-header" id="header">
   <div class="site-header__bar">
     <div class="site-header__left">
       <a class="site-header__brand" href="/" aria-label="Worksection">${ICONS.logo}<span>worksection</span></a>
@@ -46,10 +72,7 @@
     </div>
     <div class="site-header__actions">
       <button type="button" class="site-header__btn site-header__btn--plain site-header__lang" aria-label="Language: English">${ICONS.globe}<span>EN</span>${ICONS.down}</button>
-      <a class="site-header__btn site-header__btn--plain" href="#"><span>Log in</span></a>
-      <a class="site-header__btn site-header__btn--accent" href="#"><span>Book a demo</span></a>
-      <a class="site-header__btn site-header__btn--primary" href="#"><span>Registration</span></a>
-      <button type="button" class="site-header__burger" aria-expanded="false" aria-label="Menu">${ICONS.burger}${ICONS.close}</button>
+${live ? '' : ACTIONS.map(a => '      ' + action(a)).join('\n') + '\n'}      <button type="button" class="site-header__burger" aria-expanded="false" aria-label="Menu">${ICONS.burger}${ICONS.close}</button>
     </div>
   </div>
 </header>`;
@@ -57,13 +80,17 @@
   const snippet = s => {
     const vars = Object.entries(VARS).filter(([k]) => s[k] !== CSS_DEFAULTS[k]).map(([k, [p, u]]) => `  ${p}: ${s[k]}${u};`);
     if (s.alpha !== CSS_DEFAULTS.alpha) vars.push(`  --sh-surface: rgba(255, 255, 255, ${(s.alpha / 100).toFixed(2)});`);
-    return `<link rel="stylesheet" href="header.css">
+    return `<!-- кнопки це компонент сайту (.btn); на сайті він уже є. Промінь на чорній: beam.css + beam.js з border-beam/ і button.css з .btn-beam -->
+<link rel="stylesheet" href="beam.css">
+<link rel="stylesheet" href="button.css">
+<link rel="stylesheet" href="header.css">
 <!-- вордмарк набраний Work Sans 600 (--sh-font-brand): сторінка має дати цей шрифт -->
 
 <!-- шапка йде першою в <body>, одразу над хіро; sticky, тож вона тримається зверху сама.
      Меню написане один раз: мобільний лист header.js збирає з нього -->
 ${markup()}
 
+<script src="beam.js"><\/script>
 <script src="header.js"><\/script>
 <script>
   new SiteHeader('#header', {
@@ -99,9 +126,10 @@ ${vars.join('\n')}
   // the header as a component: other modules (the hero) get the same markup and follow this tab's settings
   Playground.provide('site-header', {
     create(host) {
-      host.insertAdjacentHTML('afterbegin', markup());
+      host.insertAdjacentHTML('afterbegin', markup(true));
       const el = host.querySelector(':scope > .site-header');
       el.removeAttribute('id');
+      mountActions(el);
       const inst = new SiteHeader(el);
       return { el, inst, update: s => applyTo(el, inst, s, s) };
     },
@@ -161,8 +189,9 @@ ${vars.join('\n')}
 
     mount(ctx) {
       state = ctx.state;
-      ctx.frame.insertAdjacentHTML('beforeend', markup());
+      ctx.frame.insertAdjacentHTML('beforeend', markup(true));
       root = ctx.frame.querySelector('.site-header');
+      mountActions(root);
       bar = new SiteHeader(root);
       ctx.instance = bar;
       root.addEventListener('header:compact', () => requestAnimationFrame(ctx.refresh));

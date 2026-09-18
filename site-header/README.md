@@ -5,6 +5,10 @@
 ## Підключення
 
 ```html
+<!-- кнопки в діях це компонент сайту (.btn, buttons.css — на сайті вже є). Промінь на чорній:
+     beam.css + beam.js з border-beam/ і button.css з .btn-beam, як у хіро -->
+<link rel="stylesheet" href="beam.css">
+<link rel="stylesheet" href="button.css">
 <link rel="stylesheet" href="header.css">
 
 <header class="site-header" id="header">
@@ -25,19 +29,20 @@
     </div>
     <div class="site-header__actions">
       <button type="button" class="site-header__btn site-header__btn--plain site-header__lang">…<span>EN</span>…</button>
-      <a class="site-header__btn site-header__btn--plain" href="…"><span>Log in</span></a>
-      <a class="site-header__btn site-header__btn--accent" href="…"><span>Book a demo</span></a>
-      <a class="site-header__btn site-header__btn--primary" href="…"><span>Registration</span></a>
+      <a class="btn btn-36 btn-plain btn-rounded" href="…"><span>Log in</span></a>
+      <a class="btn btn-36 btn-accent btn-rounded" href="…"><span>Book a demo</span></a>
+      <a class="btn btn-36 btn-primary btn-rounded btn-beam beam" data-beam data-trigger="always" href="…"><span>Registration</span></a>
       <button type="button" class="site-header__burger" aria-expanded="false" aria-label="Menu"><svg …/><svg …/></button>
     </div>
   </div>
 </header>
 
+<script src="beam.js"></script>
 <script src="header.js"></script>
 <script>new SiteHeader('#header');</script>
 ```
 
-Повна розмітка з іконками у вкладці «index.html» плейграунду. Шапка йде першою в `body`; вона `position: sticky`, тож тримається зверху сама, а хіро чи будь-який інший блок просто йде наступним. Меню написане один раз: мобільний лист `header.js` збирає з `.site-header__menu` і `.site-header__actions`. Без JS шапка теж працює: липка пігулка з живими посиланнями, лише без випадайок і листа.
+Повна розмітка з іконками у вкладці «index.html» плейграунду. Шапка йде першою в `body`; вона `position: sticky`, тож тримається зверху сама, а хіро чи будь-який інший блок просто йде наступним. Меню написане один раз: мобільний лист `header.js` збирає з `.site-header__menu` і `.site-header__actions`. Три кнопки дій — звичайні `.btn` сайту (`btn-36`, `btn-rounded`; `btn-plain` / `btn-accent` / `btn-primary`), шапка їх лише розставляє; чорна несе `btn-beam` — промінь з border-beam/ (без `beam.js` вона просто чорна кнопка). Без JS шапка теж працює: липка пігулка з живими посиланнями, лише без випадайок і листа.
 
 ## Опції
 
