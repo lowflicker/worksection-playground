@@ -193,7 +193,9 @@ body.no-panel .panel { display: none; }
 .stage--fill .stage__body:has(> .rz.is-fixed-h) > :first-child { margin-top: auto; }
 .stage--fill .stage__body:has(> .rz.is-fixed-h) > :last-child { margin-bottom: auto; }
 .stage--fill .rz, .stage--fill .frame { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-.stage-hint { width: 100%; color: var(--muted); font-size: 12px; text-align: center; mix-blend-mode: difference; color: rgba(255,255,255,.75); }
+/* the theme's own muted ink: the body is an isolated group, so a blend mode would
+   see nothing of the canvas under it */
+.stage-hint { width: 100%; color: var(--muted); font-size: 12px; text-align: center; }
 .stage-hint:empty { display: none; }
 .frame { width: 100%; margin: 0 auto; isolation: isolate; }
 /* the artboard: the module's own background, a hairline and a soft shadow, so the block reads as a thing on the canvas */
