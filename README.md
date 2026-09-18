@@ -50,3 +50,4 @@ python -m http.server 5174
 1. Тека `my-block/` з `my-block.css`, `my-block.js`, `demo.html`, `README.md`.
 2. `my-block/playground.js` з `Playground.register({...})`, за зразком сусідніх.
 3. Два рядки в `index.html`: стилі модуля в `<head>`, скрипт модуля і `playground.js` в кінці `<body>`.
+4. Потрібна кнопка — це завжди кнопка сайту з [`site-button/`](site-button): у плейграунді `Playground.consume('site-button', …)`, у демо — розмітка `.btn` як на сайті. Модуль лише розставляє кнопки, свої не малює.

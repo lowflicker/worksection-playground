@@ -71,6 +71,12 @@ toggle button, the mobile sheet is sized to the stage.
   `tokens.css` → `buttons.css` → `beam.css` → `button.css`.
 - Demo pages (`*/demo.html`) carry static copies of component markup for
   developers — keep them in sync when a master changes.
+- **Rule: a module that needs a button takes the button component.** Never
+  draw a button of its own or restyle `.btn`: on the stage
+  `Playground.consume('site-button', host, { variant, size, … })`, in the
+  snippet `Playground.component('site-button').markup(opts, state)`, in the
+  demo the site's own `.btn` markup on `site-css/buttons.css`. The module only
+  lays the buttons out (as `hero.css` does with `.hero__cta`).
 
 ## Token discipline
 
