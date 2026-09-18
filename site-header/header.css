@@ -261,28 +261,38 @@
   z-index: 0;
   display: flex;
   flex-direction: column;
-  height: var(--sh-sheet-h, 100dvh);
   padding-top: calc(var(--sh-top) + 64px);
   background: var(--sh-solid);
   overflow: hidden;
-  /* hidden by visibility and not by display, so opening can be animated at all;
-     the hide waits for the fade to finish, the show does not wait for anything */
+  /* Closed it is a zero-height box, not display: none and not just transparent.
+     display cannot be animated; a transparent box of 100dvh would still be laid
+     out and would give the page a scrollbar it does not need. So the sheet rolls
+     down from nothing and fades in, and visibility waits for the fade before it
+     takes the links out of reach. */
+  height: 0;
   opacity: 0;
   visibility: hidden;
-  transition: opacity var(--sh-speed) var(--sh-ease), visibility 0s linear var(--sh-speed);
+  transition:
+    height var(--sh-speed) var(--sh-ease),
+    opacity var(--sh-speed) var(--sh-ease),
+    visibility 0s linear var(--sh-speed);
 }
-.site-header--open .site-header__sheet { opacity: 1; visibility: visible; transition-delay: 0s, 0s; }
+.site-header--open .site-header__sheet {
+  height: var(--sh-sheet-h, 100dvh);
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s, 0s, 0s;
+}
 /* max-width: none would not interpolate, so the open pill is told to be 100% */
 .site-header--open .site-header__bar { width: 100%; max-width: 100%; padding: 16px 20px 16px 36px; border-radius: 0; background: var(--sh-solid); box-shadow: 0 1px 0 var(--sh-tint); -webkit-backdrop-filter: none; backdrop-filter: none; }
 .site-header__sheet-nav { flex: 1 1 auto; overflow-y: auto; padding: 24px 36px 60px; }
-/* the menu settles down into place a hair behind the fade, so the sheet unfolds
-   instead of blinking; the foot follows it */
+/* the menu itself fades a hair behind the box, so the roll reads as one motion */
 .site-header__sheet-nav, .site-header__sheet-foot {
-  translate: 0 -8px;
-  transition: translate var(--sh-speed) var(--sh-ease);
+  opacity: 0;
+  transition: opacity calc(var(--sh-speed) * .7) var(--sh-ease);
 }
-.site-header--open .site-header__sheet-nav { translate: 0 0; }
-.site-header--open .site-header__sheet-foot { translate: 0 0; transition-delay: 40ms; }
+.site-header--open .site-header__sheet-nav,
+.site-header--open .site-header__sheet-foot { opacity: 1; transition-delay: calc(var(--sh-speed) * .3); }
 .site-header__sheet-group { padding: 12px 0; }
 .site-header__sheet-item {
   display: flex;
@@ -345,5 +355,4 @@
 @media (prefers-reduced-motion: reduce) {
   .site-header__bar, .site-header__menu, .site-header__panel, .site-header__item svg, .site-header__sheet-item svg,
   .site-header__sheet, .site-header__sheet-nav, .site-header__sheet-foot, .site-header__sheet-sub { transition: none; }
-  .site-header__sheet-nav, .site-header__sheet-foot { translate: 0 0; }
 }
