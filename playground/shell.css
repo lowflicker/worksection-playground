@@ -16,6 +16,18 @@
   --accent: #0c8ce9; --warn: #b45309; --bad: #d23f3f;
   --code-bg: oklch(0.985 0 0); --code-fg: oklch(0.25 0 0); --code-hi: #fff3c4;
   --toolbar-h: 36px; --panel-w: 300px; --gutter: 12px; --radius: 10px;
+  /* The shell's layers, in one place. A module is real site code and uses any
+     z-index it likes (the header pill takes 50, the float actions take 1000),
+     so module values never compete with these: .stage__body is a stacking
+     context and keeps every one of them to itself. */
+  --z-overlay: 2;                             /* grid and guides over the stage */
+  --z-chrome: 3;                              /* the top row: crumb, tools, actions */
+  --z-popover: 5;                              /* a menu hanging off the chrome */
+  --z-handle: 5;                               /* the frame's resize handles, over the module in it */
+  --z-sheet: 20;                               /* the panel as a bottom sheet */
+  --z-help: 40;
+  --z-drawer: 50;
+  --z-editor: 60;                              /* the easing editor, over the drawer it opens from */
   --blur: blur(40px) saturate(1.5);
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color-scheme: light;
@@ -65,7 +77,7 @@ kbd.k { display: inline-block; min-width: 18px; padding: 1px 5px; border: 1px so
    middle takes what is left and scrolls inside itself only when even that is not
    enough — so nothing ever wraps to a second row and no control is dropped. */
 .topbar {
-  position: absolute; top: var(--gutter); left: var(--gutter); right: var(--gutter); z-index: 3;
+  position: absolute; top: var(--gutter); left: var(--gutter); right: var(--gutter); z-index: var(--z-chrome);
   display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center; gap: 8px; min-width: 0; pointer-events: none;
 }
@@ -91,7 +103,7 @@ kbd.k { display: inline-block; min-width: 18px; padding: 1px 5px; border: 1px so
 .crumb__badge { display: flex; }
 .crumb__badge .i { width: 14px; height: 14px; color: var(--muted); }
 .crumb__menu {
-  position: absolute; top: calc(100% + 6px); left: 0; min-width: 190px; padding: 4px; z-index: 5;
+  position: absolute; top: calc(100% + 6px); left: 0; min-width: 190px; padding: 4px; z-index: var(--z-popover);
   display: flex; flex-direction: column; gap: 2px;
   background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
   border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 12px 32px -12px rgba(0,0,0,.35);
@@ -144,7 +156,7 @@ body.is-home .crumb, body.is-home .tb { display: none; }
 :root[data-theme="dark"] [data-icon="moon"], :root:not([data-theme="dark"]) [data-icon="sun"] { display: none; }
 
 /* keyboard cheat-sheet */
-.help { position: absolute; top: calc(var(--gutter) + var(--toolbar-h) + 6px); right: calc(var(--panel-w) + var(--gutter) * 2); z-index: 40; width: 260px; padding: 10px 12px; background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 12px 32px -12px rgba(0,0,0,.35); }
+.help { position: absolute; top: calc(var(--gutter) + var(--toolbar-h) + 6px); right: calc(var(--panel-w) + var(--gutter) * 2); z-index: var(--z-help); width: 260px; padding: 10px 12px; background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 12px 32px -12px rgba(0,0,0,.35); }
 .help h3 { margin: 0 0 8px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .02em; color: var(--muted); }
 .help dl { display: grid; grid-template-columns: auto 1fr; gap: 5px 12px; margin: 0; font-size: 12px; }
 .help dt { text-align: right; white-space: nowrap; }
@@ -158,12 +170,14 @@ body.no-panel .panel { display: none; }
 
 /* --- stage: full-bleed, the tool pill floats over it, the body underneath scrolls --- */
 .stage {
-  position: relative; z-index: 0; isolation: isolate;
+  position: relative; z-index: 0; isolation: isolate;   /* the stage is the root of the shell's own layers */
   display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden;
   background: var(--canvas);
 }
 .stage__body {
   flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain;
+  /* the module's own stacking world: whatever it raises stays under the shell */
+  isolation: isolate;
   display: flex; flex-direction: column; align-items: flex-start; gap: 24px;
   padding: calc(var(--toolbar-h) + var(--gutter) * 2) 24px 32px;
 }
@@ -173,10 +187,15 @@ body.no-panel .panel { display: none; }
 .stage--fill .stage__body { gap: 12px; padding: calc(var(--toolbar-h) + var(--gutter) * 2) 24px 16px; }
 .stage--fill .stage__body > :first-child { margin-top: 0; }
 .stage--fill .stage__body > :last-child { margin-bottom: 0; }
+/* A module that owns its height is not a page and has nothing to scroll, so it
+   belongs in the middle of the canvas — block and hint centred as one group,
+   the same auto margins the artboard modules use. */
+.stage--fill .stage__body:has(> .rz.is-fixed-h) > :first-child { margin-top: auto; }
+.stage--fill .stage__body:has(> .rz.is-fixed-h) > :last-child { margin-bottom: auto; }
 .stage--fill .rz, .stage--fill .frame { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .stage-hint { width: 100%; color: var(--muted); font-size: 12px; text-align: center; mix-blend-mode: difference; color: rgba(255,255,255,.75); }
 .stage-hint:empty { display: none; }
-.frame { width: 100%; margin: 0 auto; }
+.frame { width: 100%; margin: 0 auto; isolation: isolate; }
 /* the artboard: the module's own background, a hairline and a soft shadow, so the block reads as a thing on the canvas */
 .stage__body > .rz, .stage__body > .frame {
   background: var(--stage-bg, #f5f5f5); border-radius: 12px;
@@ -190,7 +209,7 @@ body.no-panel .panel { display: none; }
 .stage--bare .stage__body > .rz, .stage--bare .stage__body > .frame { background: none; box-shadow: none; border-radius: 0; }
 .stage--bare .stage__body > .rz > .frame, .stage--bare .stage__body > .frame { overflow: visible; }
 /* screen overlays: 8px grid with a 64px major line, and centre guides */
-.stage::before, .stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2; display: none; }
+.stage::before, .stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: var(--z-overlay); display: none; }
 .stage[data-grid]::before {
   display: block;
   background-image:
@@ -243,7 +262,7 @@ body.is-paused #tb-play [data-icon="pause"] { display: none; }
 .rz.is-fixed, .rz.is-fixed-h { outline: 1px dashed rgba(127,127,127,.6); outline-offset: 8px; }
 /* a module that owns its height stops growing with the stage */
 .rz.is-fixed-h { height: var(--frame-h); flex: 0 0 auto; }
-.rz__handle { position: absolute; top: 0; bottom: 0; width: 22px; cursor: ew-resize; touch-action: none; z-index: 5; outline: 0; }
+.rz__handle { position: absolute; top: 0; bottom: 0; width: 22px; cursor: ew-resize; touch-action: none; z-index: var(--z-handle); outline: 0; }
 .rz__handle--l { left: -11px; } .rz__handle--r { right: -11px; }
 .rz__handle--b { top: auto; bottom: -11px; left: 0; right: 0; width: auto; height: 22px; cursor: ns-resize; }
 .rz__grip {
@@ -347,7 +366,7 @@ body.is-paused #tb-play [data-icon="pause"] { display: none; }
 .save__status.is-dirty { color: var(--warn); }
 
 /* --- code drawer over the stage --- */
-.drawer { position: fixed; inset: 0; z-index: 50; display: flex; justify-content: flex-end; }
+.drawer { position: fixed; inset: 0; z-index: var(--z-drawer); display: flex; justify-content: flex-end; }
 .drawer__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.4); }
 .drawer__sheet {
   position: relative; width: min(780px, 100%); display: flex; flex-direction: column;
@@ -376,7 +395,7 @@ pre.code .ln--muted { color: var(--muted); }
 .easing__icon { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; overflow: visible; }
 .easing code { font: inherit; }
 .pop {
-  position: fixed; z-index: 60; width: 232px; padding: 8px; display: flex; flex-direction: column; gap: 8px;
+  position: fixed; z-index: var(--z-editor); width: 232px; padding: 8px; display: flex; flex-direction: column; gap: 8px;
   background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
   border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 16px 40px -16px rgba(0,0,0,.45);
 }
@@ -421,7 +440,7 @@ pre.code .ln--muted { color: var(--muted); }
   .rz__handle { display: none; }
   .stage-hint { font-size: 11px; }
   .panel {
-    position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 20; margin: 0;
+    position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: var(--z-sheet); margin: 0;
     height: var(--sheet-h); max-height: none;
     border-left: 0; border-right: 0; border-bottom: 0; border-radius: 18px 18px 0 0;
     box-shadow: 0 -12px 40px -16px rgba(0, 0, 0, .35);

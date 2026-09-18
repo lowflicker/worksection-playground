@@ -122,6 +122,13 @@ zoom, frame height (`stage.resizableH`), grid, guides, fps, code drawer + copy,
 save / share link (`#<id>?s=<base64>`), the optional plate under the block
 (`stage.bg`; off by default, the block sits on the canvas), theme, panel hide, shortcuts (`?`), mobile
 sheet, collapsible groups, the catalogue (`Playground.home()`, key `H`) and the crumb pill with the module switch. localStorage prefix `ws-playground:`.
+Layering is the shell's too: `.stage__body` is a stacking context, so a module
+may use any z-index (header 50, float actions 1000) and never rises over the
+chrome; shell layers are the `--z-*` tokens on `:root`, never bare numbers.
+Placement rule: a block that is not a page and has nothing to scroll (a
+fixed-height `stage--fill` module) is centred vertically on the canvas; only
+page-like stages (the hero first screen) hug the top. A module gets this from
+the shell, never from its own CSS.
 
 ## Adding a module
 
