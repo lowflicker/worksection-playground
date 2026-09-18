@@ -50,6 +50,7 @@
     maskX: 50, maskY: 53,   // centre
     maskRx: 60, maskRy: 55, // radii
     maskSolid: 50,          // fully visible up to this % of the radius, then the fade
+    fade: 'auto',           // the colour the edges fade into: 'auto' reads the background behind the box, or any CSS colour
 
     respectReducedMotion: true,   // prefers-reduced-motion: no drift, no follow
     paused: false
@@ -75,6 +76,7 @@
     this.t0 = now();
     this.raf = 0;
     this.last = 0;
+    this.frames = 0;
     this.visible = true;
     this._bind();
     this.layout(true);
@@ -84,8 +86,9 @@
 
   Wall.prototype = {
     /* ---------- layout ---------- */
-    // force: the cells themselves changed (tile, gap, stagger); otherwise only a changed count rebuilds
-    layout: function (force) {
+    // the grid is recomputed on every call; the tile elements are rebuilt only when the cell count
+    // or the authored list changed (rebuild), so a size or gap change never re-decodes the logos
+    layout: function (rebuild) {
       var o = this.o, sheet = this.sheet, src = this.source;
       var step = o.tile + o.gap;
       // auto: cover the box plus as far as the pan and the drift can move it, so an edge never shows
@@ -93,36 +96,40 @@
       var over = function (size) { return Math.ceil((Math.abs(o.pan) * size / 2 + o.drift) / step) + 1; };
       var cols = o.columns > 0 ? o.columns | 0 : Math.ceil(W / step) + 2 * over(W);
       var rows = o.rows > 0 ? o.rows | 0 : Math.ceil(H / step) + 2 * over(H);
-      if (!force && cols === this.cols && rows === this.rowsN) return;
-      this.cols = cols; this.rowsN = rows;
-      toArray(sheet.querySelectorAll('[data-iwall-clone]')).forEach(function (c) { c.parentNode.removeChild(c); });
-      var cells = cols * rows;
-      var shift = o.stagger * step;
-      var n = src.length;
-      this.n = n ? cells : 0;
-      // which logo a cell shows: rows walk the list with a golden-ratio stride, so a short list
-      // scatters instead of repeating in stripes; each authored tile sits in the first cell that asks for it
-      var stride = Math.max(1, Math.round(n * 0.618)) | 1;
-      var placed = [];
-      for (var i = 0; i < cells && n; i++) {
-        var r = Math.floor(i / cols), c = i % cols;
-        var k = (c + r * stride) % n;
-        var t;
-        if (!placed[k]) { t = src[k]; placed[k] = true; }
-        else {
-          t = src[k].cloneNode(true);
-          t.setAttribute('data-iwall-clone', '');
-          t.setAttribute('aria-hidden', 'true');
-          sheet.appendChild(t);
+      var cells = cols * rows, n = src.length;
+      if (rebuild || cols !== this.cols || rows !== this.rowsN || !this.cells) {
+        this.cols = cols; this.rowsN = rows;
+        toArray(sheet.querySelectorAll('[data-iwall-clone]')).forEach(function (c) { c.parentNode.removeChild(c); });
+        // which logo a cell shows: rows walk the list with a golden-ratio stride, so a short list
+        // scatters instead of repeating in stripes; each authored tile sits in the first cell that asks for it
+        var stride = Math.max(1, Math.round(n * 0.618)) | 1;
+        var placed = [], list = [];
+        for (var i = 0; i < cells && n; i++) {
+          var k = ((i % cols) + Math.floor(i / cols) * stride) % n;
+          var t;
+          if (!placed[k]) { t = src[k]; placed[k] = true; }
+          else {
+            t = src[k].cloneNode(true);
+            t.setAttribute('data-iwall-clone', '');
+            t.setAttribute('aria-hidden', 'true');
+            sheet.appendChild(t);
+          }
+          t.hidden = false;
+          list.push(t);
         }
-        t.hidden = false;
-        t.style.setProperty('--x', (c * step + (r % 2 ? shift : 0)) + 'px');
-        t.style.setProperty('--y', (r * step) + 'px');
+        // more tiles than cells: the authored ones that got no cell stay out of the way
+        for (var j = 0; j < n; j++) if (!placed[j]) src[j].hidden = true;
+        this.cells = list;
+        this.n = list.length;
       }
-      // more tiles than cells: the authored ones that got no cell stay out of the way
-      for (var j = 0; j < n; j++) if (!placed[j]) src[j].hidden = true;
-      sheet.style.width = (this.cols * step - o.gap + (this.rowsN > 1 ? shift : 0)) + 'px';
-      sheet.style.height = (this.rowsN * step - o.gap) + 'px';
+      var shift = o.stagger * step;
+      for (var q = 0; q < this.cells.length; q++) {
+        var r = Math.floor(q / cols), c = q % cols, el = this.cells[q];
+        el.style.setProperty('--x', (c * step + (r % 2 ? shift : 0)) + 'px');
+        el.style.setProperty('--y', (r * step) + 'px');
+      }
+      sheet.style.width = (cols * step - o.gap + (rows > 1 ? shift : 0)) + 'px';
+      sheet.style.height = (rows * step - o.gap) + 'px';
     },
 
     // the authored tiles changed (added, removed, replaced): read them again and rebuild
@@ -144,6 +151,17 @@
       s.setProperty('--iw-ry', o.maskRy + '%');
       s.setProperty('--iw-solid', o.maskSolid + '%');
       this.el.classList.toggle('iwall--no-mask', !o.mask);
+      if (o.fade !== 'auto') s.setProperty('--iw-fade', o.fade); else this.resolveFade();
+    },
+
+    // 'auto' fade: the first painted background-color up the tree
+    resolveFade: function () {
+      var n = this.el, bg = '';
+      while ((n = n.parentElement)) {
+        var c = getComputedStyle(n).backgroundColor;
+        if (c && c !== 'transparent' && !/rgba\(\d+, \d+, \d+, 0\)/.test(c)) { bg = c; break; }
+      }
+      this.el.style.setProperty('--iw-fade', bg || '#fff');
     },
 
     /* ---------- options ---------- */
@@ -154,10 +172,9 @@
         if (!patch.hasOwnProperty(k)) continue;
         if (o[k] === patch[k]) continue;
         o[k] = patch[k];
-        if (k === 'tile' || k === 'gap' || k === 'stagger') relayout = 'force';
-        else if ((k === 'columns' || k === 'rows' || k === 'pan' || k === 'drift') && !relayout) relayout = true;
+        if (k === 'columns' || k === 'rows' || k === 'tile' || k === 'gap' || k === 'stagger' || k === 'pan' || k === 'drift') relayout = true;
       }
-      if (relayout) this.layout(relayout === 'force');
+      if (relayout) this.layout();
       this.applyVars();
       if ('paused' in patch) patch.paused ? this.pause() : this.resume();
     },
@@ -183,6 +200,8 @@
       this.x += (this.tx - this.x) * k;
       this.y += (this.ty - this.y) * k;
       this.sheet.style.transform = 'translate3d(' + this.x.toFixed(2) + 'px,' + this.y.toFixed(2) + 'px,0)';
+      // the page may recolour behind the box (theme, editor): re-read the fade twice a second
+      if (o.fade === 'auto' && ++this.frames % 30 === 0) this.resolveFade();
     },
 
     /* ---------- events ---------- */

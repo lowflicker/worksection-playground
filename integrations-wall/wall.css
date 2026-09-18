@@ -11,17 +11,25 @@
   --iw-mx: 50%; --iw-my: 53%;               /* mask centre */
   --iw-rx: 60%; --iw-ry: 55%;               /* mask radii */
   --iw-solid: 50%;                          /* mask: fully visible up to here, then the fade */
+  --iw-fade: #f4f2f0;                       /* the colour the edges fade into; wall.js sets it to the background behind the box */
 
   position: relative;
   overflow: hidden;
   touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
-  /* an ellipse of full visibility, a soft fade, nothing at the edges — as a mask, so it works over any background */
-  -webkit-mask-image: radial-gradient(ellipse var(--iw-rx) var(--iw-ry) at var(--iw-mx) var(--iw-my), #000 var(--iw-solid), rgba(0, 0, 0, .12) 82%, transparent 100%);
-  mask-image: radial-gradient(ellipse var(--iw-rx) var(--iw-ry) at var(--iw-mx) var(--iw-my), #000 var(--iw-solid), rgba(0, 0, 0, .12) 82%, transparent 100%);
 }
-.iwall--no-mask { -webkit-mask-image: none; mask-image: none; }
+/* the fade is a static gradient of the background colour laid over the moving sheet, not a mask-image:
+   a mask on the box would re-rasterise every logo on every frame */
+.iwall::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(ellipse var(--iw-rx) var(--iw-ry) at var(--iw-mx) var(--iw-my), transparent var(--iw-solid), color-mix(in srgb, var(--iw-fade) 88%, transparent) 82%, var(--iw-fade) 100%);
+}
+.iwall--no-mask::after { display: none; }
 
 /* the sheet is centred in the box; wall.js adds the pan on top of the centring */
 .iwall__sheet {

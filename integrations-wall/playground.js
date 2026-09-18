@@ -6,30 +6,41 @@
   'use strict';
 
   // the catalogue: the integrations Worksection has (worksection.com/integrations + help centre) first, then tools
-  // people ask about; marks from Simple Icons (CC0), a few from Devicon (MIT) where Simple Icons has none
-  const DEVICON = n => `https://cdn.jsdelivr.net/gh/devicons/devicon/icons/${n}/${n}-original.svg`;
+  // people ask about. Original full-colour marks: SVG Logos via Iconify (CC0), Wikimedia Commons for the Google
+  // editors / Viber / Outlook / Apple Calendar, Simple Icons (CC0) only where the brand mark is one colour anyway
+  const LOGOS = n => `https://api.iconify.design/logos/${n}.svg`;
+  const COMMONS = p => `https://upload.wikimedia.org/wikipedia/commons/${p}`;
+  const SIMPLE = n => `https://cdn.simpleicons.org/${n}`;
   const CATALOG = [
-    ['googledrive', 'Google Drive'], ['googledocs', 'Google Docs'], ['googlesheets', 'Google Sheets'], ['googleslides', 'Google Slides'],
-    ['slack', 'Slack', DEVICON('slack')], ['telegram', 'Telegram'], ['viber', 'Viber'], ['gmail', 'Gmail'],
-    ['googlecalendar', 'Google Calendar'], ['icloud', 'Apple iCal'], ['zapier', 'Zapier'], ['make', 'Make'],
-    ['jira', 'Jira'], ['trello', 'Trello'], ['asana', 'Asana'], ['basecamp', 'Basecamp'],
-    ['github', 'GitHub'], ['gitlab', 'GitLab'], ['bitbucket', 'Bitbucket'], ['figma', 'Figma'], ['miro', 'Miro'], ['notion', 'Notion'],
-    ['hubspot', 'HubSpot'], ['zoom', 'Zoom'], ['googlemeet', 'Google Meet'], ['dropbox', 'Dropbox'], ['box', 'Box'],
-    ['intercom', 'Intercom'], ['mailchimp', 'Mailchimp'], ['stripe', 'Stripe'], ['shopify', 'Shopify'], ['wordpress', 'WordPress'],
-    ['whatsapp', 'WhatsApp'], ['discord', 'Discord'], ['signal', 'Signal'], ['airtable', 'Airtable'], ['todoist', 'Todoist'],
-    ['confluence', 'Confluence'], ['loom', 'Loom'], ['zendesk', 'Zendesk'], ['salesforce', 'Salesforce', DEVICON('salesforce')],
-    ['xero', 'Xero'], ['evernote', 'Evernote'], ['linear', 'Linear'], ['clickup', 'ClickUp'], ['toggltrack', 'Toggl'],
-    ['n8n', 'n8n'], ['calendly', 'Calendly'], ['webflow', 'Webflow'],
+    ['googledrive', 'Google Drive', LOGOS('google-drive')], ['googledocs', 'Google Docs', COMMONS('6/66/Google_Docs_2020_Logo.svg')],
+    ['googlesheets', 'Google Sheets', COMMONS('a/ae/Google_Sheets_2020_Logo.svg')], ['googleslides', 'Google Slides', COMMONS('1/16/Google_Slides_2020_Logo.svg')],
+    ['slack', 'Slack', LOGOS('slack-icon')], ['telegram', 'Telegram', LOGOS('telegram')], ['viber', 'Viber', COMMONS('a/a5/Viber_icon.svg')],
+    ['gmail', 'Gmail', LOGOS('google-gmail')], ['googlecalendar', 'Google Calendar', LOGOS('google-calendar')],
+    ['outlook', 'Outlook', COMMONS('4/45/Microsoft_Office_Outlook_%282018%E2%80%932024%29.svg')], ['applecalendar', 'Apple Calendar', COMMONS('5/5e/Apple_Calendar_%28iOS%29.svg')],
+    ['zapier', 'Zapier', LOGOS('zapier-icon')], ['make', 'Make', SIMPLE('make')],
+    ['jira', 'Jira', LOGOS('jira')], ['trello', 'Trello', LOGOS('trello')], ['asana', 'Asana', LOGOS('asana-icon')], ['basecamp', 'Basecamp', LOGOS('basecamp-icon')],
+    ['github', 'GitHub', LOGOS('github-icon')], ['gitlab', 'GitLab', LOGOS('gitlab')], ['bitbucket', 'Bitbucket', LOGOS('bitbucket')],
+    ['figma', 'Figma', LOGOS('figma')], ['miro', 'Miro', LOGOS('miro-icon')], ['notion', 'Notion', LOGOS('notion-icon')],
+    ['hubspot', 'HubSpot', LOGOS('hubspot')], ['zoom', 'Zoom', LOGOS('zoom-icon')], ['googlemeet', 'Google Meet', LOGOS('google-meet')],
+    ['teams', 'Microsoft Teams', LOGOS('microsoft-teams')], ['dropbox', 'Dropbox', LOGOS('dropbox')], ['box', 'Box', LOGOS('box')],
+    ['intercom', 'Intercom', LOGOS('intercom-icon')], ['mailchimp', 'Mailchimp', LOGOS('mailchimp-freddie')], ['stripe', 'Stripe', LOGOS('stripe')],
+    ['shopify', 'Shopify', LOGOS('shopify')], ['wordpress', 'WordPress', LOGOS('wordpress-icon')],
+    ['whatsapp', 'WhatsApp', LOGOS('whatsapp-icon')], ['discord', 'Discord', LOGOS('discord-icon')], ['signal', 'Signal', LOGOS('signal')],
+    ['airtable', 'Airtable', LOGOS('airtable')], ['todoist', 'Todoist', LOGOS('todoist-icon')], ['confluence', 'Confluence', LOGOS('confluence')],
+    ['loom', 'Loom', LOGOS('loom-icon')], ['zendesk', 'Zendesk', LOGOS('zendesk-icon')], ['salesforce', 'Salesforce', LOGOS('salesforce')],
+    ['xero', 'Xero', LOGOS('xero')], ['evernote', 'Evernote', SIMPLE('evernote')], ['linear', 'Linear', LOGOS('linear-icon')],
+    ['clickup', 'ClickUp', LOGOS('clickup-icon')], ['toggl', 'Toggl', SIMPLE('toggltrack')], ['n8n', 'n8n', LOGOS('n8n')],
+    ['calendly', 'Calendly', SIMPLE('calendly')], ['webflow', 'Webflow', LOGOS('webflow')],
   ];
   // what Worksection actually integrates with: the default wall
-  const WORKSECTION = ['googledrive', 'googledocs', 'googlesheets', 'googleslides', 'slack', 'telegram', 'viber', 'gmail', 'googlecalendar', 'icloud', 'zapier', 'make'];
+  const WORKSECTION = ['googledrive', 'googledocs', 'googlesheets', 'googleslides', 'slack', 'telegram', 'viber', 'gmail', 'googlecalendar', 'outlook', 'applecalendar', 'zapier', 'make'];
   const byId = Object.fromEntries(CATALOG.map(l => [l[0], l]));
   const esc = Playground.esc;
-  // an id is a catalogue slug or, typed by hand, a Simple Icons slug or a URL / path to an SVG or PNG
   const isUrl = id => /^(https?:)?\/\/|^\.{0,2}\//.test(id) || /\.(svg|png|webp)$/i.test(id);
-  const src = id => byId[id] ? (byId[id][2] || `https://cdn.simpleicons.org/${id}`) : isUrl(id) ? id : `https://cdn.simpleicons.org/${id}`;
-  const name = id => byId[id] ? byId[id][1] : isUrl(id) ? id.split('/').pop().replace(/\.[a-z]+$/i, '') : id;
-  const file = id => (isUrl(id) ? id : `logos/${id}.svg`);
+  // typed by hand: a Simple Icons slug, `logos:name` from Iconify's SVG Logos set, or a URL / path to an SVG or PNG
+  const src = id => byId[id] ? byId[id][2] : isUrl(id) ? id : /^logos:/.test(id) ? LOGOS(id.slice(6)) : SIMPLE(id);
+  const name = id => byId[id] ? byId[id][1] : isUrl(id) ? id.split('/').pop().replace(/\.[a-z]+$/i, '') : id.replace(/^logos:/, '');
+  const file = id => (isUrl(id) ? id : `logos/${id.replace(/^logos:/, '')}.svg`);
   const tile = (id, local) => `<figure class="iwall__tile"><img src="${local ? file(id) : src(id)}" alt="${esc(name(id))}"></figure>`;
 
   const KEYS = Object.keys(IntegrationsWall.defaults).filter(k => !['respectReducedMotion', 'paused'].includes(k));
@@ -117,7 +128,7 @@ ${s.logos.map(id => '    ' + tile(id, true)).join('\n')}
       ] },
       { title: 'Логотипи', items: [
         { type: 'chips', key: 'logos', label: 'Які показувати', options: CATALOG.map(l => ({ id: l[0], label: l[1], icon: src(l[0]) })),
-          add: { placeholder: 'Slug із simpleicons.org або URL до SVG, Enter', parse: t => t.replace(/^https:\/\/cdn\.simpleicons\.org\//, '').trim() || null, label: name, icon: src } },
+          add: { placeholder: 'logos:назва з icon-sets.iconify.design, slug із simpleicons.org або URL до SVG, Enter', parse: t => t.replace(/^https:\/\/cdn\.simpleicons\.org\//, '').trim() || null, label: name, icon: src } },
         { type: 'note', text: 'Порядок плиток = порядок у списку. На сайті замість CDN лежать свої SVG у logos/, сніпет уже вказує на них.' },
       ] },
       { title: 'Вигляд', items: [
@@ -128,15 +139,16 @@ ${s.logos.map(id => '    ' + tile(id, true)).join('\n')}
     acceptance: [
       // the real cursor may sit on the stage and Chrome re-fires pointer events after a relayout, so the rows only ask for a move and an immediate reset
       { id: 'pointer-pans-the-sheet', run: ctx => {
+          ctx.set({ drift: 0 });
           const r = root.getBoundingClientRect();
           wall.x0 = wall.x;
           root.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: r.left + r.width * 0.9, clientY: r.top + r.height * 0.5 }));
-        }, wait: 800, expect: () => (wall.px !== null && Math.abs(wall.x - wall.x0) > 5) || `x moved ${(wall.x - wall.x0).toFixed(1)} px, px=${wall.px}` },
+        }, wait: 800, expect: () => Math.abs(wall.x - wall.x0) > 20 || `x moved ${(wall.x - wall.x0).toFixed(1)} px` },
       { id: 'leave-returns-to-idle', run: () => root.dispatchEvent(new PointerEvent('pointerleave')), wait: 0, expect: () => wall.px === null || 'pointer still tracked' },
       { id: 'columns-rebuild-cells', run: ctx => ctx.set({ columns: 4, rows: 5 }), expect: () => (wall.n === 20 && wall.sheet.querySelectorAll('.iwall__tile:not([hidden])').length === 20) || `n=${wall.n}` },
       { id: 'auto-grid-overhangs-the-box', run: ctx => ctx.set({ columns: 0, rows: 0 }), wait: 60, expect: () => (wall.sheet.offsetWidth > root.clientWidth && wall.sheet.offsetHeight > root.clientHeight) || `sheet ${wall.sheet.offsetWidth}×${wall.sheet.offsetHeight} in ${root.clientWidth}×${root.clientHeight}` },
       { id: 'mask-reaches-css', run: ctx => ctx.set({ mask: true, maskRx: 33 }), expect: () => getComputedStyle(root).getPropertyValue('--iw-rx').trim() === '33%' || 'no --iw-rx' },
-      { id: 'logos-rebuild-tiles', run: ctx => ctx.set({ logos: ['slack', 'telegram', 'https://example.com/x.svg'] }), expect: () => (wall.source.length === 3 && wall.source[2].querySelector('img').getAttribute('src') === 'https://example.com/x.svg') || `${wall.source.length} tiles` },
+      { id: 'logos-rebuild-tiles', run: ctx => ctx.set({ logos: ['slack', 'logos:vercel-icon', 'https://example.com/x.svg'] }), expect: () => (wall.source.length === 3 && wall.source[2].querySelector('img').getAttribute('src') === 'https://example.com/x.svg' && /iconify.*vercel-icon/.test(wall.source[1].querySelector('img').src)) || `${wall.source.length} tiles` },
       { id: 'loop-stops-when-hidden', run: () => Playground.show('integrations'), wait: 60, expect: () => !!wall.raf || 'not running while shown' },
     ],
 
