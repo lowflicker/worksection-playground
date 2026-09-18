@@ -37,7 +37,7 @@ README.md               developer overview + how to add a module.
 
 Globals / ids: `LogoWall`→`logos`, `ShortAnswer`→`answer`, `FloatActions`→`fab`,
 `BorderBeam`→`beam`, `DotSphere`→`sphere`, `Hero`→`hero`, `SiteHeader`→`header`, button (no JS, `button.css`)→`button`.
-Tab prefixes: `S :` = section of the site, `C :` = component reused inside sections. Each module exposes `.defaults`.
+`tab` prefixes: `S :` = section of the site, `C :` = component reused inside sections, none = effect; the home page (`index.html` with no hash) is a catalogue grouped by these; a module opens at `#<id>`. Each module exposes `.defaults`.
 `hero-section/` is markup-first: the adapter builds the HTML, `hero.js` only
 enhances it; its breakpoints are container queries, so the frame width
 presets (390 / 320) show the narrow composition. Its stage is the site's
@@ -119,7 +119,7 @@ playback?, onShow?, onHide? })`
 Shell owns (never reimplement in an adapter): pause / speed, frame width,
 zoom, grid, guides, fps, code drawer + copy, save / share link
 (`#<id>?s=<base64>`), stage bg, theme, panel hide, shortcuts (`?`), mobile
-sheet, collapsible groups. localStorage prefix `ws-playground:`.
+sheet, collapsible groups, the catalogue (`Playground.home()`, key `H`) and the crumb pill with the module switch. localStorage prefix `ws-playground:`.
 
 ## Adding a module
 
@@ -159,5 +159,6 @@ sheet, collapsible groups. localStorage prefix `ws-playground:`.
 - 2026-09-17: `site-header/` (worksection.com top bar; its demo stacks it on the hero).
 - 2026-09-18: header shows only the bar, hero = first screen (header + hero); `site-button/` (site's .btn mirror + mono beam), hero CTAs are its copies.
 - 2026-09-18: shell redesigned after Toolcraft (glass panel, tool pill, section reset); `easing` control (bezier editor); `check()` = acceptance, all green.
+- 2026-09-18: no topbar: home catalogue + crumb pill; shell primitives are `:where(:not(.frame *))` so they never restyle module markup.
 - Old folder `Desktop/vis-effects-for-ui` is superseded; work from this repo.
 - `.claude/launch.json` runs `python3` (no bare `python` on this Mac).

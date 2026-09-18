@@ -22,20 +22,39 @@
 </head>
 <body>
 
-<nav class="topbar">
-  <span class="topbar__brand"><i class="topbar__mark"></i>Worksection playground</span>
-  <div class="topbar__tabs" id="tabs"></div>
-  <div class="topbar__actions">
-    <button type="button" class="only-desktop" id="btn-panel" title="Сховати або показати панель (\)" aria-label="Панель">
-      <svg class="i" viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M10 2.5v11"/></svg>
-    </button>
-    <button type="button" id="btn-theme" title="Світла або темна тема (T)" aria-label="Тема">
-      <svg class="i" data-icon="sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6 13 13M3 13l1.4-1.4M11.6 4.4 13 3"/></svg>
-      <svg class="i" data-icon="moon" viewBox="0 0 16 16"><path d="M13.5 10A6 6 0 0 1 6 2.5a6 6 0 1 0 7.5 7.5z"/></svg>
-    </button>
-    <button type="button" id="btn-help" title="Клавіші (?)" aria-label="Клавіші">?</button>
+<!-- home: the catalogue of modules; a module view hides it -->
+<section class="home" id="home" hidden>
+  <header class="home__head">
+    <div>
+      <span class="home__brand"><i class="mark"></i>Worksection playground</span>
+      <p class="home__sub">Блоки промо-сайту й UI-ефекти: відкрий модуль, крути параметри, забирай код.</p>
+    </div>
+  </header>
+  <div id="catalog">
+    <section class="home__group" data-kind="section"><h2>Секції</h2><div class="home__grid"></div></section>
+    <section class="home__group" data-kind="component"><h2>Компоненти</h2><div class="home__grid"></div></section>
+    <section class="home__group" data-kind="effect"><h2>Ефекти</h2><div class="home__grid"></div></section>
   </div>
-</nav>
+</section>
+
+<!-- crumb: back to the catalogue and a quick switch, floats over the stage; the actions pill sits at its right edge -->
+<div class="crumb" id="crumb">
+  <button type="button" class="crumb__home" id="btn-home" title="Каталог (H)" aria-label="Каталог">
+    <svg class="i" viewBox="0 0 16 16"><path d="M2.5 7.5 8 2.5l5.5 5v6h-4v-4h-3v4h-4z"/></svg>
+  </button>
+  <button type="button" class="crumb__title" id="crumb-title" aria-haspopup="menu" aria-expanded="false"><span id="crumb-label"></span><svg class="i" viewBox="0 0 16 16"><path d="m4.5 6.5 3.5 3.5 3.5-3.5"/></svg></button>
+  <div class="crumb__menu" id="crumb-menu" role="menu" hidden></div>
+</div>
+<div class="actions" id="actions">
+  <button type="button" class="only-desktop" id="btn-panel" title="Сховати або показати панель (\)" aria-label="Панель">
+    <svg class="i" viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M10 2.5v11"/></svg>
+  </button>
+  <button type="button" id="btn-theme" title="Світла або темна тема (T)" aria-label="Тема">
+    <svg class="i" data-icon="sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6 13 13M3 13l1.4-1.4M11.6 4.4 13 3"/></svg>
+    <svg class="i" data-icon="moon" viewBox="0 0 16 16"><path d="M13.5 10A6 6 0 0 1 6 2.5a6 6 0 1 0 7.5 7.5z"/></svg>
+  </button>
+  <button type="button" id="btn-help" title="Клавіші (?)" aria-label="Клавіші">?</button>
+</div>
 
 <div class="help" id="help" hidden>
   <h3>Клавіші</h3>
@@ -48,7 +67,8 @@
     <dt><kbd class="k">C</kbd></dt><dd>код</dd>
     <dt><kbd class="k">\</kbd></dt><dd>сховати панель</dd>
     <dt><kbd class="k">T</kbd></dt><dd>тема</dd>
-    <dt><kbd class="k">1</kbd>…<kbd class="k">5</kbd></dt><dd>вкладки</dd>
+    <dt><kbd class="k">H</kbd></dt><dd>каталог</dd>
+    <dt><kbd class="k">1</kbd>…<kbd class="k">9</kbd></dt><dd>модулі</dd>
     <dt><kbd class="k">Esc</kbd></dt><dd>закрити</dd>
   </dl>
 </div>

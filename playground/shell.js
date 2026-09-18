@@ -15,7 +15,8 @@
    unless marked required:
      id        string   required. URL hash and storage key
      title     string   required. Panel heading
-     tab       string   Topbar label, defaults to title
+     tab       string   Short label for the crumb menu, defaults to title; its prefix
+                        (`S :` section, `C :` component) files the catalogue card
      summary   string   One line under the heading
      dir       string   Module folder, for the README link
      tabs      [{ id, label, file }] or [{ id, label, render(state, ctx) }]
@@ -111,7 +112,7 @@
 
   const els = {};
   function bindShell() {
-    ['views', 'tabs', 'toolbar', 'tb-play', 'tb-rates', 'tb-width', 'tb-width-badge', 'tb-width-in', 'tb-width-sep', 'tb-zooms', 'tb-grid', 'tb-guides', 'tb-fps',
+    ['views', 'home', 'catalog', 'crumb', 'btn-home', 'crumb-title', 'crumb-label', 'crumb-menu', 'actions', 'toolbar', 'tb-play', 'tb-rates', 'tb-width', 'tb-width-badge', 'tb-width-in', 'tb-width-sep', 'tb-zooms', 'tb-grid', 'tb-guides', 'tb-fps',
      'drawer', 'drawer-tabs', 'drawer-code', 'drawer-copy', 'drawer-files', 'drawer-legend', 'drawer-readme',
      'btn-panel', 'btn-theme', 'btn-help', 'help'].forEach(id => { els[id] = document.getElementById(id); });
   }
@@ -144,11 +145,17 @@
     els.views.append(app);
     m.els = { app, stage, body, frame, hint, panel, scroll };
 
-    // topbar tab
-    const tab = h('button', '', esc(def.tab || def.title));
-    tab.type = 'button'; tab.dataset.view = m.id;
-    tab.addEventListener('click', () => show(m.id));
-    els.tabs.append(tab);
+    // the catalogue card and the crumb menu entry; the kind comes from the tab prefix (S : section, C : component)
+    const kind = /^S\s*:/.test(def.tab || '') ? 'section' : /^C\s*:/.test(def.tab || '') ? 'component' : 'effect';
+    const files = (def.tabs || []).filter(t => t.file).map(t => `<span>${esc(t.label)}</span>`).join('');
+    const card = h('button', 'card', `<span class="card__name">${esc(def.title)}</span><span class="card__sum">${esc(def.summary || '')}</span><span class="card__files">${files}</span>`);
+    card.type = 'button'; card.dataset.view = m.id;
+    card.addEventListener('click', () => show(m.id));
+    $(`.home__group[data-kind="${kind}"] .home__grid`, els.catalog).append(card);
+    const item = h('button', '', esc(def.tab || def.title));
+    item.type = 'button'; item.dataset.view = m.id; item.setAttribute('role', 'menuitem');
+    item.addEventListener('click', () => { closeMenu(); show(m.id); });
+    els['crumb-menu'].append(item);
 
     // the module's view of the shell
     m.ctx = {
@@ -775,8 +782,18 @@
     if (active && active.rz) requestAnimationFrame(() => active.rz.sync());
   }
 
+  function openMenu(on) {
+    const open = on == null ? els['crumb-menu'].hidden : on;
+    els['crumb-menu'].hidden = !open;
+    els['crumb-title'].setAttribute('aria-expanded', String(open));
+  }
+  const closeMenu = () => openMenu(false);
+
   function bindGlobal() {
     els['btn-panel'].addEventListener('click', () => togglePanel());
+    els['btn-home'].addEventListener('click', home);
+    els['crumb-title'].addEventListener('click', () => openMenu());
+    document.addEventListener('pointerdown', e => { if (!els['crumb-menu'].hidden && !e.target.closest('#crumb')) closeMenu(); });
     els['btn-theme'].addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
     els['btn-help'].addEventListener('click', () => { els.help.hidden = !els.help.hidden; });
     $$('[data-drawer-close]', els.drawer).forEach(n => n.addEventListener('click', closeDrawer));
@@ -790,7 +807,7 @@
 
     document.addEventListener('keydown', e => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === 'Escape') { closeDrawer(); closeEasing(); els.help.hidden = true; return; }
+      if (e.key === 'Escape') { closeDrawer(); closeEasing(); closeMenu(); els.help.hidden = true; return; }
       if (e.target && e.target.closest && e.target.closest('input, textarea, select, [contenteditable]')) return;
       // e.code is layout-independent (works on the Ukrainian layout too); fall back to the key for synthetic events
       const k = e.key || '';
@@ -803,6 +820,7 @@
       else if (c === 'KeyZ') setZoom(ZOOMS[(ZOOMS.indexOf(tools.zoom) + 1) % ZOOMS.length]);
       else if (c === 'KeyC') els.drawer.hidden ? openDrawer() : closeDrawer();
       else if (c === 'KeyT') els['btn-theme'].click();
+      else if (c === 'KeyH') home();
       else if (c === 'Backslash') togglePanel();
       else if (e.key === '?') els.help.hidden = !els.help.hidden;
       else if (/^Digit[1-9]$/.test(c)) { const m = modules[+c.slice(5) - 1]; if (m) show(m.id); }
@@ -862,9 +880,12 @@
     }
     closeEasing();
     active = m;
+    els.home.hidden = true;
+    document.body.classList.remove('is-home');
     m.els.app.hidden = false;
-    m.els.stage.prepend(els.toolbar);
-    $$('[data-view]', els.tabs).forEach(b => b.classList.toggle('is-active', b.dataset.view === m.id));
+    m.els.stage.prepend(els.crumb, els.actions, els.toolbar);
+    els['crumb-label'].textContent = m.def.tab || m.def.title;
+    $$('[data-view]', els['crumb-menu']).forEach(b => b.classList.toggle('is-active', b.dataset.view === m.id));
     history.replaceState(null, '', '#' + m.id);
     store.set(STORE + 'view', m.id);
     const pb = m.def.playback || {};
@@ -878,14 +899,29 @@
     renderDrawer();
   }
 
-  /* ---------- boot ---------- */
+  // the catalogue: no module on screen, the actions pill moves into the page head
+  function home() {
+    if (active) {
+      if (active.def.onHide) active.def.onHide(active.ctx);
+      active.els.app.hidden = true;
+      active = null;
+    }
+    closeDrawer(); closeEasing(); closeMenu(); els.help.hidden = true;
+    els.home.hidden = false;
+    document.body.classList.add('is-home');
+    $('.home__head', els.home).append(els.actions);
+    history.replaceState(null, '', location.pathname + location.search);
+    store.set(STORE + 'view', '');
+  }
+
+  /* ---------- boot: a module from the hash, else the catalogue ---------- */
   function boot() {
     const [hashView, hashQuery] = location.hash.slice(1).split('?');
     restoreAll(hashView, hashQuery);
     modules.forEach(bindSheet);
     setSheet(sheet.state);
-    const saved = store.get(STORE + 'view', null);
-    show(byId[hashView] ? hashView : byId[saved] ? saved : modules[0] && modules[0].id);
+    byId[hashView] ? show(hashView) : home();
+    window.addEventListener('hashchange', () => { const id = location.hash.slice(1).split('?')[0]; if (byId[id]) show(id); else if (!id) home(); });
   }
 
   /* ---------- dev helpers: cheap answers from the console instead of reading files or taking screenshots ---------- */
@@ -999,7 +1035,7 @@
     await wait(120);
     window.removeEventListener('error', onErr);
     if (report.errors.length) report.ok = false;
-    if (start) show(start);
+    start ? show(start) : home();
     report.fps = els['tb-fps'].textContent;
     return report;
   }
@@ -1040,7 +1076,7 @@
     register,
     // playground-only css for a module (demo surfaces, stand-ins): keeps the exported files clean
     css(text) { const s = document.createElement('style'); s.textContent = text; document.head.append(s); styles.push(s); },
-    show,
+    show, home,
     get active() { return active && active.ctx; },
     provide, consume, publish, component,
     describe, check,
