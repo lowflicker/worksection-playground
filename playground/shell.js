@@ -148,7 +148,7 @@
   function bindShell() {
     ['views', 'home', 'catalog', 'crumb', 'btn-home', 'crumb-title', 'crumb-label', 'crumb-icon', 'crumb-menu', 'topbar', 'actions', 'toolbar', 'tb-play', 'tb-rates', 'tb-width', 'tb-width-badge', 'tb-width-in', 'tb-width-sep', 'tb-zooms', 'tb-grid', 'tb-guides', 'tb-fps',
      'drawer', 'drawer-tabs', 'drawer-code', 'drawer-copy', 'drawer-files', 'drawer-legend', 'drawer-readme',
-     'notebar', 'nb-fold', 'nb-count-min', 'nb-toggle', 'nb-count', 'nb-prev', 'nb-pos', 'nb-next', 'nb-add', 'nb-copy',
+     'btn-bell', 'bell-n', 'bell', 'notebar', 'nb-fold', 'nb-count-min', 'nb-toggle', 'nb-count', 'nb-prev', 'nb-pos', 'nb-next', 'nb-add', 'nb-copy',
      'btn-panel', 'btn-theme', 'btn-help', 'help'].forEach(id => { els[id] = document.getElementById(id); });
   }
 
@@ -317,8 +317,10 @@
 
     // notes: the list, «new» and a Markdown copy for the handoff
     const nt = h('div', 'notes-list');
-    nt.innerHTML = `<div class="notes__list"><p class="shared__empty">…</p></div><span class="save__status notes__status"></span>`;
+    nt.innerHTML = `<div class="notes__filter" hidden></div><div class="notes__list"><p class="shared__empty">…</p></div><span class="save__status notes__status"></span>`;
     m.notesListEl = $('.notes__list', nt);
+    m.notesFilterEl = $('.notes__filter', nt);
+    m.notesFilterEl.addEventListener('click', e => { const b = e.target.closest('[data-filter]'); if (!b) return; m.notes.filter = b.dataset.filter; renderNotesList(m); });
     m.notesStatusEl = $('.notes__status', nt);
     nt.addEventListener('click', e => { const b = e.target.closest('[data-do]'); if (!b) return; const row = b.closest('.notes__row'); notesAction(m, b.dataset.do, row && row.dataset.id); });
     scroll.append(group(m, { title: 'Нотатки до елементів' }, nt));
@@ -680,6 +682,7 @@
     claims(token) { try { return JSON.parse(b64d(token.split('.')[1])); } catch (e) { return {}; } },
     keep(tokens) {
       if (!tokens || !tokens.access_token) return auth.drop();
+      setTimeout(loadBell, 0); // a session means notifications to fetch
       const c = auth.claims(tokens.access_token), email = c.email || '';
       // the name is what the list shows to anyone with the link, so never the full address
       auth.session = {
@@ -689,7 +692,7 @@
       store.set(SESSION_KEY, auth.session);
       modules.forEach(renderAuth);
     },
-    drop() { auth.session = null; store.del(SESSION_KEY); modules.forEach(renderAuth); },
+    drop() { auth.session = null; store.del(SESSION_KEY); modules.forEach(renderAuth); setTimeout(loadBell, 0); },
     // an access token lives an hour; it is renewed a minute early, on the way to a request
     async token() {
       const s = auth.session; if (!s) return null;
@@ -944,6 +947,47 @@
     return parts.join(' > ');
   }
   const noteTarget = (m, sel) => { try { return m.els.frame.querySelector(sel); } catch (e) { return null; } };
+  // what a note is about: the pin's colour and the list's filter
+  const KINDS = [['change', 'Зміна'], ['attention', 'Увага'], ['question', 'Питання'], ['bug', 'Баг']];
+  const kindLabel = k => (KINDS.find(x => x[0] === k) || KINDS[0])[1];
+  // the element's styles at the time of the note: what a developer would open DevTools for
+  const STYLE_PROPS = ['font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'color', 'background-color', 'border-radius', 'box-shadow', 'padding', 'gap', 'width', 'height'];
+  function snapStyles(el) {
+    const cs = getComputedStyle(el), out = {};
+    for (const k of STYLE_PROPS) {
+      let v = cs.getPropertyValue(k).trim();
+      if (!v || v === 'none' || v === 'normal' || v === 'rgba(0, 0, 0, 0)' || v === '0px' || v === 'auto') continue;
+      if (k === 'font-family') v = v.split(',')[0].replace(/["']/g, '');
+      if (k === 'box-shadow' && v.length > 60) v = v.slice(0, 57) + '…';
+      v = v.replace(/(\d+\.\d\d)\d+px/g, '$1px');
+      out[k] = v;
+    }
+    return out;
+  }
+  // @name in a text: a link-looking chip; the handle is the part of the address before @
+  const mentions = text => esc(text).replace(/(^|[^\w@])@([a-z0-9][a-z0-9._-]*[a-z0-9])/gi, '$1<mark class="note-at">@$2</mark>');
+  let people = null; // handles seen in notes and replies, for the suggestions under a field
+  async function loadPeople() {
+    if (people) return people;
+    try { people = REMOTE.url ? (await rest('note_people', '?select=handle')).map(r => r.handle) : []; } catch (e) { people = []; }
+    return people;
+  }
+  // typing @ in a field: the matching handles under it, a click or Tab completes
+  function mentionable(field, host) {
+    const box = h('div', 'note-at__list'); box.hidden = true; host.append(box);
+    const at = () => { const v = field.value.slice(0, field.selectionStart); const mm = v.match(/(?:^|\s)@([a-z0-9._-]*)$/i); return mm ? mm[1].toLowerCase() : null; };
+    const refresh = async () => {
+      const q = at(); if (q === null) { box.hidden = true; return; }
+      const list = (await loadPeople()).filter(hd => hd.toLowerCase().startsWith(q) && hd.toLowerCase() !== q).slice(0, 6);
+      box.innerHTML = list.map(hd => `<button type="button" data-handle="${esc(hd)}">@${esc(hd)}</button>`).join('');
+      box.hidden = !list.length;
+    };
+    const pick = hd => { const v = field.value, i = field.selectionStart; const head = v.slice(0, i).replace(/@[a-z0-9._-]*$/i, '@' + hd + ' '); field.value = head + v.slice(i); field.focus(); field.setSelectionRange(head.length, head.length); box.hidden = true; };
+    field.addEventListener('input', refresh);
+    field.addEventListener('keydown', e => { if (!box.hidden && (e.key === 'Tab' || (e.key === 'Enter' && box.children.length === 1))) { e.preventDefault(); pick(box.firstElementChild.dataset.handle); } if (e.key === 'Escape' && !box.hidden) { e.stopPropagation(); box.hidden = true; } });
+    box.addEventListener('mousedown', e => { const b = e.target.closest('[data-handle]'); if (b) { e.preventDefault(); pick(b.dataset.handle); } });
+    field.addEventListener('blur', () => setTimeout(() => { box.hidden = true; }, 150));
+  }
   const noteLabel = sel => sel.split(' > ').pop().replace(/:nth-of-type\(\d+\)/, '');
   const noteMine = row => !REMOTE.url || (auth.user && row.owner === auth.user.id);
 
@@ -964,7 +1008,7 @@
     const n = m.notes, layer = m.els.notes;
     for (const p of n.pins) { p.el.remove(); p.box.remove(); if (p.card) p.card.remove(); if (p.peek) p.peek.remove(); }
     n.pins = n.rows.map((row, i) => {
-      const el = h('button', 'note-pin', String(i + 1)); el.type = 'button';
+      const el = h('button', 'note-pin', String(i + 1)); el.type = 'button'; el.dataset.kind = row.kind || 'change';
       const box = h('div', 'note-box');
       el.addEventListener('pointerenter', () => { p.hover = true; if (!p.card && !p.peek) { p.peek = notePeek(m, p); layer.append(p.peek); } });
       el.addEventListener('pointerleave', () => { p.hover = false; if (p.peek) { p.peek.remove(); p.peek = null; } });
@@ -1028,14 +1072,16 @@
           <button type="button" class="icon${row.done ? ' is-on' : ''}" data-do="done" title="${row.done ? 'Знову відкрити' : 'Вирішено'}">${NOTE_ICON.check}</button>
           <button type="button" class="icon" data-do="menu" title="Ще" aria-haspopup="menu">${NOTE_ICON.more}</button>
           <button type="button" class="icon" data-do="close" title="Закрити (Esc)">${ICON.close}</button></span></div>
-        <div class="note-card__menu" hidden><button type="button" data-do="link">${ICON.link}Скопіювати посилання</button>${mine ? `<button type="button" data-do="edit">${NOTE_ICON.pen}Редагувати</button><button type="button" class="is-bad" data-do="del">${NOTE_ICON.trash}Видалити</button>` : ''}</div>
-        <div class="note-card__text">${esc(row.text)}</div>
-        <code class="note-card__sel" title="${esc(row.selector)}">${esc(row.label || noteLabel(row.selector))}</code>
-        ${(row.note_replies || []).length ? `<div class="note-card__thread">${row.note_replies.map(r => `<div class="note-card__reply" data-reply="${esc(r.id)}"><div class="note-card__head">${person(r.author, r.created_at)}${!REMOTE.url || (auth.user && r.owner === auth.user.id) ? `<button type="button" class="icon" data-do="unreply" title="Видалити відповідь">${ICON.close}</button>` : ''}</div><div class="note-card__text">${esc(r.text)}</div></div>`).join('')}</div>` : ''}
+        <div class="note-card__menu" hidden><button type="button" data-do="link">${ICON.link}Скопіювати посилання</button>${row.snapshot ? `<button type="button" data-do="state">${ICON.reset}Показати стан нотатки</button>` : ''}${mine ? `<button type="button" data-do="edit">${NOTE_ICON.pen}Редагувати</button><button type="button" class="is-bad" data-do="del">${NOTE_ICON.trash}Видалити</button>` : ''}</div>
+        <div class="note-card__text">${mentions(row.text)}</div>
+        <div class="note-card__chips"><span class="note-card__kind" data-kind="${esc(row.kind || 'change')}">${esc(kindLabel(row.kind))}</span><code class="note-card__sel" title="${esc(row.selector)}">${esc(row.label || noteLabel(row.selector))}</code></div>
+        ${row.styles && Object.keys(row.styles).length ? `<details class="note-card__styles"><summary>Стилі елемента <small>${Object.keys(row.styles).length}</small></summary><dl>${Object.entries(row.styles).sort((a, b) => STYLE_PROPS.indexOf(a[0]) - STYLE_PROPS.indexOf(b[0])).map(([k, v]) => `<dt>${esc(k)}</dt><dd title="${esc(v)}">${esc(v)}</dd>`).join('')}</dl></details>` : ''}
+        ${(row.note_replies || []).length ? `<div class="note-card__thread">${row.note_replies.map(r => `<div class="note-card__reply" data-reply="${esc(r.id)}"><div class="note-card__head">${person(r.author, r.created_at)}${!REMOTE.url || (auth.user && r.owner === auth.user.id) ? `<button type="button" class="icon" data-do="unreply" title="Видалити відповідь">${ICON.close}</button>` : ''}</div><div class="note-card__text">${mentions(r.text)}</div></div>`).join('')}</div>` : ''}
         <form class="note-card__answer"><input type="text" placeholder="Відповісти…" maxlength="600" autocomplete="off"><button type="submit" class="icon" title="Надіслати (Enter)">${NOTE_ICON.send}</button></form>`;
+      mentionable($('form input', card), $('form', card));
       $('form', card).addEventListener('submit', async e => {
         e.preventDefault();
-        const input = $('input', card), text = input.value.trim();
+        const input = $('form input', card), text = input.value.trim();
         if (!text) return;
         if (REMOTE.url && !auth.user) { openSignIn(m); return; }
         try {
@@ -1065,6 +1111,7 @@
         catch (err) { notesStatus(m, 'Не вдалося позначити: ' + err.message, true); }
       }
       else if (act === 'link') { const url = noteLink(m, row.id); try { await navigator.clipboard.writeText(url); notesStatus(m, 'Посилання скопійовано'); } catch (err) { prompt('Скопіюй посилання', url); } }
+      else if (act === 'state') { restoreSnapshot(m, row.snapshot); notesStatus(m, 'Стан на момент нотатки'); }
       else if (act === 'edit') edit();
       else if (act === 'cancel-edit') render();
       else if (act === 'save-edit') {
@@ -1138,7 +1185,8 @@
     m.els.notes.classList.add('is-picking'); // still a modal moment on the stage
     const card = h('div', 'note-card note-card--compose');
     card.innerHTML = `<div class="note-card__head">${auth.user ? person(auth.user.name, new Date().toISOString()) : '<span class="note-card__avatar">?</span><span class="note-card__who"><b>Нова нотатка</b><small>до елемента</small></span>'}</div>
-      <textarea rows="3" placeholder="Що тут не так, як на сайті, або на що звернути увагу" maxlength="600"></textarea>
+      <div class="note-card__kinds">${KINDS.map(([k, l], i) => `<button type="button" data-kind="${k}" class="${i ? '' : 'is-on'}">${l}</button>`).join('')}</div>
+      <textarea rows="3" placeholder="Що тут не так, як на сайті, або на що звернути увагу. @ім'я — сказати комусь" maxlength="600"></textarea>
       <code class="note-card__sel"></code>
       <div class="note-card__row"><button type="button" data-do="up" title="Взяти батьківський елемент">Ширше</button><span class="note-card__tools"><button type="button" data-do="cancel">Скасувати</button><button type="button" class="primary" data-do="save">Зберегти</button></span></div>`;
     n.compose = { el, card, box: h('div', 'note-box note-box--pick'), hover: false, last: null };
@@ -1149,11 +1197,15 @@
     const relabel = () => { label.textContent = noteLabel(sel()); label.title = sel(); };
     relabel();
     if (text) ta.value = text;
+    mentionable(ta, card);
+    n.compose.kind = 'change';
     card.addEventListener('click', e => {
+      const k = e.target.closest('[data-kind]');
+      if (k) { n.compose.kind = k.dataset.kind; $$('[data-kind]', card).forEach(x => x.classList.toggle('is-on', x === k)); ta.focus(); return; }
       const b = e.target.closest('[data-do]'); if (!b) return;
       if (b.dataset.do === 'cancel') cancelPick(m);
       else if (b.dataset.do === 'up') { const up = n.compose.el.parentElement; if (up && up !== m.els.frame) { n.compose.el = up; relabel(); } }
-      else if (b.dataset.do === 'save') saveNote(m, { selector: sel(), label: noteLabel(sel()), text: ta.value.trim() });
+      else if (b.dataset.do === 'save') saveNote(m, { selector: sel(), label: noteLabel(sel()), text: ta.value.trim(), kind: n.compose.kind, styles: snapStyles(n.compose.el), snapshot: snapshot(m) });
     });
     ta.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); $('[data-do="save"]', card).click(); } if (e.key === 'Escape') { e.stopPropagation(); cancelPick(m); } });
     m.els.notes.append(n.compose.box, card);
@@ -1163,7 +1215,8 @@
     if (!note.text) { notesStatus(m, 'Напиши, що тут не так', true); return; }
     if (REMOTE.url && !auth.user) { openSignIn(m, { note }); return; }
     try {
-      const row = await notesDb.save({ module: m.id, selector: note.selector, label: note.label, text: note.text, author: auth.user ? auth.user.name : store.get(STORE + 'author', '') || null });
+      const row = await notesDb.save({ module: m.id, selector: note.selector, label: note.label, text: note.text, kind: note.kind || 'change', styles: note.styles || null, snapshot: note.snapshot || null, author: auth.user ? auth.user.name : store.get(STORE + 'author', '') || null });
+      people = null; // a new author may be among the handles now
       cancelPick(m);
       m.notes.rows = (m.notes.rows || []).concat([row]);
       buildPins(m); renderNotesList(m); syncToolbar();
@@ -1240,9 +1293,16 @@
   function renderNotesList(m) {
     const box = m.notesListEl; if (!box) return;
     const rows = m.notes.rows || [];
+    const f = m.notes.filter || 'all';
+    const counts = Object.fromEntries(KINDS.map(([k]) => [k, rows.filter(r => (r.kind || 'change') === k).length]));
+    if (m.notesFilterEl) {
+      m.notesFilterEl.hidden = rows.length < 2;
+      m.notesFilterEl.innerHTML = [['all', 'Усі', rows.length]].concat(KINDS.map(([k, l]) => [k, l, counts[k]])).filter(([k, , c]) => k === 'all' || c).map(([k, l, c]) => `<button type="button" data-filter="${k}" class="${f === k ? 'is-on' : ''}">${l} <small>${c}</small></button>`).join('');
+    }
     box.innerHTML = rows.length ? rows.map((r, i) => {
+      if (f !== 'all' && (r.kind || 'change') !== f) return '';
       const lost = !noteTarget(m, r.selector);
-      return `<div class="notes__row${r.done ? ' is-done' : ''}${lost ? ' is-lost' : ''}" data-id="${esc(r.id)}"><button type="button" class="notes__item" data-do="open" title="${esc(lost ? 'Елемент не знайдено: ' + r.selector : r.selector)}"><b>${i + 1}</b><span>${esc(r.text)}</span><small>${esc([r.label || noteLabel(r.selector), r.author, (r.note_replies || []).length ? r.note_replies.length + ' відп.' : '', lost ? 'елемента вже нема' : ''].filter(Boolean).join(' · '))}</small></button>${noteMine(r) ? `<button type="button" class="icon" data-do="del" title="Видалити">${ICON.close}</button>` : ''}</div>`;
+      return `<div class="notes__row${r.done ? ' is-done' : ''}${lost ? ' is-lost' : ''}" data-id="${esc(r.id)}" data-kind="${esc(r.kind || 'change')}"><button type="button" class="notes__item" data-do="open" title="${esc(lost ? 'Елемент не знайдено: ' + r.selector : r.selector)}"><b>${i + 1}</b><span>${esc(r.text)}</span><small>${esc([r.label || noteLabel(r.selector), r.author, (r.note_replies || []).length ? r.note_replies.length + ' відп.' : '', lost ? 'елемента вже нема' : ''].filter(Boolean).join(' · '))}</small></button>${noteMine(r) ? `<button type="button" class="icon" data-do="del" title="Видалити">${ICON.close}</button>` : ''}</div>`;
     }).join('') : '<p class="shared__empty">Ще нема нотаток: «Нотатка» внизу сцени — і клацни елемент</p>';
     if (m === active) syncNotebar();
   }
@@ -1280,6 +1340,60 @@
       try { await notesDb.remove(id); if (m.notes.open === id) closeNote(m); m.notes.rows = m.notes.rows.filter(r => r.id !== id); buildPins(m); renderNotesList(m); syncToolbar(); }
       catch (e) { notesStatus(m, 'Не вдалося видалити: ' + e.message, true); }
     }
+  }
+
+  /* ===== The bell: what happened to my notes =====
+     A row per thing to tell the signed-in person: a reply under their note, or @their.name in a text.
+     The database writes them (a trigger, presets.sql); the shell only reads its own and marks them
+     read. Polled once a minute while signed in; the bell sits next to the home button. */
+  const bell = { rows: [], timer: 0 };
+  async function loadBell() {
+    if (!REMOTE.url || !auth.user) { bell.rows = []; syncBell(); return; }
+    try { bell.rows = await rest('notifications', '?select=*&order=created_at.desc&limit=40'); } catch (e) { bell.rows = []; }
+    syncBell();
+  }
+  function syncBell() {
+    const on = !!(REMOTE.url && auth.user);
+    els['btn-bell'].hidden = !on;
+    const unread = bell.rows.filter(r => !r.read).length;
+    els['bell-n'].textContent = unread; els['bell-n'].hidden = !unread;
+    els['btn-bell'].title = unread ? `${unread} нов${unread === 1 ? 'е' : unread < 5 ? 'і' : 'их'} — відповіді та згадки` : 'Сповіщення: відповіді під твоїми нотатками та згадки';
+    if (!on) { clearInterval(bell.timer); bell.timer = 0; }
+    else if (!bell.timer) bell.timer = setInterval(loadBell, 60000);
+    if (!els.bell.hidden) renderBell();
+  }
+  function renderBell() {
+    const box = $('.bell__list', els.bell);
+    const rows = bell.rows;
+    box.innerHTML = rows.length ? rows.map(r => `<button type="button" class="bell__item${r.read ? '' : ' is-new'}" data-id="${esc(r.id)}" data-module="${esc(r.module)}" data-note="${esc(r.note_id)}">
+        <span class="note-card__avatar">${esc(initials(r.from_author))}</span>
+        <span class="bell__body"><b>${esc(r.from_author || 'хтось')}</b> ${r.kind === 'reply' ? 'відповів під твоєю нотаткою' : 'згадав тебе'} <em>${esc((byId[r.module] || {}).def ? byId[r.module].def.tab || byId[r.module].def.title : r.module)}</em><span class="bell__text">${esc(r.text || '')}</span><small>${esc(when(r.created_at))}</small></span></button>`).join('')
+      : '<p class="shared__empty">Поки тихо: тут будуть відповіді під твоїми нотатками та згадки @' + esc(auth.user ? auth.user.name : '') + '</p>';
+    $('.bell__all', els.bell).hidden = !rows.some(r => !r.read);
+  }
+  async function markBell(ids) {
+    if (!ids.length) return;
+    bell.rows.forEach(r => { if (ids.includes(r.id)) r.read = true; });
+    syncBell();
+    try { await rest('notifications', `?id=in.(${ids.map(encodeURIComponent).join(',')})&select=id`, { method: 'PATCH', body: JSON.stringify({ read: true }) }); } catch (e) {}
+  }
+  function openBell(on) {
+    const show = on == null ? els.bell.hidden : on;
+    els.bell.hidden = !show;
+    els['btn-bell'].classList.toggle('is-on', show);
+    if (show) { renderBell(); loadBell(); }
+  }
+  function buildBell() {
+    els['btn-bell'].addEventListener('click', e => { e.stopPropagation(); closeMenu(); openBell(); });
+    els.bell.addEventListener('click', e => {
+      const all = e.target.closest('.bell__all');
+      if (all) { markBell(bell.rows.filter(r => !r.read).map(r => r.id)); return; }
+      const it = e.target.closest('.bell__item'); if (!it) return;
+      markBell([it.dataset.id]);
+      openBell(false);
+      location.hash = `#${it.dataset.module}?n=${it.dataset.note}`;
+    });
+    document.addEventListener('click', e => { if (!els.bell.hidden && !e.target.closest('#bell, #btn-bell')) openBell(false); });
   }
 
   /* ===== Resizable frame: drag either edge, the frame stays centred ===== */
@@ -1429,6 +1543,8 @@
     setTool('guides', tools.guides, true);
     setTool('notes', tools.notes, true);
     requestAnimationFrame(notesLoop);
+    buildBell();
+    loadBell();
     setRate(1);
     requestAnimationFrame(tick);
   }
@@ -1604,7 +1720,7 @@
 
     document.addEventListener('keydown', e => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === 'Escape') { closeDrawer(); closeEasing(); closeMenu(); els.help.hidden = true; if (active) { cancelPick(active); closeNote(active); } return; }
+      if (e.key === 'Escape') { closeDrawer(); closeEasing(); closeMenu(); openBell(false); els.help.hidden = true; if (active) { cancelPick(active); closeNote(active); } return; }
       if (e.target && e.target.closest && e.target.closest('input, textarea, select, [contenteditable]')) return;
       // e.code is layout-independent (works on the Ukrainian layout too); fall back to the key for synthetic events
       const k = e.key || '';
@@ -1738,7 +1854,11 @@
     const noteOf = q => q && new URLSearchParams(q).get('n');
     const land = (m, q) => {
       if (sharedOf(q)) openShared(m, sharedOf(q));
-      if (noteOf(q)) { const id = noteOf(q); const go = () => m.notes.rows ? openNote(m, id) : setTimeout(go, 100); go(); }
+      if (noteOf(q)) {
+        const id = noteOf(q);
+        const go = () => { if (!m.notes.rows) return setTimeout(go, 100); const row = m.notes.rows.find(r => r.id === id); if (row && row.snapshot) restoreSnapshot(m, row.snapshot); openNote(m, id); };
+        go();
+      }
     };
     if (byId[hashView]) land(byId[hashView], hashQuery);
     window.addEventListener('hashchange', () => {

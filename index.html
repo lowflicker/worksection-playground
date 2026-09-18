@@ -64,6 +64,15 @@
   <button type="button" class="crumb__home" id="btn-home" title="Каталог (H)" aria-label="Каталог">
     <svg class="i" viewBox="0 0 16 16"><path d="M2.5 7.5 8 2.5l5.5 5v6h-4v-4h-3v4h-4z"/></svg>
   </button>
+  <!-- the bell: only for a signed-in person; replies under their notes and @mentions -->
+  <button type="button" class="crumb__bell" id="btn-bell" aria-label="Сповіщення" hidden>
+    <svg class="i" viewBox="0 0 16 16"><path d="M4 11V7.5a4 4 0 0 1 8 0V11l1 1.5H3z"/><path d="M6.5 13.5a1.5 1.5 0 0 0 3 0"/></svg>
+    <span class="nb__count" id="bell-n" hidden></span>
+  </button>
+  <div class="bell" id="bell" hidden>
+    <div class="bell__head"><span>Сповіщення</span><button type="button" class="bell__all ghost" hidden>Прочитано все</button></div>
+    <div class="bell__list"></div>
+  </div>
   <button type="button" class="crumb__title" id="crumb-title" aria-haspopup="menu" aria-expanded="false"><span class="crumb__badge" id="crumb-icon" aria-hidden="true"></span><span id="crumb-label"></span><svg class="i" viewBox="0 0 16 16"><path d="m4.5 6.5 3.5 3.5 3.5-3.5"/></svg></button>
   <!-- the switch, filed the same way as the catalogue; the shell fills each group -->
   <div class="crumb__menu" id="crumb-menu" role="menu" hidden>

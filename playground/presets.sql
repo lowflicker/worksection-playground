@@ -102,3 +102,71 @@ create policy "note_replies: insert" on public.note_replies for insert to authen
   with check (owner = auth.uid() and lower(auth.jwt() ->> 'email') like '%@worksection.ua');
 create policy "note_replies: delete" on public.note_replies for delete to authenticated
   using (owner = auth.uid());
+
+-- What kind of note it is, the element's styles at the time, the module's state at the time.
+alter table public.notes add column if not exists kind text not null default 'change';   -- change | attention | question | bug
+alter table public.notes add column if not exists styles jsonb;                          -- { 'font-size': '13px', … } of the element
+alter table public.notes add column if not exists snapshot jsonb;                        -- { state, ui } as the share link carries it
+
+-- Notifications: one row per person to tell — someone replied under their note, or wrote @their.name.
+-- Written only by the trigger below; a person reads and marks their own.
+create table if not exists public.notifications (
+  id          text primary key default substr(replace(gen_random_uuid()::text, '-', ''), 1, 8),
+  email       text not null,
+  kind        text not null,                 -- reply | mention
+  module      text not null,
+  note_id     text not null references public.notes (id) on delete cascade,
+  from_author text,
+  text        text,
+  read        boolean not null default false,
+  created_at  timestamptz not null default now()
+);
+create index if not exists notifications_email_created on public.notifications (email, created_at desc);
+alter table public.notifications enable row level security;
+drop policy if exists "notifications: read own"  on public.notifications;
+drop policy if exists "notifications: mark own"  on public.notifications;
+create policy "notifications: read own" on public.notifications for select to authenticated
+  using (lower(email) = lower(auth.jwt() ->> 'email'));
+create policy "notifications: mark own" on public.notifications for update to authenticated
+  using (lower(email) = lower(auth.jwt() ->> 'email'))
+  with check (lower(email) = lower(auth.jwt() ->> 'email'));
+
+-- @name in a text means name@worksection.ua; the note's author hears about every reply; one row per person per text
+create or replace function public.notify_note_people() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare
+  n public.notes%rowtype;
+  from_email text;
+  handle text;
+  who text;
+  told text := '';
+  snippet text := left(new.text, 140);
+begin
+  if tg_table_name = 'notes' then select * into n from public.notes where id = new.id;
+  else select * into n from public.notes where id = new.note_id; end if;
+  select email into from_email from auth.users where id = new.owner;
+  if tg_table_name = 'note_replies' and n.owner is not null and n.owner <> new.owner then
+    select email into who from auth.users where id = n.owner;
+    if who is not null then
+      insert into public.notifications (email, kind, module, note_id, from_author, text) values (who, 'reply', n.module, n.id, new.author, snippet);
+      told := lower(who);
+    end if;
+  end if;
+  for handle in select distinct lower(m[1]) from regexp_matches(new.text, '@([a-z0-9][a-z0-9._-]*[a-z0-9])', 'gi') as m loop
+    who := handle || '@worksection.ua';
+    if (from_email is null or lower(from_email) <> who) and who <> told then
+      insert into public.notifications (email, kind, module, note_id, from_author, text) values (who, 'mention', n.module, n.id, new.author, snippet);
+    end if;
+  end loop;
+  return new;
+end $$;
+revoke execute on function public.notify_note_people() from anon, authenticated, public;
+drop trigger if exists notify_on_note on public.notes;
+drop trigger if exists notify_on_reply on public.note_replies;
+create trigger notify_on_note after insert on public.notes for each row execute function public.notify_note_people();
+create trigger notify_on_reply after insert on public.note_replies for each row execute function public.notify_note_people();
+
+-- who can be @mentioned: the handles seen so far, for the field's suggestions
+create or replace view public.note_people with (security_invoker = true) as
+  select distinct author as handle from public.notes where author is not null
+  union select distinct author from public.note_replies where author is not null;
