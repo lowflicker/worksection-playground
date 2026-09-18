@@ -144,7 +144,9 @@ Shell owns (never reimplement in an adapter): pause / speed, frame width,
 zoom, frame height (`stage.resizableH`), grid, guides, fps, code drawer + copy,
 save / share link (`#<id>?s=<base64>`), shared saves for the developers
 (named snapshots in Supabase over plain REST, `REMOTE` in `shell.js`, table in
-`playground/presets.sql`, short link `#<id>?p=<save>`; without `REMOTE` the same
+`playground/presets.sql`, short link `#<id>?p=<save>`; reading is open, saving
+asks for a sign-in — a PKCE magic link to a `@worksection.ua` mailbox, no SDK —
+and the row policies are the gate; without `REMOTE` the same
 list lives in localStorage), the optional plate under the block
 (`stage.bg`; off by default, the block sits on the canvas), theme, panel hide, shortcuts (`?`), mobile
 sheet, collapsible groups, the catalogue (`Playground.home()`, key `H`) and the crumb pill with the module switch. localStorage prefix `ws-playground:`.
@@ -197,5 +199,6 @@ the shell, never from its own CSS.
 - 2026-09-18: no topbar: home catalogue + crumb pill; shell primitives are `:where(:not(.frame *))` so they never restyle module markup.
 - 2026-09-18: `integrations-wall/` (Ramp-like logo sheet: stagger, pointer pan, drift, ellipse mask; demo marks from Simple Icons / Devicon CDN).
 - 2026-09-18: `site-css/` — the site's tokens (loaded) + reference stylesheets; Button runs on the site's `buttons.css` verbatim: configurator + every-look sheet, `button.css` = ws-icon box + `.btn-beam`.
+- 2026-09-18: shared saves need a sign-in (magic link, PKCE, `@worksection.ua` only); policies + domain trigger applied in Supabase via MCP and proven.
 - Old folder `Desktop/vis-effects-for-ui` is superseded; work from this repo.
 - `.claude/launch.json` runs `python3` (no bare `python` on this Mac).

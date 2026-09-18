@@ -113,6 +113,7 @@
   const REMOTE = {
     url: 'https://mczdzxxqowefduehllnu.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jemR6eHhxb3dlZmR1ZWhsbG51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3NDIwMzUsImV4cCI6MjEwNTMxODAzNX0.L9aLRgy3wPA_tpJskasQWoQD2sBouRBesYWB_TI7GG0',
+    domain: 'worksection.ua', // the Google Workspace whose people may save; the policies in presets.sql enforce it
   };
   const b64e = str => btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   const b64d = str => decodeURIComponent(escape(atob(str.replace(/-/g, '+').replace(/_/g, '/'))));
@@ -294,10 +295,13 @@
 
     // shared saves: the list, a name and the save button
     const sh = h('div', 'shared');
-    sh.innerHTML = `<div class="shared__list"><p class="shared__empty">…</p></div><div class="shared__add"><input type="text" placeholder="Назва збереження" maxlength="80" autocomplete="off"><button type="button" data-do="save">Зберегти для розробника</button></div><span class="save__status shared__status"></span>`;
+    sh.innerHTML = `<div class="shared__list"><p class="shared__empty">…</p></div><div class="shared__add"><input type="text" placeholder="Назва збереження" maxlength="80" autocomplete="off"><button type="button" data-do="save">Зберегти для розробника</button></div><div class="shared__auth"></div><span class="save__status shared__status"></span>`;
     m.sharedListEl = $('.shared__list', sh);
+    m.sharedAddEl = $('.shared__add', sh);
+    m.sharedAuthEl = $('.shared__auth', sh);
     m.sharedNameEl = $('input', sh);
     m.sharedStatusEl = $('.shared__status', sh);
+    renderAuth(m);
     sh.addEventListener('click', e => { const b = e.target.closest('[data-do]'); if (!b) return; const row = b.closest('.shared__row'); sharedAction(m, b.dataset.do, row && row.dataset.id); });
     m.sharedNameEl.addEventListener('keydown', e => { if (e.key === 'Enter') sharedAction(m, 'save'); });
     scroll.append(group(m, { title: 'Збережені для розробника' }, sh));
@@ -645,10 +649,122 @@
     }
   }
 
+  /* ===== Sign-in: a link to the company mailbox, through Supabase Auth (GoTrue's REST, no SDK) =====
+     Reading stays open so a link works for anyone; saving and deleting need a signed-in person from the
+     company's domain. The row policies in presets.sql are the real gate — the shell only asks for the
+     sign-in, carries the token and shows who is in; nothing it checks is trusted by the server.
+     PKCE: the mail's link brings back a one-time code that only the browser holding the verifier can
+     turn into a session, so no tokens travel in the address bar and a forwarded or scanned mail is
+     worth nothing. The session lives in this browser. */
+  const SESSION_KEY = STORE + 'session';
+  const auth = {
+    session: store.get(SESSION_KEY, null),
+    error: '', // what went wrong on the way back, shown once in the panel
+    get user() { return auth.session ? auth.session.user : null; },
+    claims(token) { try { return JSON.parse(b64d(token.split('.')[1])); } catch (e) { return {}; } },
+    keep(tokens) {
+      if (!tokens || !tokens.access_token) return auth.drop();
+      const c = auth.claims(tokens.access_token), email = c.email || '';
+      // the name is what the list shows to anyone with the link, so never the full address
+      auth.session = {
+        access_token: tokens.access_token, refresh_token: tokens.refresh_token, expires_at: (c.exp || 0) * 1000,
+        user: { id: c.sub, email, name: email.split('@')[0] },
+      };
+      store.set(SESSION_KEY, auth.session);
+      modules.forEach(renderAuth);
+    },
+    drop() { auth.session = null; store.del(SESSION_KEY); modules.forEach(renderAuth); },
+    // an access token lives an hour; it is renewed a minute early, on the way to a request
+    async token() {
+      const s = auth.session; if (!s) return null;
+      if (Date.now() < s.expires_at - 60e3) return s.access_token;
+      try {
+        const r = await fetch(`${REMOTE.url}/auth/v1/token?grant_type=refresh_token`, { method: 'POST', headers: { apikey: REMOTE.anonKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: s.refresh_token }) });
+        if (!r.ok) throw new Error(r.status);
+        auth.keep(await r.json());
+        return auth.session.access_token;
+      } catch (e) { auth.drop(); return null; }
+    },
+    async post(path, body) {
+      const r = await fetch(`${REMOTE.url}/auth/v1/${path}`, { method: 'POST', headers: { apikey: REMOTE.anonKey, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (!r.ok) {
+        let msg = 'Supabase ' + r.status;
+        try { const e = await r.json(); msg = e.msg || e.error_description || e.message || msg; } catch (e) {}
+        throw new Error(r.status === 429 ? 'забагато спроб, зачекай трохи' : msg);
+      }
+      return r.json();
+    },
+    // step 1: the mail; the verifier and the hash the person left from wait in this browser
+    async signIn(email) {
+      email = (email || '').trim().toLowerCase();
+      if (!email.endsWith('@' + REMOTE.domain)) throw new Error('потрібна пошта @' + REMOTE.domain);
+      const verifier = Array.from(crypto.getRandomValues(new Uint8Array(48)), b => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~'[b % 66]).join('');
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+      const challenge = btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      store.set(STORE + 'auth-flow', { verifier, back: location.hash });
+      await auth.post('otp?redirect_to=' + encodeURIComponent(location.origin + location.pathname), { email, create_user: true, code_challenge: challenge, code_challenge_method: 's256' });
+      return email;
+    },
+    // step 2, on the way back: ?code=… is swapped for a session and the address is cleaned up
+    async land() {
+      const q = new URLSearchParams(location.search);
+      if (!q.has('code') && !q.has('error_description') && !q.has('error')) return;
+      const flow = store.get(STORE + 'auth-flow', null); store.del(STORE + 'auth-flow');
+      history.replaceState(null, '', location.pathname + ((flow && flow.back) || location.hash));
+      if (q.has('code') && flow) {
+        try { auth.keep(await auth.post('token?grant_type=pkce', { auth_code: q.get('code'), code_verifier: flow.verifier })); }
+        catch (e) { auth.error = e.message; }
+      } else auth.error = q.get('error_description') || q.get('error') || 'відкрий посилання в тому самому браузері, де просив лист';
+      if (auth.error) { modules.forEach(renderAuth); auth.error = ''; }
+    },
+    async signOut() {
+      const t = await auth.token();
+      if (t) fetch(`${REMOTE.url}/auth/v1/logout`, { method: 'POST', headers: { apikey: REMOTE.anonKey, Authorization: 'Bearer ' + t } }).catch(() => {});
+      auth.drop();
+    },
+  };
+  function renderAuth(m) {
+    const box = m.sharedAuthEl; if (!box) return;
+    if (!REMOTE.url) { box.hidden = true; return; }
+    const u = auth.user;
+    box.hidden = !u;
+    box.innerHTML = u ? `<span class="shared__who" title="${esc(u.email)}">${esc(u.name)}</span><button type="button" data-do="out">Вийти</button>` : '';
+    if (auth.error) sharedStatus(m, 'Не вдалося увійти: ' + auth.error, true);
+    // the name typed before the round trip through the mailbox comes back with the person
+    const pending = store.get(STORE + 'auth-pending', null);
+    if (u && pending && pending.module === m.id) { store.del(STORE + 'auth-pending'); m.sharedNameEl.value = pending.name; sharedStatus(m, 'Ти в системі — тепер «Зберегти»'); }
+    if (m.sharedRendered) renderShared(m); // whose rows may be deleted changed
+  }
+  // the save button is for everyone; the sign-in is asked for only when it is pressed
+  let signInEl;
+  function openSignIn(m) {
+    if (!signInEl) {
+      signInEl = h('div', 'modal');
+      signInEl.innerHTML = `<div class="modal__backdrop"></div><form class="modal__card"><h3>Увійди, щоб зберегти</h3><p>Збережене бачать усі, зберігати можуть люди з @${esc(REMOTE.domain)}. На пошту прийде посилання для входу — відкрий його в цьому ж браузері, повернешся сюди.</p><input type="email" placeholder="ім'я@${esc(REMOTE.domain)}" autocomplete="email" required><p class="modal__status save__status"></p><div class="modal__row"><button type="button" data-do="cancel">Скасувати</button><button type="submit" class="primary">Надіслати посилання</button></div></form>`;
+      document.body.append(signInEl);
+      const form = $('form', signInEl), input = $('input', signInEl), status = $('.modal__status', signInEl);
+      const close = () => { signInEl.hidden = true; };
+      $('.modal__backdrop', signInEl).addEventListener('click', close);
+      $('[data-do="cancel"]', signInEl).addEventListener('click', close);
+      signInEl.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+        const mod = signInEl.module;
+        store.set(STORE + 'auth-pending', { module: mod.id, name: mod.sharedNameEl.value.trim() });
+        try { const email = await auth.signIn(input.value); status.textContent = `Лист надіслано на ${email} — відкрий посилання з нього. Лист може йти хвилину.`; status.classList.remove('is-dirty'); input.value = ''; }
+        catch (err) { status.textContent = err.message; status.classList.add('is-dirty'); input.focus(); }
+      });
+    }
+    signInEl.module = m;
+    $('.modal__status', signInEl).textContent = '';
+    signInEl.hidden = false;
+    $('input', signInEl).focus();
+  }
+
   /* ===== Shared saves: a named snapshot for the developers, with a short link (#<id>?p=<save>) =====
      One interface, two backends: Supabase's REST (plain fetch, no SDK) when REMOTE is set, else this
      browser's storage — so the panel and the links behave the same either way. A row is
-     { id, module, name, author, snapshot, created_at }. */
+     { id, module, name, author, owner, snapshot, created_at }. */
   const SHARED_KEY = STORE + 'shared';
   const localShared = {
     all: () => store.get(SHARED_KEY, []),
@@ -663,12 +779,20 @@
   };
   const remoteShared = {
     async call(query, opts) {
-      const headers = { apikey: REMOTE.anonKey, Authorization: 'Bearer ' + REMOTE.anonKey, 'Content-Type': 'application/json', Prefer: 'return=representation' };
+      const token = await auth.token();
+      const headers = { apikey: REMOTE.anonKey, Authorization: 'Bearer ' + (token || REMOTE.anonKey), 'Content-Type': 'application/json', Prefer: 'return=representation' };
       const r = await fetch(`${REMOTE.url}/rest/v1/presets${query}`, Object.assign({ headers }, opts));
-      if (!r.ok) throw new Error('Supabase ' + r.status);
+      if (!r.ok) {
+        // PostgREST: a policy says no → 401 for anon, 403 for a signed-in person (a stale token is 401 too)
+        let msg = 'Supabase ' + r.status;
+        try { const e = await r.json(); if (e.message) msg = e.message; } catch (e) {}
+        if (r.status === 401) { if (token) auth.drop(); msg = 'потрібно увійти'; }
+        if (r.status === 403) msg = 'дозволено лише людям з @' + REMOTE.domain;
+        throw new Error(msg);
+      }
       return r.status === 204 ? null : r.json();
     },
-    list: module => remoteShared.call(`?module=eq.${encodeURIComponent(module)}&select=id,module,name,author,created_at&order=created_at.desc`),
+    list: module => remoteShared.call(`?module=eq.${encodeURIComponent(module)}&select=id,module,name,author,owner,created_at&order=created_at.desc`),
     get: async id => (await remoteShared.call(`?id=eq.${encodeURIComponent(id)}&select=*`))[0] || null,
     save: async p => (await remoteShared.call('', { method: 'POST', body: JSON.stringify(p) }))[0],
     remove: id => remoteShared.call(`?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }),
@@ -685,8 +809,11 @@
   async function renderShared(m) {
     const box = m.sharedListEl; if (!box) return;
     let rows;
+    m.sharedRendered = true;
     try { rows = await shared.list(m.id); } catch (e) { box.innerHTML = ''; sharedStatus(m, 'Не вдалося прочитати збережені: ' + e.message, true); return; }
-    box.innerHTML = rows.length ? rows.map(p => `<div class="shared__row" data-id="${esc(p.id)}"><button type="button" class="shared__item" data-do="open" title="Відкрити"><b>${esc(p.name)}</b><small>${esc([p.author, when(p.created_at)].filter(Boolean).join(' · '))}</small></button><button type="button" class="icon" data-do="link" title="Скопіювати посилання">${ICON.link}</button><button type="button" class="icon" data-do="del" title="Видалити">${ICON.close}</button></div>`).join('') : '<p class="shared__empty">Ще нічого не збережено</p>';
+    // only the person who saved a row may delete it (the policy says so; the shell just hides the button)
+    const mine = p => !REMOTE.url || (auth.user && p.owner === auth.user.id);
+    box.innerHTML = rows.length ? rows.map(p => `<div class="shared__row${mine(p) ? ' is-own' : ''}" data-id="${esc(p.id)}"><button type="button" class="shared__item" data-do="open" title="Відкрити"><b>${esc(p.name)}</b><small>${esc([p.author, when(p.created_at)].filter(Boolean).join(' · '))}</small></button><button type="button" class="icon" data-do="link" title="Скопіювати посилання">${ICON.link}</button><button type="button" class="icon" data-do="del" title="Видалити">${ICON.close}</button></div>`).join('') : '<p class="shared__empty">Ще нічого не збережено</p>';
   }
   async function openShared(m, id) {
     try {
@@ -700,6 +827,7 @@
   }
   async function sharedAction(m, act, id) {
     if (act === 'open') return openShared(m, id);
+    if (act === 'out') return auth.signOut();
     if (act === 'link') {
       const url = sharedLink(m, id);
       try { await navigator.clipboard.writeText(url); sharedStatus(m, 'Посилання скопійовано'); } catch (e) { prompt('Скопіюй посилання', url); }
@@ -713,8 +841,9 @@
     if (act === 'save') {
       const name = m.sharedNameEl.value.trim();
       if (!name) { m.sharedNameEl.focus(); sharedStatus(m, 'Дай збереженню назву', true); return; }
-      // the author is asked once per browser; a shared list without names is useless to the developers
-      let author = store.get(STORE + 'author', '');
+      if (REMOTE.url && !auth.user) return openSignIn(m);
+      // the author is the signed-in person (Google's name); without a server, asked once per browser
+      let author = auth.user ? auth.user.name : store.get(STORE + 'author', '');
       if (!author) { author = (prompt('Як тебе підписати в списку збережень?') || '').trim(); if (author) store.set(STORE + 'author', author); }
       try {
         const item = await shared.save({ module: m.id, name, author, snapshot: snapshot(m) });
@@ -1153,8 +1282,9 @@
   }
 
   /* ---------- boot: a module from the hash, else the catalogue ---------- */
-  function boot() {
+  async function boot() {
     countCatalogue();
+    await auth.land(); // back from the mailbox? the code becomes a session, the hash comes back first
     const [hashView, hashQuery] = location.hash.slice(1).split('?');
     restoreAll(hashView, hashQuery);
     modules.forEach(bindSheet);
