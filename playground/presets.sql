@@ -1,6 +1,7 @@
--- Shared saves for the playground: one row per named snapshot a designer keeps for the developers.
+-- Shared saves (presets) and notes for the playground: one row per named snapshot a designer keeps
+-- for the developers, one per note pinned to a module's element.
 -- Run in Supabase → SQL Editor; every statement is idempotent, so re-running it after a change is fine.
--- The shell talks to this table over REST with the anon key (playground/shell.js, REMOTE); the policies
+-- The shell talks to these tables over REST with the anon key (playground/shell.js, REMOTE); the policies
 -- below are what that key may do: anyone reads (links must work for everyone), only a signed-in person
 -- from the company's Google Workspace saves, only the author deletes.
 --
@@ -51,3 +52,33 @@ revoke execute on function public.only_company_accounts() from anon, authenticat
 drop trigger if exists only_company_accounts on auth.users;
 create trigger only_company_accounts before insert on auth.users
   for each row execute function public.only_company_accounts();
+
+-- ---------------------------------------------------------------------------------------------
+-- Notes pinned to a module's elements («Нотатки» in the shell): a CSS path from the module's frame
+-- to the element and what the designer says about it. Same access as presets; anyone in the
+-- company may tick «done», the author deletes.
+create table if not exists public.notes (
+  id          text primary key default substr(replace(gen_random_uuid()::text, '-', ''), 1, 8),
+  module      text not null,
+  selector    text not null,
+  label       text,
+  text        text not null,
+  author      text,
+  owner       uuid default auth.uid() references auth.users (id) on delete set null,
+  done        boolean not null default false,
+  created_at  timestamptz not null default now()
+);
+create index if not exists notes_module_created on public.notes (module, created_at);
+alter table public.notes enable row level security;
+drop policy if exists "notes: read"   on public.notes;
+drop policy if exists "notes: insert" on public.notes;
+drop policy if exists "notes: update" on public.notes;
+drop policy if exists "notes: delete" on public.notes;
+create policy "notes: read"   on public.notes for select using (true);
+create policy "notes: insert" on public.notes for insert to authenticated
+  with check (owner = auth.uid() and lower(auth.jwt() ->> 'email') like '%@worksection.ua');
+create policy "notes: update" on public.notes for update to authenticated
+  using (lower(auth.jwt() ->> 'email') like '%@worksection.ua')
+  with check (lower(auth.jwt() ->> 'email') like '%@worksection.ua');
+create policy "notes: delete" on public.notes for delete to authenticated
+  using (owner = auth.uid());

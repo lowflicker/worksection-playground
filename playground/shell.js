@@ -7,6 +7,8 @@
      - renders the settings panel from a declarative list of controls,
        keeps the state, saves it in the browser, packs it into share links
      - stage tools: pause, playback speed, frame width, zoom, grid, guides, fps
+     - named saves for the developers and notes pinned to the module's
+       elements, both in Supabase behind a company sign-in (or local)
      - the code drawer: generated snippet with changed lines highlighted,
        plus the module's source files, plus copy
      - light / dark theme, keyboard shortcuts, the mobile bottom sheet
@@ -127,7 +129,7 @@
   let active = null;
   let paused = false;
   let rate = 1;
-  const tools = Object.assign({ zoom: 1, grid: false, guides: false }, store.get(STORE + 'tools', {}));
+  const tools = Object.assign({ zoom: 1, grid: false, guides: false, notes: true }, store.get(STORE + 'tools', {}));
   const groupsCollapsed = store.get(STORE + 'groups', {});
 
   /* What a module is, and the glyph that says so. The kind files the catalogue
@@ -146,6 +148,7 @@
   function bindShell() {
     ['views', 'home', 'catalog', 'crumb', 'btn-home', 'crumb-title', 'crumb-label', 'crumb-icon', 'crumb-menu', 'topbar', 'actions', 'toolbar', 'tb-play', 'tb-rates', 'tb-width', 'tb-width-badge', 'tb-width-in', 'tb-width-sep', 'tb-zooms', 'tb-grid', 'tb-guides', 'tb-fps',
      'drawer', 'drawer-tabs', 'drawer-code', 'drawer-copy', 'drawer-files', 'drawer-legend', 'drawer-readme',
+     'tb-notes', 'tb-notes-n', 'tb-note-add',
      'btn-panel', 'btn-theme', 'btn-help', 'help'].forEach(id => { els[id] = document.getElementById(id); });
   }
 
@@ -172,14 +175,19 @@
     const hint = h('div', 'stage-hint');
     if (stageDef.resizable) { m.rz = makeResizable(m, frame); body.append(m.rz.el); } else body.append(frame);
     body.append(hint);
-    stage.append(body);
+    // the notes layer sits over the body, outside its stacking context: no module z-index reaches it
+    const notes = h('div', 'notes'); notes.hidden = true;
+    notes.addEventListener('pointermove', e => pickMove(m, e));
+    notes.addEventListener('click', e => { if (m.notes.pick && !e.target.closest('.note-card, .note-pin')) pickChoose(m, e); });
+    stage.append(body, notes);
+    m.notes = { rows: null, pins: [], open: null, pick: null, compose: null };
     const panel = h('aside', 'panel');
     const scroll = h('div', 'panel__scroll');
     scroll.addEventListener('scroll', () => closeEasing(), { passive: true });
     panel.append(scroll);
     app.append(stage, panel);
     els.views.append(app);
-    m.els = { app, stage, body, frame, hint, panel, scroll };
+    m.els = { app, stage, body, frame, hint, panel, scroll, notes };
 
     // the catalogue card and the switch entry, both filed under the module's kind
     m.kind = KIND[def.kind] ? def.kind : 'effect';
@@ -306,6 +314,14 @@
     m.sharedNameEl.addEventListener('keydown', e => { if (e.key === 'Enter') sharedAction(m, 'save'); });
     scroll.append(group(m, { title: 'Збережені для розробника' }, sh));
     renderShared(m);
+
+    // notes: the list, «new» and a Markdown copy for the handoff
+    const nt = h('div', 'notes-list');
+    nt.innerHTML = `<div class="notes__list"><p class="shared__empty">…</p></div><div class="notes__add"><button type="button" data-do="new" title="Клацни елемент на сцені й напиши нотатку (Shift+N)">Нова нотатка</button><button type="button" data-do="copy" title="Увесь список як Markdown, для передачі розробнику">${ICON.link}Markdown</button></div><span class="save__status notes__status"></span>`;
+    m.notesListEl = $('.notes__list', nt);
+    m.notesStatusEl = $('.notes__status', nt);
+    nt.addEventListener('click', e => { const b = e.target.closest('[data-do]'); if (!b) return; const row = b.closest('.notes__row'); notesAction(m, b.dataset.do, row && row.dataset.id); });
+    scroll.append(group(m, { title: 'Нотатки до елементів' }, nt));
 
     // presets, random, reset
     if (def.presets || def.random) {
@@ -730,14 +746,21 @@
     box.hidden = !u;
     box.innerHTML = u ? `<span class="shared__who" title="${esc(u.email)}">${esc(u.name)}</span><button type="button" data-do="out">Вийти</button>` : '';
     if (auth.error) sharedStatus(m, 'Не вдалося увійти: ' + auth.error, true);
-    // the name typed before the round trip through the mailbox comes back with the person
+    // what was being done before the round trip through the mailbox comes back with the person:
+    // the name typed for a save, or the note that was about to be pinned
     const pending = store.get(STORE + 'auth-pending', null);
-    if (u && pending && pending.module === m.id) { store.del(STORE + 'auth-pending'); m.sharedNameEl.value = pending.name; sharedStatus(m, 'Ти в системі — тепер «Зберегти»'); }
+    if (u && pending && pending.module === m.id) {
+      store.del(STORE + 'auth-pending');
+      if (pending.note) saveNote(m, pending.note);
+      else { m.sharedNameEl.value = pending.name; sharedStatus(m, 'Ти в системі — тепер «Зберегти»'); }
+    }
     if (m.sharedRendered) renderShared(m); // whose rows may be deleted changed
+    if (m.notes.rows) renderNotesList(m);
   }
-  // the save button is for everyone; the sign-in is asked for only when it is pressed
+  // the save button is for everyone; the sign-in is asked for only when it is pressed.
+  // extra: what to carry over the round trip besides the module (a note about to be saved)
   let signInEl;
-  function openSignIn(m) {
+  function openSignIn(m, extra) {
     if (!signInEl) {
       signInEl = h('div', 'modal');
       signInEl.innerHTML = `<div class="modal__backdrop"></div><form class="modal__card"><h3>Увійди, щоб зберегти</h3><p>Збережене бачать усі, зберігати можуть люди з @${esc(REMOTE.domain)}. На пошту прийде посилання для входу — відкрий його в цьому ж браузері, повернешся сюди.</p><input type="email" placeholder="ім'я@${esc(REMOTE.domain)}" autocomplete="email" required><p class="modal__status save__status"></p><div class="modal__row"><button type="button" data-do="cancel">Скасувати</button><button type="submit" class="primary">Надіслати посилання</button></div></form>`;
@@ -750,12 +773,13 @@
       form.addEventListener('submit', async e => {
         e.preventDefault();
         const mod = signInEl.module;
-        store.set(STORE + 'auth-pending', { module: mod.id, name: mod.sharedNameEl.value.trim() });
+        store.set(STORE + 'auth-pending', Object.assign({ module: mod.id, name: mod.sharedNameEl.value.trim() }, signInEl.extra || {}));
         try { const email = await auth.signIn(input.value); status.textContent = `Лист надіслано на ${email} — відкрий посилання з нього. Лист може йти хвилину.`; status.classList.remove('is-dirty'); input.value = ''; }
         catch (err) { status.textContent = err.message; status.classList.add('is-dirty'); input.focus(); }
       });
     }
     signInEl.module = m;
+    signInEl.extra = extra || null;
     $('.modal__status', signInEl).textContent = '';
     signInEl.hidden = false;
     $('input', signInEl).focus();
@@ -777,25 +801,29 @@
     },
     async remove(id) { store.set(SHARED_KEY, localShared.all().filter(p => p.id !== id)); },
   };
+  // one call to PostgREST for every table the shell keeps: the session's token when there is one, else the anon key
+  async function rest(table, query, opts) {
+    const token = await auth.token();
+    const headers = { apikey: REMOTE.anonKey, Authorization: 'Bearer ' + (token || REMOTE.anonKey), 'Content-Type': 'application/json', Prefer: 'return=representation' };
+    const r = await fetch(`${REMOTE.url}/rest/v1/${table}${query}`, Object.assign({ headers }, opts));
+    if (!r.ok) {
+      // a policy says no → 401 for anon, 403 for a signed-in person (a stale token is 401 too)
+      let msg = 'Supabase ' + r.status;
+      try { const e = await r.json(); if (e.message) msg = e.message; } catch (e) {}
+      if (r.status === 401) { if (token) auth.drop(); msg = 'потрібно увійти'; }
+      if (r.status === 403) msg = 'дозволено лише людям з @' + REMOTE.domain;
+      throw new Error(msg);
+    }
+    return r.status === 204 ? null : r.json();
+  }
+  // a policy that says no to an update or a delete is not an error to PostgREST — the row is just left out.
+  // So both ask for the row back and treat an empty answer as the refusal it is
+  const touched = rows => { if (!rows || !rows.length) throw new Error(auth.user ? 'дозволено лише авторові' : 'потрібно увійти'); return rows[0]; };
   const remoteShared = {
-    async call(query, opts) {
-      const token = await auth.token();
-      const headers = { apikey: REMOTE.anonKey, Authorization: 'Bearer ' + (token || REMOTE.anonKey), 'Content-Type': 'application/json', Prefer: 'return=representation' };
-      const r = await fetch(`${REMOTE.url}/rest/v1/presets${query}`, Object.assign({ headers }, opts));
-      if (!r.ok) {
-        // PostgREST: a policy says no → 401 for anon, 403 for a signed-in person (a stale token is 401 too)
-        let msg = 'Supabase ' + r.status;
-        try { const e = await r.json(); if (e.message) msg = e.message; } catch (e) {}
-        if (r.status === 401) { if (token) auth.drop(); msg = 'потрібно увійти'; }
-        if (r.status === 403) msg = 'дозволено лише людям з @' + REMOTE.domain;
-        throw new Error(msg);
-      }
-      return r.status === 204 ? null : r.json();
-    },
-    list: module => remoteShared.call(`?module=eq.${encodeURIComponent(module)}&select=id,module,name,author,owner,created_at&order=created_at.desc`),
-    get: async id => (await remoteShared.call(`?id=eq.${encodeURIComponent(id)}&select=*`))[0] || null,
-    save: async p => (await remoteShared.call('', { method: 'POST', body: JSON.stringify(p) }))[0],
-    remove: id => remoteShared.call(`?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    list: module => rest('presets', `?module=eq.${encodeURIComponent(module)}&select=id,module,name,author,owner,created_at&order=created_at.desc`),
+    get: async id => (await rest('presets', `?id=eq.${encodeURIComponent(id)}&select=*`))[0] || null,
+    save: async p => (await rest('presets', '', { method: 'POST', body: JSON.stringify(p) }))[0],
+    remove: async id => touched(await rest('presets', `?id=eq.${encodeURIComponent(id)}&select=id`, { method: 'DELETE' })),
   };
   const shared = REMOTE.url && REMOTE.anonKey ? remoteShared : localShared;
   const sharedLink = (m, id) => `${location.origin}${location.pathname}#${m.id}?p=${id}`;
@@ -852,6 +880,270 @@
         sharedStatus(m, `Збережено «${item.name}», посилання в адресному рядку`);
         renderShared(m);
       } catch (e) { sharedStatus(m, 'Не вдалося зберегти: ' + e.message, true); }
+    }
+  }
+
+  /* ===== Notes: annotations pinned to a module's elements =====
+     A note is { id, module, selector, label, text, author, owner, done, created_at }: a CSS path from the
+     module's frame to an element, and what the designer says about it — why it differs from the site,
+     what to watch when porting. The pins live in .notes, a layer over the stage outside the module's
+     stacking context, and follow their elements every frame while shown, so zoom, scroll and the
+     module's own motion cost nothing. Same backend and sign-in as the shared saves. */
+  const NOTES_KEY = STORE + 'notes';
+  const localNotes = {
+    all: () => store.get(NOTES_KEY, []),
+    async list(module) { return localNotes.all().filter(n => n.module === module); },
+    async save(n) { const item = Object.assign({ id: Math.random().toString(36).slice(2, 10), created_at: new Date().toISOString(), done: false }, n); store.set(NOTES_KEY, localNotes.all().concat([item])); return item; },
+    async update(id, patch) { store.set(NOTES_KEY, localNotes.all().map(n => n.id === id ? Object.assign({}, n, patch) : n)); },
+    async remove(id) { store.set(NOTES_KEY, localNotes.all().filter(n => n.id !== id)); },
+  };
+  const remoteNotes = {
+    list: module => rest('notes', `?module=eq.${encodeURIComponent(module)}&select=*&order=created_at.asc`),
+    save: async n => (await rest('notes', '', { method: 'POST', body: JSON.stringify(n) }))[0],
+    update: async (id, patch) => touched(await rest('notes', `?id=eq.${encodeURIComponent(id)}&select=id`, { method: 'PATCH', body: JSON.stringify(patch) })),
+    remove: async id => touched(await rest('notes', `?id=eq.${encodeURIComponent(id)}&select=id`, { method: 'DELETE' })),
+  };
+  const notesDb = REMOTE.url && REMOTE.anonKey ? remoteNotes : localNotes;
+  const noteLink = (m, id) => `${location.origin}${location.pathname}#${m.id}?n=${id}`;
+
+  // the path to an element: tag + up to two classes per step, nth-of-type only where that is ambiguous,
+  // and it starts over at the nearest id. State classes (is-…, …--open, .beam) are skipped: they come and go
+  const STATE_CLASS = /^(is-|has-|js-)|--(open|active|compact|dragging|on|off|hover)$|^(active|open|hover|focus|beam)$/;
+  function pathTo(el, root) {
+    const parts = [];
+    for (let n = el; n && n !== root && n.parentElement; n = n.parentElement) {
+      const tag = n.tagName.toLowerCase();
+      if (n.id) { parts.unshift(`${tag}#${CSS.escape(n.id)}`); break; }
+      let s = tag + [...n.classList].filter(c => !STATE_CLASS.test(c)).slice(0, 2).map(c => '.' + CSS.escape(c)).join('');
+      const kin = [...n.parentElement.children];
+      if (kin.filter(k => k.matches(s)).length > 1) s += `:nth-of-type(${kin.filter(k => k.tagName === n.tagName).indexOf(n) + 1})`;
+      parts.unshift(s);
+    }
+    return parts.join(' > ');
+  }
+  const noteTarget = (m, sel) => { try { return m.els.frame.querySelector(sel); } catch (e) { return null; } };
+  const noteLabel = sel => sel.split(' > ').pop().replace(/:nth-of-type\(\d+\)/, '');
+  const noteMine = row => !REMOTE.url || (auth.user && row.owner === auth.user.id);
+
+  async function loadNotes(m) {
+    const n = m.notes;
+    try { n.rows = await notesDb.list(m.id); } catch (e) { n.rows = []; notesStatus(m, 'Не вдалося прочитати нотатки: ' + e.message, true); }
+    buildPins(m);
+    renderNotesList(m);
+    syncToolbar();
+  }
+  function notesStatus(m, text, bad) {
+    if (!m.notesStatusEl) return;
+    m.notesStatusEl.textContent = text || '';
+    m.notesStatusEl.classList.toggle('is-dirty', !!bad);
+  }
+  // one pin + one outline per row; the card is built when the pin opens
+  function buildPins(m) {
+    const n = m.notes, layer = m.els.notes;
+    for (const p of n.pins) { p.el.remove(); p.box.remove(); if (p.card) p.card.remove(); }
+    n.pins = n.rows.map((row, i) => {
+      const el = h('button', 'note-pin', String(i + 1)); el.type = 'button'; el.title = row.text;
+      const box = h('div', 'note-box');
+      el.addEventListener('pointerenter', () => { p.hover = true; });
+      el.addEventListener('pointerleave', () => { p.hover = false; });
+      el.addEventListener('click', e => { e.stopPropagation(); toggleNote(m, row.id); });
+      const p = { row, el, box, card: null, hover: false };
+      layer.append(box, el);
+      return p;
+    });
+    n.pins.forEach(p => { p.el.classList.toggle('is-done', !!p.row.done); });
+    if (n.open && !n.pins.some(p => p.row.id === n.open)) n.open = null;
+  }
+  function pinOf(m, id) { return m.notes.pins.find(p => p.row.id === id); }
+  function toggleNote(m, id) {
+    const n = m.notes;
+    if (n.open === id) { closeNote(m); return; }
+    closeNote(m);
+    const p = pinOf(m, id); if (!p) return;
+    n.open = id;
+    p.card = noteCard(m, p);
+    m.els.notes.append(p.card);
+  }
+  function closeNote(m) {
+    const n = m.notes;
+    const p = n.open && pinOf(m, n.open);
+    if (p && p.card) { p.card.remove(); p.card = null; }
+    n.open = null;
+  }
+  // from the list or a link: the layer on, the element in view, the card open
+  function openNote(m, id) {
+    if (!tools.notes) setTool('notes', true);
+    const p = pinOf(m, id); if (!p) return;
+    const t = noteTarget(m, p.row.selector);
+    if (t) t.scrollIntoView({ block: 'center', inline: 'center' });
+    if (m.notes.open !== id) toggleNote(m, id);
+  }
+  function noteCard(m, p) {
+    const row = p.row;
+    const card = h('div', 'note-card');
+    card.innerHTML = `<div class="note-card__text">${esc(row.text)}</div>
+      <div class="note-card__meta"><span>${esc([row.author, when(row.created_at)].filter(Boolean).join(' · '))}</span><code title="${esc(row.selector)}">${esc(row.label || noteLabel(row.selector))}</code></div>
+      <div class="note-card__row"><label class="note-card__done"><input type="checkbox"${row.done ? ' checked' : ''}> Зроблено</label><span class="note-card__tools"><button type="button" class="icon" data-do="link" title="Скопіювати посилання на нотатку">${ICON.link}</button>${noteMine(row) ? `<button type="button" class="icon" data-do="del" title="Видалити">${ICON.close}</button>` : ''}<button type="button" class="icon" data-do="close" title="Закрити">${ICON.close}</button></span></div>`;
+    $('input', card).addEventListener('change', async e => {
+      const done = e.target.checked;
+      if (REMOTE.url && !auth.user) { e.target.checked = !done; openSignIn(m); return; }
+      try { await notesDb.update(row.id, { done }); row.done = done; p.el.classList.toggle('is-done', done); renderNotesList(m); }
+      catch (err) { e.target.checked = !done; notesStatus(m, 'Не вдалося позначити: ' + err.message, true); }
+    });
+    card.addEventListener('click', async e => {
+      const b = e.target.closest('[data-do]'); if (!b) return;
+      if (b.dataset.do === 'close') closeNote(m);
+      else if (b.dataset.do === 'link') { const url = noteLink(m, row.id); try { await navigator.clipboard.writeText(url); notesStatus(m, 'Посилання скопійовано'); } catch (err) { prompt('Скопіюй посилання', url); } }
+      else if (b.dataset.do === 'del') { if (!confirm('Видалити цю нотатку для всіх?')) return; try { await notesDb.remove(row.id); closeNote(m); m.notes.rows = m.notes.rows.filter(r => r.id !== row.id); buildPins(m); renderNotesList(m); syncToolbar(); } catch (err) { notesStatus(m, 'Не вдалося видалити: ' + err.message, true); } }
+    });
+    return card;
+  }
+
+  // a new note: pick an element under the pointer, then say what about it
+  function startPick(m) {
+    const n = m.notes;
+    cancelPick(m);
+    if (!tools.notes) setTool('notes', true);
+    n.pick = { el: null, box: h('div', 'note-box note-box--pick'), tag: h('div', 'note-tag') };
+    m.els.notes.append(n.pick.box, n.pick.tag);
+    m.els.notes.classList.add('is-picking');
+    notesStatus(m, 'Клацни елемент, який хочеш прокоментувати. Esc — скасувати');
+  }
+  function cancelPick(m) {
+    const n = m.notes;
+    if (n.pick) { n.pick.box.remove(); n.pick.tag.remove(); n.pick = null; }
+    if (n.compose) { n.compose.card.remove(); n.compose.box.remove(); n.compose = null; }
+    m.els.notes.classList.remove('is-picking');
+  }
+  // what the pointer is over inside the frame; the layer itself and the shell's chrome are skipped, and a
+  // bare text or icon child yields to the button, link or box it sits in — that is what one means
+  const INLINE = 'span, b, i, u, em, strong, small, code, svg, svg *, ws-icon, path';
+  function underPointer(m, x, y) {
+    const frame = m.els.frame;
+    for (let el of document.elementsFromPoint(x, y)) {
+      if (el === frame || !frame.contains(el)) continue;
+      while (el.parentElement !== frame && el.matches(INLINE)) el = el.parentElement;
+      return el;
+    }
+    return null;
+  }
+  function pickMove(m, e) {
+    const n = m.notes; if (!n.pick) return;
+    n.pick.el = underPointer(m, e.clientX, e.clientY);
+    n.pick.tag.textContent = n.pick.el ? noteLabel(pathTo(n.pick.el, m.els.frame)) : '';
+  }
+  function pickChoose(m, e) {
+    const n = m.notes; if (!n.pick) return;
+    const el = underPointer(m, e.clientX, e.clientY); if (!el) return;
+    startCompose(m, el);
+  }
+  function startCompose(m, el, text) {
+    const n = m.notes;
+    cancelPick(m);
+    m.els.notes.classList.add('is-picking'); // still a modal moment on the stage
+    const card = h('div', 'note-card note-card--compose');
+    card.innerHTML = `<textarea rows="3" placeholder="Що тут не так, як на сайті, або на що звернути увагу" maxlength="600"></textarea>
+      <div class="note-card__meta"><code></code></div>
+      <div class="note-card__row"><button type="button" data-do="up" title="Взяти батьківський елемент">Ширше</button><span class="note-card__tools"><button type="button" data-do="cancel">Скасувати</button><button type="button" class="primary" data-do="save">Зберегти</button></span></div>`;
+    n.compose = { el, card, box: h('div', 'note-box note-box--pick') };
+    const sel = () => pathTo(n.compose.el, m.els.frame);
+    const label = $('code', card), ta = $('textarea', card);
+    const relabel = () => { label.textContent = noteLabel(sel()); label.title = sel(); };
+    relabel();
+    if (text) ta.value = text;
+    card.addEventListener('click', e => {
+      const b = e.target.closest('[data-do]'); if (!b) return;
+      if (b.dataset.do === 'cancel') cancelPick(m);
+      else if (b.dataset.do === 'up') { const up = n.compose.el.parentElement; if (up && up !== m.els.frame) { n.compose.el = up; relabel(); } }
+      else if (b.dataset.do === 'save') saveNote(m, { selector: sel(), label: noteLabel(sel()), text: ta.value.trim() });
+    });
+    ta.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); $('[data-do="save"]', card).click(); } if (e.key === 'Escape') { e.stopPropagation(); cancelPick(m); } });
+    m.els.notes.append(n.compose.box, card);
+    ta.focus();
+  }
+  async function saveNote(m, note) {
+    if (!note.text) { notesStatus(m, 'Напиши, що тут не так', true); return; }
+    if (REMOTE.url && !auth.user) { openSignIn(m, { note }); return; }
+    try {
+      const row = await notesDb.save({ module: m.id, selector: note.selector, label: note.label, text: note.text, author: auth.user ? auth.user.name : store.get(STORE + 'author', '') || null });
+      cancelPick(m);
+      m.notes.rows = (m.notes.rows || []).concat([row]);
+      buildPins(m); renderNotesList(m); syncToolbar();
+      if (!tools.notes) setTool('notes', true);
+      toggleNote(m, row.id);
+      notesStatus(m, 'Нотатку збережено');
+    } catch (e) { notesStatus(m, 'Не вдалося зберегти: ' + e.message, true); }
+  }
+
+  // every frame while the layer shows: pins on their elements, the open card beside its pin,
+  // anything scrolled out of the stage's window hidden with it
+  function drawNotes(m) {
+    const n = m.notes, layer = m.els.notes;
+    const on = tools.notes || !!n.pick || !!n.compose;
+    layer.hidden = !on;
+    if (!on) return;
+    const sr = m.els.stage.getBoundingClientRect(), br = m.els.body.getBoundingClientRect();
+    const seen = r => r.bottom > br.top && r.top < br.bottom && r.right > br.left && r.left < br.right;
+    const put = (el, r, dx, dy) => { el.style.transform = `translate(${Math.round(r.left - sr.left + (dx || 0))}px, ${Math.round(r.top - sr.top + (dy || 0))}px)`; };
+    const fit = (box, r) => { put(box, r); box.style.width = r.width + 'px'; box.style.height = r.height + 'px'; };
+    const beside = (card, r) => {
+      // under the element, left-aligned; flipped above or pulled left when the stage runs out
+      const w = card.offsetWidth || 260, hh = card.offsetHeight || 80;
+      let x = r.left - sr.left, y = r.bottom - sr.top + 8;
+      if (x + w > sr.width - 8) x = Math.max(8, sr.width - 8 - w);
+      if (y + hh > sr.height - 8) y = Math.max(8, r.top - sr.top - 8 - hh);
+      card.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+    };
+    for (const p of n.pins) {
+      const t = noteTarget(m, p.row.selector);
+      const r = t && t.getBoundingClientRect();
+      const show = !!r && seen(r) && !(r.width === 0 && r.height === 0);
+      p.el.hidden = !show;
+      p.box.hidden = !show || !(p.hover || n.open === p.row.id);
+      if (p.card) p.card.hidden = !show;
+      if (!show) continue;
+      put(p.el, r, -10, -10);
+      fit(p.box, r);
+      if (p.card) beside(p.card, r);
+    }
+    if (n.pick) {
+      const r = n.pick.el && n.pick.el.getBoundingClientRect();
+      n.pick.box.hidden = !r; n.pick.tag.hidden = !r;
+      if (r) { fit(n.pick.box, r); put(n.pick.tag, r, 0, -22); }
+    }
+    if (n.compose) {
+      const r = n.compose.el.getBoundingClientRect();
+      fit(n.compose.box, r);
+      beside(n.compose.card, r);
+    }
+  }
+  function notesLoop() {
+    if (active && !active.els.app.hidden && active.notes) drawNotes(active);
+    requestAnimationFrame(notesLoop);
+  }
+
+  // the panel's list: every note, in order, with the ones whose element is gone marked
+  function renderNotesList(m) {
+    const box = m.notesListEl; if (!box) return;
+    const rows = m.notes.rows || [];
+    box.innerHTML = rows.length ? rows.map((r, i) => {
+      const lost = !noteTarget(m, r.selector);
+      return `<div class="notes__row${r.done ? ' is-done' : ''}${lost ? ' is-lost' : ''}" data-id="${esc(r.id)}"><button type="button" class="notes__item" data-do="open" title="${esc(lost ? 'Елемент не знайдено: ' + r.selector : r.selector)}"><b>${i + 1}</b><span>${esc(r.text)}</span><small>${esc([r.label || noteLabel(r.selector), r.author, lost ? 'елемента вже нема' : ''].filter(Boolean).join(' · '))}</small></button>${noteMine(r) ? `<button type="button" class="icon" data-do="del" title="Видалити">${ICON.close}</button>` : ''}</div>`;
+    }).join('') : '<p class="shared__empty">Ще нема нотаток. «Нова» — і клацни елемент</p>';
+  }
+  async function notesAction(m, act, id) {
+    if (act === 'new') return startPick(m);
+    if (act === 'copy') {
+      const rows = m.notes.rows || [];
+      const md = rows.map((r, i) => `- [${r.done ? 'x' : ' '}] ${i + 1}. \`${r.label || noteLabel(r.selector)}\` — ${r.text}${r.author ? ` (${r.author})` : ''}`).join('\n');
+      try { await navigator.clipboard.writeText(`## ${m.def.title}\n${md}`); notesStatus(m, 'Список скопійовано як Markdown'); } catch (e) { prompt('Скопіюй', md); }
+      return;
+    }
+    if (act === 'open') return openNote(m, id);
+    if (act === 'del') {
+      if (!confirm('Видалити цю нотатку для всіх?')) return;
+      try { await notesDb.remove(id); if (m.notes.open === id) closeNote(m); m.notes.rows = m.notes.rows.filter(r => r.id !== id); buildPins(m); renderNotesList(m); syncToolbar(); }
+      catch (e) { notesStatus(m, 'Не вдалося видалити: ' + e.message, true); }
     }
   }
 
@@ -989,9 +1281,15 @@
     $$('[data-zoom]', els['tb-zooms']).forEach(b => b.addEventListener('click', () => setZoom(+b.dataset.zoom)));
     els['tb-grid'].addEventListener('click', () => setTool('grid', !tools.grid));
     els['tb-guides'].addEventListener('click', () => setTool('guides', !tools.guides));
+    els['tb-notes'].addEventListener('click', () => setTool('notes', !tools.notes));
+    els['tb-note-add'].addEventListener('click', () => { if (active) startPick(active); });
+    // a click anywhere else closes the open card; the pins and cards handle their own clicks
+    document.addEventListener('click', e => { if (active && active.notes.open && !e.target.closest('.note-card, .note-pin, .notes__row')) closeNote(active); });
     setZoom(tools.zoom, true);
     setTool('grid', tools.grid, true);
     setTool('guides', tools.guides, true);
+    setTool('notes', tools.notes, true);
+    requestAnimationFrame(notesLoop);
     setRate(1);
     requestAnimationFrame(tick);
   }
@@ -1001,6 +1299,10 @@
     $$('[data-zoom]', els['tb-zooms']).forEach(b => b.classList.toggle('is-active', +b.dataset.zoom === tools.zoom));
     els['tb-grid'].classList.toggle('is-on', tools.grid);
     els['tb-guides'].classList.toggle('is-on', tools.guides);
+    els['tb-notes'].classList.toggle('is-on', tools.notes);
+    const nn = active && active.notes.rows ? active.notes.rows.filter(r => !r.done).length : 0;
+    els['tb-notes-n'].textContent = nn;
+    els['tb-notes-n'].hidden = !nn;
     document.body.classList.toggle('is-paused', paused);
     syncWidth();
     syncTbFade();
@@ -1166,7 +1468,7 @@
 
     document.addEventListener('keydown', e => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === 'Escape') { closeDrawer(); closeEasing(); closeMenu(); els.help.hidden = true; return; }
+      if (e.key === 'Escape') { closeDrawer(); closeEasing(); closeMenu(); els.help.hidden = true; if (active) { cancelPick(active); closeNote(active); } return; }
       if (e.target && e.target.closest && e.target.closest('input, textarea, select, [contenteditable]')) return;
       // e.code is layout-independent (works on the Ukrainian layout too); fall back to the key for synthetic events
       const k = e.key || '';
@@ -1176,6 +1478,8 @@
       else if (c === 'BracketRight') setRate(RATES[Math.min(RATES.length - 1, RATES.indexOf(rate) + 1)]);
       else if (c === 'KeyG') setTool('grid', !tools.grid);
       else if (c === 'KeyL') setTool('guides', !tools.guides);
+      else if (c === 'KeyN' && e.shiftKey) { if (active) startPick(active); }
+      else if (c === 'KeyN') setTool('notes', !tools.notes);
       else if (c === 'KeyZ') setZoom(ZOOMS[(ZOOMS.indexOf(tools.zoom) + 1) % ZOOMS.length]);
       else if (c === 'KeyC') els.drawer.hidden ? openDrawer() : closeDrawer();
       else if (c === 'KeyT') els['btn-theme'].click();
@@ -1253,6 +1557,7 @@
     if (!paused && pb.resume) pb.resume(m.ctx);
     if (pb.rate) pb.rate(m.ctx, rate);
     if (m.def.onShow) m.def.onShow(m.ctx);
+    if (!m.notes.rows) loadNotes(m); // once per module, the first time it is on screen
     // observers and sizes only exist once the view is displayed
     setTimeout(() => { for (const a of m.els.stage.getAnimations({ subtree: true })) { a.playbackRate = rate; if (paused) a.pause(); } refresh(m); }, 50);
     syncToolbar();
@@ -1292,10 +1597,16 @@
     byId[hashView] ? show(hashView) : home();
     // a shared save arrives after the module is up: it is fetched, then laid over the state
     const sharedOf = q => q && new URLSearchParams(q).get('p');
-    if (byId[hashView] && sharedOf(hashQuery)) openShared(byId[hashView], sharedOf(hashQuery));
+    // a note link: the module's notes are fetched on show; the card opens once they are in
+    const noteOf = q => q && new URLSearchParams(q).get('n');
+    const land = (m, q) => {
+      if (sharedOf(q)) openShared(m, sharedOf(q));
+      if (noteOf(q)) { const id = noteOf(q); const go = () => m.notes.rows ? openNote(m, id) : setTimeout(go, 100); go(); }
+    };
+    if (byId[hashView]) land(byId[hashView], hashQuery);
     window.addEventListener('hashchange', () => {
       const [id, q] = location.hash.slice(1).split('?');
-      if (byId[id]) { show(id); if (sharedOf(q)) openShared(byId[id], sharedOf(q)); } else if (!id) home();
+      if (byId[id]) { show(id); land(byId[id], q); } else if (!id) home();
     });
   }
 

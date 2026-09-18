@@ -38,7 +38,7 @@ Live: https://lowflicker.github.io/worksection-playground/ (Pages, `main`).
 index.html              static page: shell, then each module's css/js + its playground.js. No build.
 playground/shell.js     the shell. Header comment = the module contract. ~750 lines, sectioned.
 playground/shell.css    shell styles; tokens on :root / :root[data-theme="dark"].
-playground/presets.sql  the Supabase table + policies behind «Збережені для розробника». Run once.
+playground/presets.sql  the Supabase tables + policies behind «Збережені для розробника» and «Нотатки». Idempotent.
 <module>/<name>.css/js  the exported effect. API and options in the file header + README.
 <module>/playground.js  adapter: Playground.register({...}), declarative, 150–380 lines.
 <module>/demo.html      standalone page with the module (works from file://).
@@ -147,7 +147,10 @@ save / share link (`#<id>?s=<base64>`), shared saves for the developers
 `playground/presets.sql`, short link `#<id>?p=<save>`; reading is open, saving
 asks for a sign-in — a PKCE magic link to a `@worksection.ua` mailbox, no SDK —
 and the row policies are the gate; without `REMOTE` the same
-list lives in localStorage), the optional plate under the block
+list lives in localStorage), notes pinned to a module's elements (table
+`notes`, a CSS path from the frame + text; the `.notes` layer over the stage,
+toggle `N`, new `Shift+N`, list in the panel, link `#<id>?n=<note>`; same
+sign-in), the optional plate under the block
 (`stage.bg`; off by default, the block sits on the canvas), theme, panel hide, shortcuts (`?`), mobile
 sheet, collapsible groups, the catalogue (`Playground.home()`, key `H`) and the crumb pill with the module switch. localStorage prefix `ws-playground:`.
 Layering is the shell's too: `.stage__body` is a stacking context, so a module

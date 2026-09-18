@@ -21,6 +21,7 @@
      so module values never compete with these: .stage__body is a stacking
      context and keeps every one of them to itself. */
   --z-overlay: 2;                             /* grid and guides over the stage */
+  --z-notes: 2;                               /* pins and cards, after the overlays in the DOM */
   --z-chrome: 3;                              /* the top row: crumb, tools, actions */
   --z-popover: 5;                              /* a menu hanging off the chrome */
   --z-handle: 5;                               /* the frame's resize handles, over the module in it */
@@ -30,6 +31,9 @@
   --z-editor: 60;                              /* the easing editor, over the drawer it opens from */
   --z-modal: 70;                               /* the sign-in ask, over everything */
   --blur: blur(40px) saturate(1.5);
+  /* the notes: black glass in both themes, a heavy shadow so a card reads over any module */
+  --note-bg: oklab(0.08 0 0 / .74); --note-fg: oklch(0.985 0 0); --note-muted: oklab(1 0 0 / .62); --note-faint: oklab(1 0 0 / .4);
+  --note-line: oklab(1 0 0 / .12); --note-shadow: 0 32px 64px -20px rgba(0,0,0,.7), 0 12px 24px -12px rgba(0,0,0,.5), 0 0 0 1px oklab(1 0 0 / .08) inset;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color-scheme: light;
 }
@@ -211,6 +215,62 @@ body.no-panel .panel { display: none; }
 /* no plate: the block sits on the shell's canvas, so there is nothing to clip to either */
 .stage--bare .stage__body > .rz, .stage--bare .stage__body > .frame { background: none; box-shadow: none; border-radius: 0; }
 .stage--bare .stage__body > .rz > .frame, .stage--bare .stage__body > .frame { overflow: visible; }
+/* --- notes: a layer over the stage; pins on elements, black-glass cards, a picking mode --- */
+.notes { position: absolute; inset: 0; z-index: var(--z-notes); pointer-events: none; overflow: hidden; }
+.notes > * { position: absolute; top: 0; left: 0; will-change: transform; }
+.notes.is-picking { pointer-events: auto; cursor: crosshair; }
+.note-pin {
+  pointer-events: auto; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 10px;
+  background: var(--note-bg); color: var(--note-fg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+  box-shadow: 0 8px 20px -6px rgba(0,0,0,.6), 0 0 0 1px oklab(1 0 0 / .14) inset;
+  font-size: 10px; font-weight: 600; line-height: 20px; font-variant-numeric: tabular-nums; cursor: pointer;
+  transition: scale .12s, opacity .12s;
+}
+.note-pin:hover { scale: 1.15; }
+.note-pin.is-done { opacity: .45; }
+.note-box { pointer-events: none; border-radius: 4px; box-shadow: 0 0 0 1.5px var(--note-fg), 0 0 0 3px oklab(0 0 0 / .55); }
+.note-box--pick { box-shadow: 0 0 0 1.5px var(--accent), 0 0 0 3px oklab(1 0 0 / .8); background: oklab(from var(--accent) l a b / .08); }
+.note-tag { pointer-events: none; padding: 2px 7px; border-radius: 6px; background: var(--note-bg); color: var(--note-fg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); font: 500 10px/16px ui-monospace, "SF Mono", Menlo, Consolas, monospace; white-space: nowrap; box-shadow: 0 8px 20px -8px rgba(0,0,0,.6); }
+.note-card {
+  pointer-events: auto; width: 260px; padding: 10px 12px; border-radius: var(--radius);
+  background: var(--note-bg); color: var(--note-fg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+  box-shadow: var(--note-shadow); font-size: 12px; line-height: 1.45; display: flex; flex-direction: column; gap: 8px;
+}
+.note-card__text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.note-card__meta { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 10.5px; color: var(--note-muted); }
+.note-card__meta code { color: var(--note-faint); font: 500 10px/16px ui-monospace, "SF Mono", Menlo, Consolas, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 55%; }
+.note-card__row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-top: 6px; border-top: 1px solid var(--note-line); }
+.note-card__done { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--note-muted); cursor: pointer; }
+.note-card__done input { margin: 0; accent-color: var(--note-fg); }
+.note-card__tools { display: flex; gap: 2px; }
+/* the card's own buttons: light on the black glass, the shell's shapes */
+.note-card button { height: 24px; padding: 0 8px; border: 1px solid var(--note-line); background: oklab(1 0 0 / .06); color: var(--note-fg); font-size: 11px; }
+.note-card button:hover { background: oklab(1 0 0 / .14); border-color: oklab(1 0 0 / .2); }
+.note-card button.icon { width: 24px; padding: 0; border-color: transparent; background: transparent; color: var(--note-muted); }
+.note-card button.icon:hover { color: var(--note-fg); background: oklab(1 0 0 / .1); }
+.note-card button.primary { background: var(--note-fg); color: oklch(0.145 0 0); border-color: transparent; }
+.note-card button.primary:hover { background: oklab(1 0 0 / .86); }
+.note-card textarea { width: 100%; min-height: 60px; padding: 6px 8px; border: 1px solid var(--note-line); border-radius: 8px; background: oklab(1 0 0 / .06); color: var(--note-fg); font: inherit; font-size: 12px; line-height: 1.45; resize: vertical; }
+.note-card textarea:focus { outline: 0; border-color: oklab(1 0 0 / .3); background: oklab(1 0 0 / .09); }
+.note-card textarea::placeholder { color: var(--note-faint); }
+/* the panel's list */
+.notes__list { display: flex; flex-direction: column; gap: 2px; }
+.notes__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px; align-items: center; }
+.notes__row .icon { width: 26px; height: 26px; padding: 0; border: 0; background: transparent; color: var(--muted); border-radius: 6px; opacity: 0; transition: opacity 120ms; }
+.notes__row:hover .icon, .notes__row:focus-within .icon { opacity: 1; }
+.notes__row .icon:hover { background: var(--panel-2); color: var(--text); }
+.notes__item { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 1px 6px; align-items: baseline; min-width: 0; height: auto; padding: 5px 8px; border: 0; border-radius: 8px; background: transparent; text-align: left; cursor: pointer; }
+.notes__item:hover { background: var(--panel-2); }
+.notes__item b { grid-row: span 2; font-size: 10px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.notes__item span { font-size: 12px; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.notes__item small { font-size: 11px; color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.notes__row.is-done .notes__item span { color: var(--muted); text-decoration: line-through; }
+.notes__row.is-lost .notes__item small { color: var(--warn); }
+.notes__add { display: flex; gap: 6px; }
+.notes__add button { flex: 1 1 auto; }
+.notes__status { min-height: 0; }
+.notes__status:empty { display: none; }
+
 /* screen overlays: 8px grid with a 64px major line, and centre guides */
 .stage::before, .stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: var(--z-overlay); display: none; }
 .stage[data-grid]::before {
@@ -252,6 +312,7 @@ body.no-panel .panel { display: none; }
 .tb__badge input:hover { background: var(--panel-2); }
 .tb__badge input:focus-visible { outline: 1px solid var(--accent); outline-offset: 0; background: var(--panel); }
 .tb__sep { flex: none; width: 1px; height: 16px; background: var(--line); margin: 0 3px; }
+.tb__count { display: inline-block; min-width: 14px; height: 14px; margin-left: 1px; padding: 0 4px; border-radius: 7px; background: var(--accent); color: #fff; font-size: 9px; font-weight: 600; line-height: 14px; text-align: center; }
 .tb__fps { flex: none; padding: 0 8px 0 4px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tb__fps.is-low { color: var(--bad); }
 .tb__fps small { color: var(--faint); }
