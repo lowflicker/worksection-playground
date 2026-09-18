@@ -87,6 +87,12 @@
             <img src="${base}img/dashboard-phone.webp" width="804" height="1748" alt="Worksection dashboard on a phone" loading="lazy" decoding="async">
           </picture>
         </button>`;
+  // the CTAs are the site's button component (C : Button is the master): its markup in the snippet, its copies on the stage
+  const CTA = [{ variant: 'primary', label: 'Get started' }, { variant: 'secondary', label: 'Contact sales' }];
+  const cta = (variant, label) => {
+    const b = Playground.component('site-button');
+    return b ? b.markup({ variant, label, size: 48, rounded: true }, b.state()) : `<a class="btn btn-48 btn-${variant} btn-rounded" href="#"><span>${label}</span></a>`;
+  };
   const markup = (s, base, demo) => `<section class="hero" id="hero">
   <div class="hero__inner">
     <div class="hero__head">
@@ -94,9 +100,9 @@
       <h1 class="hero__title">Project management built <br>for teams, not just tasks</h1>
       ${demo || s.content === 'lead' ? `<p class="hero__lead"${demo && s.content !== 'lead' ? ' hidden' : ''}>We believe in teamocracy: people first, success follows. Worksection empowers teams and simplifies project management for all.</p>` : ''}
       ${demo || s.content === 'list' ? `<ul class="hero__list"${demo && s.content !== 'list' ? ' hidden' : ''}><li>Заощаджуйте кошти</li><li>Заощаджуйте час</li><li>Створюйте простір продуктивності</li></ul>` : ''}
-      <div class="hero__cta">
-        <a class="hero__btn hero__btn--primary" href="#">Get started</a>
-        <a class="hero__btn" href="#">Contact sales</a>
+      <div class="hero__cta">${demo ? '' : `
+        ${cta('primary', 'Get started')}
+        ${cta('secondary', 'Contact sales')}`}
       </div>
       <p class="hero__note">14 day trial, no credit card required</p>
     </div>
@@ -120,11 +126,15 @@
 <link rel="preload" as="image" type="image/avif" fetchpriority="high"
       imagesrcset="${srcset('', 'dashboard', 'avif')}" imagesizes="${SIZES}">
 <link rel="stylesheet" href="hero.css">
+<!-- кнопки це компонент сайту (.btn); на сайті він уже є. Промінь на головній: beam.css + beam.js з border-beam/ і button.css з .btn-beam -->
+<link rel="stylesheet" href="beam.css">
+<link rel="stylesheet" href="button.css">
 
 <!-- кожна вкладка несе свою пару скріншотів у data-desktop / data-phone;
      без hero.js блок теж рендериться: перша вкладка і композиція з data-main -->
 ${markup(s, '', false)}
 
+<script src="beam.js"><\/script>
 <script src="hero.js"><\/script>
 <script>
   new Hero('#hero', {
@@ -254,8 +264,9 @@ ${markup(s, '', false)}
       </div></div></div>`);
       root = ctx.frame.querySelector('.hero');
       hero = new Hero(root);
-      // the site header above the hero: the S : Header tab is the master, this copy follows its settings
+      // the site header above the hero and the CTA buttons: S : Header and C : Button are the masters, these copies follow their settings
       Playground.consume('site-header', ctx.frame.querySelector('.hero-browser__page'));
+      for (const b of CTA) Playground.consume('site-button', root.querySelector('.hero__cta'), Object.assign({ size: 48, rounded: true }, b));
       ctx.instance = hero;
       // taps in the demo flow back into the panel
       root.addEventListener('hero:main', e => { if (ctx.state.main !== e.detail.main) ctx.set({ main: e.detail.main }); });

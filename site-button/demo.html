@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Button demo</title>
+<!-- beam.css before button.css: .btn-beam overrides the effect's variables -->
+<link rel="stylesheet" href="../border-beam/beam.css">
+<link rel="stylesheet" href="button.css">
+<style>
+  body { margin: 0; padding: 48px 24px; background: #eaebeb; font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: rgba(0,0,0,.5); }
+  section { max-width: 960px; margin: 0 auto 40px; }
+  h2 { margin: 0 0 16px; font-size: 12px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .dark { padding: 24px; border-radius: 16px; background: #1e201f; }
+</style>
+</head>
+<body>
+<section>
+  <h2>Хіро: btn-48 btn-rounded, головна з променем</h2>
+  <div class="row">
+    <a class="btn btn-48 btn-primary btn-rounded btn-beam beam" data-beam data-trigger="always" href="#"><span>Get started</span></a>
+    <a class="btn btn-48 btn-secondary btn-rounded" href="#"><span>Contact sales</span></a>
+    <a class="btn btn-48 btn-tertiary btn-rounded" href="#"><span>Як це працює</span></a>
+    <button type="button" class="btn btn-48 btn-accent btn-rounded"><span>Забронювати демо</span></button>
+    <a class="btn btn-48 btn-plain btn-rounded" href="#"><span>Увійти</span></a>
+  </div>
+</section>
+<section>
+  <h2>Сайт за замовчуванням: btn-48, кути 12 px</h2>
+  <div class="row">
+    <a class="btn btn-48 btn-primary" href="#"><span>Спробуйте Worksection</span></a>
+    <a class="btn btn-48 btn-secondary" href="#"><span>Contact sales</span></a>
+    <a class="btn btn-48 btn-white" href="#"><span>Білий</span></a>
+    <a class="btn btn-48 btn-ghost" href="#"><span>Ghost</span></a>
+  </div>
+</section>
+<section>
+  <h2>Шапка: btn-36 btn-rounded</h2>
+  <div class="row">
+    <a class="btn btn-36 btn-plain btn-rounded" href="#"><span>Увійти</span></a>
+    <button type="button" class="btn btn-36 btn-accent btn-rounded"><span>Забронювати демо</span></button>
+    <a class="btn btn-36 btn-primary btn-rounded" href="#"><span>Реєстрація</span></a>
+  </div>
+</section>
+<section>
+  <h2>На темному: btn-invert</h2>
+  <div class="row dark">
+    <a class="btn btn-48 btn-primary btn-invert" href="#"><span>Спробуйте Worksection</span></a>
+    <a class="btn btn-48 btn-secondary btn-invert" href="#"><span>Contact sales</span></a>
+    <a class="btn btn-48 btn-tertiary btn-invert" href="#"><span>Забронювати демо</span></a>
+  </div>
+</section>
+
+<script src="../border-beam/beam.js"></script>
+</body>
+</html>

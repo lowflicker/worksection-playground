@@ -16,6 +16,9 @@
 <link rel="preload" as="image" type="image/avif" fetchpriority="high"
       imagesrcset="img/dashboard-1280.avif 1280w, img/dashboard.avif 2496w" imagesizes="(max-width: 639px) 140vw, 1280px">
 <link rel="stylesheet" href="hero.css">
+<!-- кнопки це компонент сайту (.btn); промінь на головній: border-beam + .btn-beam -->
+<link rel="stylesheet" href="../border-beam/beam.css">
+<link rel="stylesheet" href="../site-button/button.css">
 
 <!-- кожна вкладка несе свою пару скріншотів у data-desktop / data-phone;
      без hero.js блок теж рендериться: перша вкладка і композиція з data-main -->
@@ -27,8 +30,8 @@
       <p class="hero__lead">We believe in teamocracy: people first, success follows. Worksection empowers teams and simplifies project management for all.</p>
       
       <div class="hero__cta">
-        <a class="hero__btn hero__btn--primary" href="#">Get started</a>
-        <a class="hero__btn" href="#">Contact sales</a>
+        <a class="btn btn-48 btn-primary btn-rounded btn-beam beam" data-beam data-trigger="always" href="#"><span>Get started</span></a>
+        <a class="btn btn-48 btn-secondary btn-rounded" href="#"><span>Contact sales</span></a>
       </div>
       <p class="hero__note">14 day trial, no credit card required</p>
     </div>
@@ -78,6 +81,7 @@
   </div>
 </section>
 
+<script src="../border-beam/beam.js"></script>
 <script src="hero.js"></script>
 <script>
   new Hero('#hero', {

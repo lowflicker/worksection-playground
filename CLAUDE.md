@@ -10,7 +10,7 @@ effects here with an AI; the **audience is the developers** in his company,
 who copy a module's files into the site. Two strictly separate parts:
 
 1. **Modules** (`logo-wall/`, `short-answer/`, `float-actions/`, `border-beam/`,
-   `dot-sphere/`, `hero-section/`, `site-header/`) — the product. Plain HTML + CSS + vanilla JS, no deps, no
+   `dot-sphere/`, `hero-section/`, `site-header/`, `site-button/`) — the product. Plain HTML + CSS + vanilla JS, no deps, no
    build, no frameworks, ever. These files are what gets exported.
 2. **Shell** (`playground/`) — the chrome around them. Never exported, knows
    nothing about any specific module, currently vanilla with no deps.
@@ -36,7 +36,8 @@ README.md               developer overview + how to add a module.
 ```
 
 Globals / ids: `LogoWall`→`logos`, `ShortAnswer`→`answer`, `FloatActions`→`fab`,
-`BorderBeam`→`beam`, `DotSphere`→`sphere`, `Hero`→`hero`, `SiteHeader`→`header`. Each exposes `.defaults`.
+`BorderBeam`→`beam`, `DotSphere`→`sphere`, `Hero`→`hero`, `SiteHeader`→`header`, button (no JS, `button.css`)→`button`.
+Tab prefixes: `S :` = section of the site, `C :` = component reused inside sections. Each module exposes `.defaults`.
 `hero-section/` is markup-first: the adapter builds the HTML, `hero.js` only
 enhances it; its breakpoints are container queries, so the frame width
 presets (390 / 320) show the narrow composition. Its stage is the site's
@@ -45,12 +46,15 @@ and the hero under it. `site-header/` is the same kind (markup-first,
 container queries) and shows the bar alone: no page, the compact state is a
 toggle button, the mobile sheet is sized to the stage.
 
-The header is a **shared component**: `site-header/playground.js` is the
-master (`Playground.provide('site-header', …)`, markup in its `markup()`,
-every `apply` publishes the state), `hero-section/playground.js` consumes it
-(`Playground.consume('site-header', host)`). Edit the header in the master
-only; every copy follows. `site-header/demo.html` carries a static copy of
-the markup for developers — keep it in sync when the menu changes.
+**Shared components** (masters publish, copies follow; edit only the master):
+- header: `site-header/playground.js` provides `site-header`; the hero consumes it.
+- button: `site-button/playground.js` provides `site-button` (opts `{ variant, size, rounded, label, href, beam }`);
+  the hero consumes two for its CTAs and takes their snippet markup from
+  `Playground.component('site-button').markup()`. `button.css` mirrors the site's
+  own `.btn` system (classes, tokens, values from worksection.com); only
+  `.btn-beam` is new. Load order: `beam.css` before `button.css`.
+- Demo pages (`*/demo.html`) carry static copies of component markup for
+  developers — keep them in sync when a master changes.
 
 ## Token discipline
 
@@ -97,10 +101,11 @@ playback?, onShow?, onHide? })`
 - `playback` hooks only for motion outside `getAnimations()` (timers, canvas).
 - `ctx` = `{ id, state, defaults, ui, frame, stage, instance, set, reset, refresh, paused, rate }`.
   Call `ctx.refresh()` from module events. Playground-only CSS → `Playground.css()`.
-- Shared components: `Playground.provide(name, { create(host) → { el, update(state) }, state() })`
-  in the master, `Playground.consume(name, host)` in the consumer (copy is
-  prepended into `host`), `Playground.publish(name, state)` from the master's
-  `apply`. Never import another adapter's markup by hand.
+- Shared components: `Playground.provide(name, { create(host, opts) → { el, update(state) }, state(), markup?(opts, state) })`
+  in the master, `Playground.consume(name, host, opts?)` in the consumer,
+  `Playground.publish(name, state)` from the master's `apply`,
+  `Playground.component(name)` for a snippet that embeds the component.
+  Never import another adapter's markup by hand.
 
 Shell owns (never reimplement in an adapter): pause / speed, frame width,
 zoom, grid, guides, fps, code drawer + copy, save / share link
@@ -142,5 +147,6 @@ sheet, collapsible groups. localStorage prefix `ws-playground:`.
 - 2026-09-16: shell rewrite done, 5 modules on the new contract, pushed.
 - 2026-09-16: `hero-section/` (Figma hero, tap-to-swap on phones; `img/build.py` rebuilds the screenshots from PNG).
 - 2026-09-17: `site-header/` (worksection.com top bar; its demo stacks it on the hero).
+- 2026-09-18: header shows only the bar, hero = first screen (header + hero); `site-button/` (site's .btn mirror + mono beam), hero CTAs are its copies.
 - Old folder `Desktop/vis-effects-for-ui` is superseded; work from this repo.
 - `.claude/launch.json` runs `python3` (no bare `python` on this Mac).

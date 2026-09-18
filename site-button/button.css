@@ -1,0 +1,174 @@
+/* ==========================================================================
+   Worksection button: a mirror of the site's .btn system, with the class
+   names, the nesting and the tokens exactly as in worksection.com's CSS
+   (values resolved from the live site), so the playground and the demos
+   render buttons the way the site does.
+
+   On the site none of this is needed: the classes already exist there.
+   What is new is the beam variant at the bottom, .btn-beam, which puts the
+   mono border light from border-beam/ on the dark button.
+
+   Markup:
+     <a class="btn btn-48 btn-primary btn-rounded" href="…"><span>Get started</span></a>
+     <a class="btn btn-48 btn-secondary btn-rounded" href="…"><span>Contact sales</span></a>
+     <button class="btn btn-36 btn-accent btn-rounded"><span>Book a demo</span></button>
+   Sizes      btn-32 btn-36 (both 32 px) btn-40 btn-48 btn-56
+   Variants   btn-primary btn-secondary btn-tertiary btn-accent btn-plain btn-white btn-ghost
+   Modifiers  btn-rounded (pill) btn-invert (on dark surfaces) btn-square btn-active
+
+   Beam (needs beam.css before this file, and beam.js):
+     <a class="btn btn-48 btn-primary btn-rounded btn-beam beam" data-beam data-trigger="always" href="…"><span>Get started</span></a>
+   ========================================================================== */
+
+.btn {
+  /* tokens, named as on the site */
+  --font-body-semi-xs: 600 13px/18px "Inter", sans-serif;
+  --font-body-med-md: 500 16px/20px "Inter", sans-serif;
+  --font-body-med-lg: 500 18px/24px "Inter", sans-serif;
+  --text-base-primary: #000000ed;
+  --text-base-secondary: #000000a8;
+  --text-base-invert-primary: #ffffff;
+  --text-base-ghost: #0a0a0a33;
+  --base-white-solid: #ffffff;
+  --base-white-a-0: #ffffff00;
+  --base-white-a-20: #ffffff33;
+  --base-white-a-30: #ffffff4d;
+  --base-white-a-40: #ffffff66;
+  --base-white-a-50: #ffffff80;
+  --base-white-a-60: #ffffff99;
+  --base-greengrey-100: #eaebeb;
+  --base-greengrey-150: #dddfde;
+  --base-greengrey-800: #636967;
+  --base-greengrey-900: #4f5452;
+  --base-greengrey-950: #2d2f2e;
+  --base-greengrey-990: #1e201f;
+  --base-greengrey-a-100: #16222217;
+  --base-greengrey-a-150: #0d1c1424;
+  --base-greengrey-a-200: #05140f33;
+  --base-slate-a-100: #2636360f;
+  --base-slate-a-150: #0f1c2926;
+  --base-slate-a-200: #080c1c30;
+  --base-neutral-a-300: #0d0d0d1f;
+  --base-neutral-a-400: #0a0a0a33;
+  --border-mid-high: #0d1c1424;
+  --border-invert-midhigh: #ffffff26;
+  --border-invert-mid: #ffffff33;
+  --button-accent-text: #323702;
+  --button-accent-surf-default: #eef95a;
+  --button-accent-surf-hover: #e6f33c;
+  --button-accent-surf-press: #d4e121;
+  --button-accent-outline: #b1c00c;
+
+  box-sizing: border-box;
+  display: inline-flex;            /* the site has flex; inline keeps a lone button in text flow */
+  justify-content: center;
+  align-items: center;
+  border: 0;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background .15s, box-shadow .15s, color .15s;
+  & span { white-space: nowrap; }
+  & svg { flex: none; fill: currentColor; }
+
+  /* --- sizes --- */
+  &.btn-32, &.btn-36 {
+    padding: 6px 8px; border-radius: 10px; height: 32px;
+    & svg { width: 16px; height: 16px; }
+    & span { font: var(--font-body-semi-xs); padding: 0 4px; }
+    &.btn-square { width: 32px; }
+  }
+  &.btn-36.btn-square { width: 36px; }
+  &.btn-40 {
+    padding: 8px 12px; border-radius: 12px; height: 40px;
+    & span { font: var(--font-body-med-md); padding: 0 8px; }
+    &.btn-square { width: 40px; }
+  }
+  &.btn-48 {
+    padding: 12px 16px; border-radius: 12px; height: 48px;
+    & span { font: var(--font-body-med-lg); padding: 0 8px; }
+    &.btn-square { width: 48px; }
+  }
+  &.btn-56 {
+    padding: 12px 16px; border-radius: 14px; height: 56px;
+    & span { font: var(--font-body-med-lg); padding: 0 8px; }
+  }
+
+  /* --- variants --- */
+  &.btn-plain {
+    color: var(--text-base-secondary); background: var(--base-white-a-0);
+    &:hover { color: var(--text-base-primary); }
+  }
+  &.btn-accent {
+    color: var(--button-accent-text); background: var(--button-accent-surf-default);
+    box-shadow: 0 3px 1px -1px var(--base-white-a-50) inset, 0 -8px 28px 4px var(--base-greengrey-a-150) inset, 0 0 0 1px var(--button-accent-outline), 0 1px 2px -.5px var(--base-greengrey-a-150), 0 3px 4px -1.5px var(--base-greengrey-a-150), 0 8px 10px -4px var(--base-greengrey-a-100);
+    &:hover { background: var(--button-accent-surf-hover); box-shadow: 0 0 0 1.5px var(--button-accent-surf-press), 0 1px 2px -.5px var(--base-greengrey-a-150), 0 3px 4px -1.5px var(--base-greengrey-a-150), 0 8px 10px -4px var(--base-greengrey-a-100); }
+    &:active, &.btn-active { background: var(--button-accent-surf-press); box-shadow: 0 0 0 1.5px var(--button-accent-surf-press); }
+  }
+  &.btn-primary {
+    color: var(--text-base-invert-primary); background: var(--base-greengrey-990);
+    box-shadow: 0 0 0 1px var(--base-greengrey-950), 0 2px 2px -1px var(--base-greengrey-a-200), 0 4px 4px -2px var(--base-greengrey-a-200), 0 6px 8px -3px var(--base-greengrey-a-150);
+    &:hover { background: var(--base-greengrey-900); box-shadow: 0 0 0 1px var(--base-greengrey-900), 0 2px 2px -1px var(--base-greengrey-a-200), 0 4px 4px -2px var(--base-greengrey-a-200), 0 6px 8px -3px var(--base-greengrey-a-150); }
+    &:active, &.btn-active { background: var(--base-greengrey-800); box-shadow: 0 0 0 1px var(--base-greengrey-800); }
+    &.btn-invert {
+      background: var(--base-white-solid); color: var(--text-base-primary);
+      box-shadow: 0 -4px 0 -1px var(--base-greengrey-a-100) inset, 0 0 0 1px var(--base-slate-a-200), 0 1px 2px -.5px var(--base-slate-a-150), 0 3px 4px -1.5px var(--base-slate-a-200), 0 8px 10px -4px var(--base-slate-a-100);
+      &:hover { background: var(--base-greengrey-100); box-shadow: 0 0 0 1px var(--base-slate-a-200), 0 1px 2px -.5px var(--base-slate-a-150), 0 3px 4px -1.5px var(--base-slate-a-200), 0 8px 10px -4px var(--base-slate-a-100); }
+      &:active, &.btn-active { background: var(--base-greengrey-150); box-shadow: 0 0 0 1px var(--base-slate-a-200); }
+    }
+  }
+  &.btn-white {
+    background: var(--base-white-solid); color: var(--text-base-primary);
+    box-shadow: 0 0 0 1px var(--base-greengrey-a-150), 0 1px 2px -.5px var(--base-slate-a-150), 0 3px 4px -1.5px var(--base-slate-a-200), 0 8px 10px -4px var(--base-slate-a-100), 0 -4px 0 -1px var(--base-greengrey-a-100) inset;
+    &:hover { background: var(--base-greengrey-100); box-shadow: 0 0 0 1px var(--base-greengrey-a-150), 0 1px 2px -.5px var(--base-slate-a-150), 0 3px 4px -1.5px var(--base-slate-a-200), 0 8px 10px -4px var(--base-slate-a-100); }
+    &:active, &.btn-active { background: var(--base-greengrey-150); box-shadow: 0 0 0 1px var(--base-greengrey-a-200); }
+  }
+  &.btn-secondary {
+    color: var(--text-base-primary); background: var(--base-greengrey-a-100); box-shadow: 0 0 0 1px var(--border-mid-high);
+    &:hover { background: var(--base-greengrey-a-150); box-shadow: 0 0 0 1px var(--base-greengrey-a-150); }
+    &:active, &.btn-active { background: var(--base-greengrey-a-200); box-shadow: 0 0 0 1px var(--base-greengrey-a-200); }
+    &.btn-invert {
+      background: var(--base-white-a-20); color: var(--text-base-invert-primary);
+      box-shadow: 0 0 0 1px var(--border-invert-midhigh), 0 1px 1px -.5px var(--base-neutral-a-400), 0 4px 6px -2px var(--base-neutral-a-300), 0 2px 8px 0 var(--base-white-a-20) inset;
+      &:hover { background: var(--base-white-a-30); }
+      &:active, &.btn-active { background: var(--base-white-a-40); box-shadow: 0 0 0 1px var(--border-invert-mid); }
+    }
+  }
+  &.btn-tertiary {
+    color: var(--text-base-primary); background: var(--base-white-a-0); box-shadow: 0 0 0 1px var(--border-mid-high);
+    &:hover { background: var(--base-greengrey-a-100); box-shadow: 0 0 0 1px var(--base-greengrey-a-100); }
+    &:active, &.btn-active { background: var(--base-greengrey-a-200); box-shadow: 0 0 0 1px var(--base-greengrey-a-200); }
+    &.btn-invert {
+      color: var(--text-base-invert-primary); box-shadow: 0 0 0 1px var(--border-invert-midhigh);
+      &:hover { background: var(--base-white-a-30); box-shadow: 0 0 0 1px var(--base-white-a-30); }
+      &:active, &.btn-active { background: var(--base-white-a-60); box-shadow: 0 0 0 1px var(--base-white-a-60); }
+    }
+  }
+  &.btn-ghost, &[disabled] {
+    color: var(--text-base-ghost); background: var(--base-greengrey-a-100); box-shadow: 0 0 0 1px var(--base-greengrey-a-100);
+    pointer-events: none;
+  }
+  &.btn-rounded { border-radius: 50px !important; }
+  &:focus-visible { outline: 2px solid var(--button-accent-outline); outline-offset: 2px; }
+}
+
+/* --- beam: the mono border light (border-beam/) on the dark button ----------
+   New to the site. The host classes .beam + data-beam belong to the effect, this
+   modifier only tunes it: the radius follows the size, the palette is mono. */
+.btn.btn-beam {
+  --beam-radius: 12px;
+  --beam-width: 1px;
+  --beam-duration: 2.4s;
+  --beam-head: 66;
+  --beam-arc: 14;
+  --beam-strength: .9;
+  --beam-bloom-blur: 6px;
+  --beam-inner-feather: 20px;
+  --beam-saturate: 0;
+  --beam-hue-range: 0deg;
+  --beam-brightness: 1.3;
+  --bc-1: #ffffff; --bc-2: #d6d6de; --bc-3: #ffffff; --bc-4: #c9c9d4; --bc-5: #e8e8ef;
+  --bc-6: #ffffff; --bc-7: #d0d0d8; --bc-8: #ffffff; --bc-9: #bcbcc6;
+  &.btn-32, &.btn-36 { --beam-radius: 10px; }
+  &.btn-56 { --beam-radius: 14px; }
+  &.btn-rounded { --beam-radius: 50px; }
+}

@@ -12,7 +12,7 @@
 | `demo.html` | приклад підключення |
 | `playground.js` | опис для плейграунду: контроли, пресети, сніпет. На сайт не потрібен |
 
-На сайт беруть `hero.css` + `hero.js` + власну розмітку і скріншоти. Плейграунд: `../index.html`, вкладка «S : Hero».
+На сайт беруть `hero.css` + `hero.js` + власну розмітку і скріншоти. Кнопки CTA — компонент сайту `.btn` (він на сайті вже є; у плейграунді його дзеркало в `../site-button/`). Промінь на головній кнопці — `.btn-beam` з `site-button/button.css` плюс `beam.css` + `beam.js` з `../border-beam/`. Плейграунд: `../index.html`, вкладка «S : Hero».
 
 ## Підключення
 
@@ -31,8 +31,8 @@
       <h1 class="hero__title">Project management built <br>for teams, not just tasks</h1>
       <p class="hero__lead">We believe in teamocracy…</p>
       <div class="hero__cta">
-        <a class="hero__btn hero__btn--primary" href="#">Get started</a>
-        <a class="hero__btn" href="#">Contact sales</a>
+        <a class="btn btn-48 btn-primary btn-rounded btn-beam beam" data-beam data-trigger="always" href="#"><span>Get started</span></a>
+        <a class="btn btn-48 btn-secondary btn-rounded" href="#"><span>Contact sales</span></a>
       </div>
       <p class="hero__note">14 day trial, no credit card required</p>
     </div>

@@ -52,9 +52,10 @@
    Shared components. When one module's demo needs another module inside it
    (the header above the hero), the master adapter provides it by name and
    the other consumes it; they never reference each other's files:
-     Playground.provide(name, { create(host) -> { el, update(state) }, state() })
-     Playground.consume(name, host, onMount?)   a copy, prepended into host
-     Playground.publish(name, state)            master's apply() pushes changes
+     Playground.provide(name, { create(host, opts) -> { el, update(state) }, state(), markup?(opts, state) })
+     Playground.consume(name, host, opts?, onMount?)   a copy inside host
+     Playground.publish(name, state)                   master's apply() pushes changes
+     Playground.component(name)                        provider def, e.g. its markup() for a snippet
    ========================================================================== */
 (function () {
   'use strict';
@@ -749,14 +750,16 @@
 
   /* ---------- shared components: one adapter provides, others consume, the master's state flows to every copy ---------- */
   // Adapters never reference each other; a component travels by name through the shell.
-  // provide(name, { create(host) -> { el, update(state) }, state() })   the master registers a factory and its current state
-  // consume(name, host, onMount?)                                      a copy is created in host as soon as the provider exists
-  // publish(name, state)                                               the master pushes a change to every copy
+  // provide(name, { create(host, opts) -> { el, update(state) }, state(), markup?(opts, state) })
+  //                                                the master registers a factory, its current state and, optionally, markup for snippets
+  // consume(name, host, opts?, onMount?)           a copy is created in host as soon as the provider exists
+  // publish(name, state)                           the master pushes a change to every copy
+  // component(name)                                the provider's definition, for snippets that embed the component
   const provided = {};
   const consumers = {};
   function mountConsumer(name, c) {
     if (c.handle) return;
-    c.handle = provided[name].create(c.host);
+    c.handle = provided[name].create(c.host, c.opts || {});
     if (c.handle.update) c.handle.update(provided[name].state());
     if (c.onMount) c.onMount(c.handle);
   }
@@ -764,12 +767,13 @@
     provided[name] = def;
     (consumers[name] || []).forEach(c => mountConsumer(name, c));
   }
-  function consume(name, host, onMount) {
-    const c = { host, onMount, handle: null };
+  function consume(name, host, opts, onMount) {
+    const c = { host, opts, onMount, handle: null };
     (consumers[name] = consumers[name] || []).push(c);
     if (provided[name]) mountConsumer(name, c);
     return c;
   }
+  const component = name => provided[name] || null;
   function publish(name, state) {
     (consumers[name] || []).forEach(c => { if (c.handle && c.handle.update) c.handle.update(state); });
   }
@@ -782,7 +786,7 @@
     css(text) { const s = document.createElement('style'); s.textContent = text; document.head.append(s); styles.push(s); },
     show,
     get active() { return active && active.ctx; },
-    provide, consume, publish,
+    provide, consume, publish, component,
     describe, check,
     esc, fmt: fmtNum,
   };

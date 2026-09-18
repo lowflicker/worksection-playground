@@ -13,6 +13,7 @@
 | Dot sphere | [`dot-sphere/`](dot-sphere) | 3D-сфера з точок на canvas, реагує на курсор | `sphere.js` |
 | S : Hero | [`hero-section/`](hero-section) | хіро з вкладками і двома скріншотами, на телефоні тап міняє головний | `hero.css`, `hero.js`, своя розмітка і скріншоти |
 | S : Header | [`site-header/`](site-header) | шапка worksection.com: липка пігулка, стискається на скролі, бургер і лист на вузькому | `header.css`, `header.js`, своя розмітка |
+| C : Button | [`site-button/`](site-button) | кнопки сайту (дзеркало `.btn` з worksection.com) і промінь border-beam у моно на головній | лише `.btn-beam` з `button.css` + `beam.css`, `beam.js` |
 
 ## Для розробника
 
