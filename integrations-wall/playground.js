@@ -1,7 +1,7 @@
 /* Playground definition for the Integrations wall.
    Not part of the module: a site needs only wall.css + wall.js and its own
-   tiles. The card around the wall (heading, arrow) is a stand-in for the
-   promo block the wall sits in, like the one on ramp.com. */
+   tiles. The stage shows the wall alone, in a box the size of a promo card;
+   the card itself (heading, link) is the site's business. */
 (function () {
   'use strict';
 
@@ -21,17 +21,11 @@
   const tile = l => `<figure class="iwall__tile"><img src="${src(l)}" alt="${l[1]}" title="${l[1]}" loading="lazy"></figure>`;
 
   const KEYS = Object.keys(IntegrationsWall.defaults).filter(k => !['respectReducedMotion', 'paused'].includes(k));
-  const defaults = Object.assign(Object.fromEntries(KEYS.map(k => [k, IntegrationsWall.defaults[k]])), { surface: '#ffffff', card: '#f4f2f0' });
+  const defaults = Object.assign(Object.fromEntries(KEYS.map(k => [k, IntegrationsWall.defaults[k]])), { surface: '#ffffff', box: '#f4f2f0' });
 
   Playground.css(`
-    .iw-card { position: relative; width: min(100%, 460px); margin: 0 auto; aspect-ratio: 421 / 526; overflow: hidden; border-radius: 12px; border: 1px solid rgba(0,0,0,.08); background: var(--iw-card, #f4f2f0); font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    .iw-card__head { position: relative; z-index: 2; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 28px 24px 0 28px; pointer-events: none; }
-    .iw-card__head h3 { margin: 0; max-width: 300px; font-size: 22px; line-height: 26px; font-weight: 500; letter-spacing: -.01em; color: #1e201f; }
-    .iw-card__head h3 span { color: rgba(30, 32, 31, .5); }
-    .iw-card__arrow { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 8px; background: #fff; border: 1px solid rgba(0,0,0,.08); color: #1e201f; }
-    .iw-card__arrow svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-    .iw-card .iwall { position: absolute; inset: 0; }
-    @container (max-width: 480px) { .iw-card__head h3 { font-size: 19px; line-height: 23px; } }
+    .iw-box { position: relative; width: min(100%, 460px); margin: 0 auto; aspect-ratio: 421 / 526; overflow: hidden; border-radius: 12px; background: var(--iw-box, #f4f2f0); }
+    .iw-box .iwall { position: absolute; inset: 0; }
   `);
 
   let wall = null, root = null;
@@ -112,7 +106,7 @@ ${LOGOS.slice(0, 6).map(l => '    ' + tile(l).replace(src(l), `logos/${l[0]}.svg
       ] },
       { title: 'Вигляд', items: [
         { type: 'color', key: 'surface', label: 'Плитка' },
-        { type: 'color', key: 'card', label: 'Картка', proof: ctx => ctx.frame.querySelector('.iw-card').style.getPropertyValue('--iw-card') },
+        { type: 'color', key: 'box', label: 'Фон боксу', proof: ctx => ctx.frame.querySelector('.iw-box').style.getPropertyValue('--iw-box') },
       ] },
     ],
 
@@ -128,10 +122,7 @@ ${LOGOS.slice(0, 6).map(l => '    ' + tile(l).replace(src(l), `logos/${l[0]}.svg
     ],
 
     mount(ctx) {
-      ctx.frame.insertAdjacentHTML('beforeend', `<div class="iw-card"><div class="iw-card__head">
-        <h3>200+ інтеграцій <span>з інструментами, якими ви вже користуєтесь</span></h3>
-        <span class="iw-card__arrow"><svg viewBox="0 0 16 16"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
-      </div><div class="iwall"><div class="iwall__sheet">${LOGOS.map(tile).join('')}</div></div></div>`);
+      ctx.frame.insertAdjacentHTML('beforeend', `<div class="iw-box"><div class="iwall"><div class="iwall__sheet">${LOGOS.map(tile).join('')}</div></div></div>`);
       root = ctx.frame.querySelector('.iwall');
       wall = IntegrationsWall.create(root, Object.assign({}, IntegrationsWall.defaults, defaults, { respectReducedMotion: false }));
       wall.stop(); // onShow starts the loop once the tab is on screen
@@ -144,11 +135,11 @@ ${LOGOS.slice(0, 6).map(l => '    ' + tile(l).replace(src(l), `logos/${l[0]}.svg
       for (const k of KEYS) if (k in patch) opts[k] = patch[k];
       wall.setOptions(opts);
       root.style.setProperty('--iw-surface', ctx.state.surface);
-      root.parentNode.style.setProperty('--iw-card', ctx.state.card);
+      root.parentNode.style.setProperty('--iw-box', ctx.state.box);
     },
     hint(ctx) {
       return ctx.paused ? 'Пауза: аркуш стоїть, плитки під курсором ще піднімаються'
-        : ctx.state.pan ? 'Веди курсором по картці, аркуш озирається за ним' : 'Аркуш лише дрейфує; додай «озирання», щоб він реагував на курсор';
+        : ctx.state.pan ? 'Веди курсором по боксу, аркуш озирається за ним' : 'Аркуш лише дрейфує; додай «озирання», щоб він реагував на курсор';
     },
     playback: {
       pause: () => wall.pause(),

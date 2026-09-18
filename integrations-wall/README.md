@@ -30,7 +30,7 @@
 </script>
 ```
 
-Боксу потрібен розмір (він `position: relative; overflow: hidden`), у картці найпростіше дати йому `position: absolute; inset: 0`. Кількість плиток довільна: скрипт клонує їх по колу, щоб заповнити `columns × rows` клітинок, зайві ховає. Або без JS-ініціалізації: `<div class="iwall" data-iwall data-iwall-columns="9">`.
+Модуль — лише стіна. Боксу потрібен розмір (він `position: relative; overflow: hidden`); у картці з заголовком найпростіше дати йому `position: absolute; inset: 0`, а текст покласти поверх з `z-index`. Кількість плиток довільна: скрипт клонує їх по колу, щоб заповнити `columns × rows` клітинок, зайві ховає. Або без JS-ініціалізації: `<div class="iwall" data-iwall data-iwall-columns="9">`.
 
 Опції з дефолтами й коментарями у шапці `wall.js`: сітка (`columns`, `rows`, `tile`, `gap`, `stagger`, `radius`, `logo`), рух (`pan`, `ease`, `drift`, `driftPeriod`, `hoverScale`), маска (`mask`, `maskX/Y`, `maskRx/Ry`, `maskSolid`). `wall.setOptions({...})`, `pause()`, `resume()`, `destroy()`.
 
