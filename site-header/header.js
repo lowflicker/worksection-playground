@@ -12,8 +12,13 @@
       the group close it.
    3. The mobile sheet. Built once from the nav and the actions, so the menu is
       written a single time in the markup. The burger toggles it, the scroll
-      container is locked while it is open, Escape closes it, and it closes
-      itself if the bar grows back into the wide layout.
+      container is locked while it is open (its scrollbar width is handed back
+      as padding, or the page would jump sideways), Escape closes it, and it
+      closes itself if the bar grows back into the wide layout.
+      Opening is a transition, not a swap: the state is a class and an
+      aria-expanded, everything visible is hidden by visibility rather than by
+      display or [hidden], and CSS eases the pill into the flat bar over
+      --sh-speed. JS sets no styles for it beyond --sh-sheet-h.
 
    API:
      const bar = new SiteHeader('#header', { compactAfter: 24 })
@@ -136,9 +141,8 @@
       if (!t) return;
       if (t.classList.contains('site-header__burger')) { this.toggle(); return; }
       if (t.classList.contains('site-header__sheet-item')) {
-        const on = t.getAttribute('aria-expanded') !== 'true';
-        t.setAttribute('aria-expanded', on);
-        t.nextElementSibling.hidden = !on;
+        // the group's own aria-expanded drives the reveal, so CSS can ease it
+        t.setAttribute('aria-expanded', t.getAttribute('aria-expanded') !== 'true');
         return;
       }
       e.preventDefault();
@@ -157,22 +161,39 @@
       if (this.isOpen) return;
       this._hideAll();
       const sc = this._scroller();
-      this._lock = { el: sc, overflow: sc.style.overflow };
+      // locking the scroller takes its scrollbar away, which would shift the page
+      // sideways under the sheet: give the width back as padding
+      const bar = sc === document.documentElement
+        ? innerWidth - document.documentElement.clientWidth
+        : sc.offsetWidth - sc.clientWidth;
+      this._lock = { el: sc, overflow: sc.style.overflow, pad: sc.style.paddingRight };
       sc.style.overflow = 'hidden';
+      if (bar > 0) sc.style.paddingRight = (parseFloat(getComputedStyle(sc).paddingRight) || 0) + bar + 'px';
       if (sc !== document.documentElement) this.root.style.setProperty('--sh-sheet-h', sc.clientHeight + 'px');
       this.root.classList.add('site-header--open');
       this.burger.setAttribute('aria-expanded', 'true');
-      this.sheet.hidden = false;
       this.root.dispatchEvent(new CustomEvent('header:open'));
     }
     close() {
       if (!this.isOpen) return;
       this.root.classList.remove('site-header--open');
       this.burger.setAttribute('aria-expanded', 'false');
-      this.sheet.hidden = true;
-      if (this._lock) { this._lock.el.style.overflow = this._lock.overflow; this._lock = null; }
-      this.root.style.removeProperty('--sh-sheet-h');
+      if (this._lock) {
+        this._lock.el.style.overflow = this._lock.overflow;
+        this._lock.el.style.paddingRight = this._lock.pad;
+        this._lock = null;
+      }
+      // the sheet keeps its height until the fade is over, or it would collapse mid-way
+      const done = () => this.root.style.removeProperty('--sh-sheet-h');
+      if (this._fade) clearTimeout(this._fade);
+      this._fade = setTimeout(done, this._speed());
       this.root.dispatchEvent(new CustomEvent('header:close'));
+    }
+    // the sheet's own fade length, so JS never hardcodes what CSS owns
+    _speed() {
+      const raw = getComputedStyle(this.root).getPropertyValue('--sh-speed').trim();
+      const ms = raw.endsWith('ms') ? parseFloat(raw) : raw.endsWith('s') ? parseFloat(raw) * 1000 : 300;
+      return ms > 0 ? ms : 300;
     }
     toggle() { this.isOpen ? this.close() : this.open(); }
     // the nearest ancestor that actually scrolls, else the document
@@ -186,7 +207,6 @@
     _buildSheet() {
       const sheet = document.createElement('div');
       sheet.className = 'site-header__sheet';
-      sheet.hidden = true;
       const nav = document.createElement('nav');
       nav.className = 'site-header__sheet-nav';
       nav.setAttribute('aria-label', (this.root.querySelector('.site-header__menu') || {}).getAttribute?.('aria-label') || 'Menu');
@@ -202,16 +222,20 @@
           head.type = 'button';
           head.setAttribute('aria-expanded', 'false');
           head.insertAdjacentHTML('beforeend', CHEVRON_R);
+          // two elements, not one: the outer row is what animates from 0fr to 1fr,
+          // the inner one keeps the links at their natural height to be clipped to
           const sub = document.createElement('div');
           sub.className = 'site-header__sheet-sub';
-          sub.hidden = true;
+          const list = document.createElement('div');
+          list.className = 'site-header__sheet-list';
           for (const l of links) {
             const a = document.createElement('a');
             a.className = 'site-header__sheet-link';
             a.href = l.getAttribute('href');
             a.textContent = l.firstChild.textContent.trim();
-            sub.append(a);
+            list.append(a);
           }
+          sub.append(list);
           wrap.append(head, sub);
         } else {
           head.href = item.getAttribute('href');
@@ -233,6 +257,7 @@
       if (this._io) this._io.disconnect();
       this._ro.disconnect();
       for (const t of this._timers.values()) clearTimeout(t);
+      if (this._fade) { clearTimeout(this._fade); this._fade = null; this.root.style.removeProperty('--sh-sheet-h'); }
       this.sentinel.remove();
       this.root.removeEventListener('pointerover', this._onOver);
       this.root.removeEventListener('pointerout', this._onOut);

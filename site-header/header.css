@@ -100,7 +100,16 @@
   box-shadow: var(--sh-shadow);
   -webkit-backdrop-filter: blur(var(--sh-blur));
   backdrop-filter: blur(var(--sh-blur));
-  transition: max-width var(--sh-speed) var(--sh-ease), border-radius var(--sh-speed) var(--sh-ease), box-shadow var(--sh-speed) var(--sh-ease);
+  /* Everything the open state changes is listed here, or the pill snaps into the
+     flat bar in one frame and only its corners bother to animate. */
+  transition:
+    width var(--sh-speed) var(--sh-ease),
+    max-width var(--sh-speed) var(--sh-ease),
+    padding var(--sh-speed) var(--sh-ease),
+    border-radius var(--sh-speed) var(--sh-ease),
+    background-color var(--sh-speed) var(--sh-ease),
+    backdrop-filter var(--sh-speed) var(--sh-ease),
+    box-shadow var(--sh-speed) var(--sh-ease);
 }
 .site-header--compact .site-header__bar { max-width: var(--sh-width-compact); }
 .site-header--compact .site-header__menu { padding-left: 8px; gap: 2px; }
@@ -256,10 +265,24 @@
   padding-top: calc(var(--sh-top) + 64px);
   background: var(--sh-solid);
   overflow: hidden;
+  /* hidden by visibility and not by display, so opening can be animated at all;
+     the hide waits for the fade to finish, the show does not wait for anything */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--sh-speed) var(--sh-ease), visibility 0s linear var(--sh-speed);
 }
-.site-header__sheet[hidden] { display: none; }
-.site-header--open .site-header__bar { width: 100%; max-width: none; padding: 16px 20px 16px 36px; border-radius: 0; background: var(--sh-solid); box-shadow: 0 1px 0 var(--sh-tint); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.site-header--open .site-header__sheet { opacity: 1; visibility: visible; transition-delay: 0s, 0s; }
+/* max-width: none would not interpolate, so the open pill is told to be 100% */
+.site-header--open .site-header__bar { width: 100%; max-width: 100%; padding: 16px 20px 16px 36px; border-radius: 0; background: var(--sh-solid); box-shadow: 0 1px 0 var(--sh-tint); -webkit-backdrop-filter: none; backdrop-filter: none; }
 .site-header__sheet-nav { flex: 1 1 auto; overflow-y: auto; padding: 24px 36px 60px; }
+/* the menu settles down into place a hair behind the fade, so the sheet unfolds
+   instead of blinking; the foot follows it */
+.site-header__sheet-nav, .site-header__sheet-foot {
+  translate: 0 -8px;
+  transition: translate var(--sh-speed) var(--sh-ease);
+}
+.site-header--open .site-header__sheet-nav { translate: 0 0; }
+.site-header--open .site-header__sheet-foot { translate: 0 0; transition-delay: 40ms; }
 .site-header__sheet-group { padding: 12px 0; }
 .site-header__sheet-item {
   display: flex;
@@ -277,8 +300,25 @@
 }
 .site-header__sheet-item svg { width: 20px; height: 20px; flex: none; fill: var(--sh-ink-2); transition: rotate .2s; }
 .site-header__sheet-item[aria-expanded="true"] svg { rotate: 90deg; }
-.site-header__sheet-sub { display: grid; gap: 4px; padding: 12px 0 4px 12px; }
-.site-header__sheet-sub[hidden] { display: none; }
+/* a collapsed group is a grid row of 0fr: the links keep their real height inside
+   and get clipped, so opening one does not shove the rest of the menu down */
+.site-header__sheet-sub {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  visibility: hidden;
+  transition: grid-template-rows var(--sh-speed) var(--sh-ease), visibility 0s linear var(--sh-speed);
+}
+.site-header__sheet-item[aria-expanded="true"] + .site-header__sheet-sub {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  transition-delay: 0s, 0s;
+}
+/* only the side padding lives here: vertical padding on the row's own item would
+   keep the collapsed group 16px tall instead of nothing, so it rides on the links */
+.site-header__sheet-list { display: grid; gap: 4px; padding-left: 12px; min-height: 0; }
+.site-header__sheet-list > :first-child { padding-top: 18px; }
+.site-header__sheet-list > :last-child { padding-bottom: 10px; }
 .site-header__sheet-link { display: block; padding: 6px 0; font: 500 15px/20px var(--sh-font); color: var(--sh-ink-2); text-decoration: none; }
 .site-header__sheet-link:hover { color: var(--sh-ink); }
 .site-header__sheet-foot { display: flex; align-items: center; gap: 8px; padding: 12px 36px; background: var(--sh-solid); box-shadow: 0 -1px 0 var(--sh-tint); }
@@ -293,7 +333,7 @@
   .site-header__actions > :not(.site-header__btn--primary):not(.site-header__burger) { display: none; }
   .site-header__burger { display: inline-flex; }
   .site-header__bar { max-width: 566px; }
-  .site-header--open .site-header__bar { max-width: none; }
+  .site-header--open .site-header__bar { max-width: 100%; }
 }
 @container (max-width: 619px) {
   .site-header__bar { --sh-gutter: 20px; max-width: none; }
@@ -303,5 +343,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .site-header__bar, .site-header__menu, .site-header__panel, .site-header__item svg, .site-header__sheet-item svg { transition: none; }
+  .site-header__bar, .site-header__menu, .site-header__panel, .site-header__item svg, .site-header__sheet-item svg,
+  .site-header__sheet, .site-header__sheet-nav, .site-header__sheet-foot, .site-header__sheet-sub { transition: none; }
+  .site-header__sheet-nav, .site-header__sheet-foot { translate: 0 0; }
 }
