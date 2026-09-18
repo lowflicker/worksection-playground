@@ -53,6 +53,31 @@
   --beam-bloom-alpha: .24;
   --beam-bloom-blur: 8px;
   --beam-inner-feather: 28px;      /* how far the inner glow reaches in    */
+  /* The frame the inner glow lives in. A plain linear ramp (#fff -> transparent)
+     holds a constant slope and then just stops, and the eye reads that kink as a
+     straight line drawn across the box — exactly what the glow must not have.
+     These stops trace a smoothstep instead: flat at both ends, steepest in the
+     middle, so the reach stays the same (half the light at half the feather) and
+     the glow simply has no boundary of its own anywhere inside. */
+  --beam-inner-fade:
+    #fff 0,
+    rgba(255,255,255,.94) calc(var(--beam-inner-feather) * .15),
+    rgba(255,255,255,.84) calc(var(--beam-inner-feather) * .25),
+    rgba(255,255,255,.72) calc(var(--beam-inner-feather) * .35),
+    rgba(255,255,255,.50) calc(var(--beam-inner-feather) * .50),
+    rgba(255,255,255,.28) calc(var(--beam-inner-feather) * .65),
+    rgba(255,255,255,.16) calc(var(--beam-inner-feather) * .75),
+    rgba(255,255,255,.06) calc(var(--beam-inner-feather) * .85),
+    transparent var(--beam-inner-feather),
+    transparent calc(100% - var(--beam-inner-feather)),
+    rgba(255,255,255,.06) calc(100% - var(--beam-inner-feather) * .85),
+    rgba(255,255,255,.16) calc(100% - var(--beam-inner-feather) * .75),
+    rgba(255,255,255,.28) calc(100% - var(--beam-inner-feather) * .65),
+    rgba(255,255,255,.50) calc(100% - var(--beam-inner-feather) * .50),
+    rgba(255,255,255,.72) calc(100% - var(--beam-inner-feather) * .35),
+    rgba(255,255,255,.84) calc(100% - var(--beam-inner-feather) * .25),
+    rgba(255,255,255,.94) calc(100% - var(--beam-inner-feather) * .15),
+    #fff 100%;
   --beam-inner-shadow: .27;        /* inset white rim on the glow layer    */
 
   /* colour grade */
@@ -165,10 +190,8 @@
       rgba(255,255,255,.10) calc((var(--beam-head) + var(--beam-arc) * 2.167) * 1%),
       transparent           calc((var(--beam-head) + var(--beam-arc) * 2.417) * 1%),
       transparent 100%),
-    linear-gradient(#fff, transparent var(--beam-inner-feather),
-                    transparent calc(100% - var(--beam-inner-feather)), #fff),
-    linear-gradient(to right, #fff, transparent var(--beam-inner-feather),
-                    transparent calc(100% - var(--beam-inner-feather)), #fff);
+    linear-gradient(to bottom, var(--beam-inner-fade)),
+    linear-gradient(to right,  var(--beam-inner-fade));
   mask-composite: intersect, add;
 
   opacity: calc(var(--beam-opacity) * var(--beam-inner-alpha)
@@ -286,8 +309,8 @@
   mask-image:
     radial-gradient(ellipse calc(78px * var(--beam-w)) calc(60px * var(--beam-h)) at calc(var(--beam-x) * 100%) 100%,
       #fff 0%, rgba(255,255,255,.5) 45%, transparent 100%),
-    linear-gradient(#fff, transparent var(--beam-inner-feather), transparent calc(100% - var(--beam-inner-feather)), #fff),
-    linear-gradient(to right, #fff, transparent var(--beam-inner-feather), transparent calc(100% - var(--beam-inner-feather)), #fff);
+    linear-gradient(to bottom, var(--beam-inner-fade)),
+    linear-gradient(to right,  var(--beam-inner-fade));
   mask-composite: intersect, add;
   opacity: calc(var(--beam-opacity) * var(--beam-edge) * var(--beam-inner-alpha)
                 * var(--beam-inner-opacity) * var(--beam-strength));
