@@ -60,5 +60,7 @@
 /* --- small sizes in medium ---------------------------------------------------
    A design change to the site (2026-09): buttons.css sets btn-32 / btn-36 in
    --font-body-semi-xs (600); at 13 px that reads heavy, so the label takes the
-   medium token instead. Same size and line height, only the weight differs. */
+   medium token instead. Same size and line height, only the weight differs.
+   The accent (green) one keeps semibold: it is the call to action. */
 .btn.btn-32 span, .btn.btn-36 span { font: var(--font-body-med-xs); }
+.btn.btn-32.btn-accent span, .btn.btn-36.btn-accent span { font: var(--font-body-semi-xs); }
