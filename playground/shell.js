@@ -984,6 +984,8 @@
   function noteCard(m, p) {
     const row = p.row;
     const card = h('div', 'note-card');
+    card.addEventListener('pointerenter', () => { p.cardHover = true; });
+    card.addEventListener('pointerleave', () => { p.cardHover = false; });
     card.innerHTML = `<div class="note-card__text">${esc(row.text)}</div>
       <div class="note-card__meta"><span>${esc([row.author, when(row.created_at)].filter(Boolean).join(' · '))}</span><code title="${esc(row.selector)}">${esc(row.label || noteLabel(row.selector))}</code></div>
       <div class="note-card__row"><label class="note-card__done"><input type="checkbox"${row.done ? ' checked' : ''}> Зроблено</label><span class="note-card__tools"><button type="button" class="icon" data-do="link" title="Скопіювати посилання на нотатку">${ICON.link}</button>${noteMine(row) ? `<button type="button" class="icon" data-do="del" title="Видалити">${ICON.close}</button>` : ''}<button type="button" class="icon" data-do="close" title="Закрити">${ICON.close}</button></span></div>`;
@@ -1049,7 +1051,9 @@
     card.innerHTML = `<textarea rows="3" placeholder="Що тут не так, як на сайті, або на що звернути увагу" maxlength="600"></textarea>
       <div class="note-card__meta"><code></code></div>
       <div class="note-card__row"><button type="button" data-do="up" title="Взяти батьківський елемент">Ширше</button><span class="note-card__tools"><button type="button" data-do="cancel">Скасувати</button><button type="button" class="primary" data-do="save">Зберегти</button></span></div>`;
-    n.compose = { el, card, box: h('div', 'note-box note-box--pick') };
+    n.compose = { el, card, box: h('div', 'note-box note-box--pick'), hover: false, last: null };
+    card.addEventListener('pointerenter', () => { n.compose.hover = true; });
+    card.addEventListener('pointerleave', () => { n.compose.hover = false; });
     const sel = () => pathTo(n.compose.el, m.els.frame);
     const label = $('code', card), ta = $('textarea', card);
     const relabel = () => { label.textContent = noteLabel(sel()); label.title = sel(); };
@@ -1081,6 +1085,9 @@
 
   // every frame while the layer shows: pins on their elements, the open card beside its pin,
   // anything scrolled out of the stage's window hidden with it
+  const ptr = { x: -1, y: -1 };
+  document.addEventListener('pointermove', e => { ptr.x = e.clientX; ptr.y = e.clientY; }, { passive: true });
+  const overPin = r => ptr.x >= r.left - 18 && ptr.x <= r.left + 18 && ptr.y >= r.top - 18 && ptr.y <= r.top + 18; // the 22 px pin plus its hit area, centred on the corner
   function drawNotes(m) {
     const n = m.notes, layer = m.els.notes;
     const on = tools.notes || !!n.pick || !!n.compose;
@@ -1088,7 +1095,9 @@
     if (!on) return;
     const sr = m.els.stage.getBoundingClientRect(), br = m.els.body.getBoundingClientRect();
     const seen = r => r.bottom > br.top && r.top < br.bottom && r.right > br.left && r.left < br.right;
-    const put = (el, r, dx, dy) => { el.style.transform = `translate(${Math.round(r.left - sr.left + (dx || 0))}px, ${Math.round(r.top - sr.top + (dy || 0))}px)`; };
+    // the position is the `translate` property, not `transform`: the pin scales on hover, and a scale
+    // multiplies whatever `transform` holds (the offset would fly by 12 %), while `translate` comes first
+    const put = (el, r, dx, dy) => { el.style.translate = `${Math.round(r.left - sr.left + (dx || 0))}px ${Math.round(r.top - sr.top + (dy || 0))}px`; };
     const fit = (box, r) => { put(box, r); box.style.width = r.width + 'px'; box.style.height = r.height + 'px'; };
     const beside = (card, r) => {
       // under the element, left-aligned; flipped above or pulled left when the stage runs out
@@ -1096,18 +1105,26 @@
       let x = r.left - sr.left, y = r.bottom - sr.top + 8;
       if (x + w > sr.width - 8) x = Math.max(8, sr.width - 8 - w);
       if (y + hh > sr.height - 8) y = Math.max(8, r.top - sr.top - 8 - hh);
-      card.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+      card.style.translate = `${Math.round(x)}px ${Math.round(y)}px`;
     };
     for (const p of n.pins) {
       const t = noteTarget(m, p.row.selector);
-      const r = t && t.getBoundingClientRect();
+      const live = t && t.getBoundingClientRect();
+      // A pin overlaps its element, so pointing at it ends the element's hover; if the element moves
+      // on hover (a lifted card, a scaled screenshot), the pin would slide out from under the pointer,
+      // the hover would return, and so on — a flicker. So while the pointer is inside the pin (its
+      // last drawn box, not the browser's hover, which lags a moving element) or on its card, the pin
+      // stays where it was; the outline keeps following the element.
+      const held = (p.last && overPin(p.last)) || p.cardHover;
+      const r = held && p.last ? p.last : live;
+      if (!held) p.last = live;
       const show = !!r && seen(r) && !(r.width === 0 && r.height === 0);
       p.el.hidden = !show;
       p.box.hidden = !show || !(p.hover || n.open === p.row.id);
       if (p.card) p.card.hidden = !show;
       if (!show) continue;
-      put(p.el, r, -10, -10);
-      fit(p.box, r);
+      put(p.el, r, -11, -11);
+      if (live) fit(p.box, live);
       if (p.card) beside(p.card, r);
     }
     if (n.pick) {
@@ -1116,8 +1133,10 @@
       if (r) { fit(n.pick.box, r); put(n.pick.tag, r, 0, -22); }
     }
     if (n.compose) {
-      const r = n.compose.el.getBoundingClientRect();
-      fit(n.compose.box, r);
+      const live = n.compose.el.getBoundingClientRect();
+      const r = n.compose.hover && n.compose.last ? n.compose.last : live; // same hold while typing
+      if (!n.compose.hover) n.compose.last = live;
+      fit(n.compose.box, live);
       beside(n.compose.card, r);
     }
   }

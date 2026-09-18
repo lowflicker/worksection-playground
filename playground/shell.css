@@ -219,7 +219,7 @@ body.no-panel .panel { display: none; }
 .stage--bare .stage__body > .rz > .frame, .stage--bare .stage__body > .frame { overflow: visible; }
 /* --- notes: a layer over the stage; pins on elements, black-glass cards, a picking mode --- */
 .notes { position: absolute; inset: 0; z-index: var(--z-notes); pointer-events: none; overflow: hidden; }
-.notes > * { position: absolute; top: 0; left: 0; will-change: transform; }
+.notes > * { position: absolute; top: 0; left: 0; will-change: translate; }
 .notes.is-picking { pointer-events: auto; cursor: crosshair; }
 /* the pin: 22 px of accent with a ring, and a 36 px hit area around it so it is easy to catch */
 .note-pin {
