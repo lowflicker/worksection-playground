@@ -108,7 +108,7 @@
   function bindShell() {
     ['views', 'tabs', 'toolbar', 'tb-play', 'tb-rates', 'tb-width', 'tb-width-badge', 'tb-width-sep', 'tb-zooms', 'tb-grid', 'tb-guides', 'tb-fps',
      'drawer', 'drawer-tabs', 'drawer-code', 'drawer-copy', 'drawer-files', 'drawer-legend', 'drawer-readme',
-     'btn-code', 'btn-panel', 'btn-theme', 'btn-help', 'help'].forEach(id => { els[id] = document.getElementById(id); });
+     'btn-panel', 'btn-theme', 'btn-help', 'help'].forEach(id => { els[id] = document.getElementById(id); });
   }
 
   /* ===== Registering a module: the view skeleton, the panel, the demo ===== */
@@ -199,18 +199,40 @@
   }
 
   /* ===== Panel ===== */
+  const ICON = {
+    reset: '<svg class="i" viewBox="0 0 16 16"><path d="M3 8a5 5 0 1 0 1.5-3.6"/><path d="M3 2.5v3h3"/></svg>',
+    caret: '<svg class="i" viewBox="0 0 16 16"><path d="m4 6 4 4 4-4"/></svg>',
+    code: '<svg class="i" viewBox="0 0 16 16"><path d="M6 4 2 8l4 4M10 4l4 4-4 4"/></svg>',
+    link: '<svg class="i" viewBox="0 0 16 16"><path d="M6.5 9.5 9.5 6.5M7 4.5l1-1a2.5 2.5 0 0 1 3.5 3.5l-1 1M9 11.5l-1 1a2.5 2.5 0 0 1-3.5-3.5l1-1"/></svg>',
+  };
+
   function buildPanel(m) {
-    const def = m.def, scroll = m.els.scroll;
+    const def = m.def, scroll = m.els.scroll, panel = m.els.panel;
     scroll.innerHTML = '';
-    scroll.append(h('h1', '', esc(def.title)));
+
+    // head: title, reset everything, collapse everything
+    const head = h('div', 'panel__head');
+    head.innerHTML = `<h1>${esc(def.title)}</h1><button type="button" class="icon" data-do="reset" title="Скинути всі налаштування">${ICON.reset}</button><button type="button" class="icon" data-do="fold" title="Згорнути / розгорнути всі групи">${ICON.caret}</button>`;
+    head.addEventListener('click', e => {
+      const b = e.target.closest('[data-do]'); if (!b) return;
+      if (b.dataset.do === 'reset') reset(m);
+      else { const open = m.groups.some(g => !g.el.classList.contains('is-collapsed')); m.groups.forEach(g => setCollapsed(m, g, open)); }
+    });
+    panel.prepend(head);
     if (def.summary) scroll.append(h('p', 'sub', esc(def.summary)));
 
     // save / share
     const save = h('div', 'save');
-    save.innerHTML = '<button type="button" class="primary" data-do="save">Зберегти</button><button type="button" data-do="link">Посилання</button><button type="button" data-do="clear">Забути</button><span class="save__status"></span>';
+    save.innerHTML = '<button type="button" data-do="save">Зберегти</button><button type="button" data-do="clear">Забути збережене</button><span class="save__status"></span>';
     save.addEventListener('click', e => { const b = e.target.closest('[data-do]'); if (b) saveAction(m, b.dataset.do); });
     m.saveStatusEl = $('.save__status', save);
     scroll.append(save);
+
+    // foot: the actions pinned to the bottom, as in a design tool
+    const foot = h('div', 'panel__foot');
+    foot.innerHTML = `<button type="button" class="primary" data-do="code" title="Код блоку з поточними значеннями (C)">${ICON.code}Код</button><button type="button" data-do="link" title="Посилання з поточними налаштуваннями">${ICON.link}Посилання</button>`;
+    foot.addEventListener('click', e => { const b = e.target.closest('[data-do]'); if (!b) return; if (b.dataset.do === 'code') openDrawer(); else saveAction(m, 'link'); });
+    panel.append(foot);
 
     // presets, random, reset
     if (def.presets || def.random) {
@@ -225,10 +247,11 @@
         });
         body.append(row);
       }
-      const row2 = h('div', 'row-btns'); row2.style.marginTop = '8px';
-      if (def.random) { const b = h('button', '', 'Випадково'); b.type = 'button'; b.addEventListener('click', () => setState(m, def.random(m.ctx) || {})); row2.append(b); }
-      const r = h('button', '', 'Скинути'); r.type = 'button'; r.addEventListener('click', () => reset(m)); row2.append(r);
-      body.append(row2);
+      if (def.random) {
+        const row2 = h('div', 'row-btns');
+        const b = h('button', '', 'Випадково'); b.type = 'button'; b.addEventListener('click', () => setState(m, def.random(m.ctx) || {})); row2.append(b);
+        body.append(row2);
+      }
       scroll.append(group(m, { title: 'Пресети' }, body));
     }
 
@@ -255,20 +278,32 @@
     scroll.append(group(m, { title: 'Сцена', collapsed: true }, scene));
   }
 
+  function setCollapsed(m, g, on) {
+    g.el.classList.toggle('is-collapsed', on);
+    groupsCollapsed[m.id + '/' + g.def.title] = on;
+    store.set(STORE + 'groups', groupsCollapsed);
+  }
+
   function group(m, g, body) {
     const wrap = h('div', 'group');
     const key = m.id + '/' + g.title;
-    const head = h('h2', '', esc(g.title));
+    const head = h('h2', '', `<span>${esc(g.title)}</span><div class="group__tools"><button type="button" class="reset" title="Скинути цю групу">${ICON.reset}</button><button type="button" class="caret" title="Згорнути">${ICON.caret}</button></div>`);
     body.classList.add('group__body');
-    const collapsed = key in groupsCollapsed ? groupsCollapsed[key] : !!g.collapsed;
-    wrap.classList.toggle('is-collapsed', collapsed);
-    head.addEventListener('click', () => {
-      const on = wrap.classList.toggle('is-collapsed');
-      groupsCollapsed[key] = on;
-      store.set(STORE + 'groups', groupsCollapsed);
+    if (!(g.items || []).some(it => it.key)) $('.reset', head).remove();
+    const rec = { el: wrap, def: g };
+    wrap.classList.toggle('is-collapsed', key in groupsCollapsed ? groupsCollapsed[key] : !!g.collapsed);
+    head.addEventListener('click', e => {
+      if (e.target.closest('.reset')) {
+        // the group's own keys back to their defaults; items without a key (buttons, status) have nothing to reset
+        const patch = {};
+        for (const it of g.items || []) if (it.key) setPath(patch, it.key, getPath(m.defaults, it.key));
+        if (Object.keys(patch).length) setState(m, patch);
+        return;
+      }
+      setCollapsed(m, rec, !wrap.classList.contains('is-collapsed'));
     });
     wrap.append(head, body);
-    m.groups.push({ el: wrap, def: g });
+    m.groups.push(rec);
     return wrap;
   }
 
@@ -287,10 +322,11 @@
     if (t === 'range') {
       const el = h('div', 'field', `<label for="${id}">${label}</label><output></output><input type="range" id="${id}" min="${it.min}" max="${it.max}" step="${it.step == null ? 1 : it.step}">`);
       const input = $('input', el), out = $('output', el);
-      input.addEventListener('input', () => setState(m, setPath({}, it.key, parseFloat(input.value))));
+      const fill = () => input.style.setProperty('--fill', ((input.value - it.min) / (it.max - it.min) * 100) + '%');
+      input.addEventListener('input', () => { fill(); setState(m, setPath({}, it.key, parseFloat(input.value))); });
       // double-click the label: back to the default value
       $('label', el).addEventListener('dblclick', () => setState(m, setPath({}, it.key, getPath(m.defaults, it.key))));
-      return { el, item: it, sync: s => { const v = getPath(s, it.key); input.value = v; out.textContent = it.fmt ? it.fmt(v) : fmtNum(v) + (it.unit ? ' ' + it.unit : ''); } };
+      return { el, item: it, sync: s => { const v = getPath(s, it.key); input.value = v; fill(); out.textContent = it.fmt ? it.fmt(v) : fmtNum(v) + (it.unit ? ' ' + it.unit : ''); } };
     }
     if (t === 'select') {
       const el = h('div', 'field inline', `<label for="${id}">${label}</label><select id="${id}">${it.options.map(o => `<option value="${esc(o[0])}">${esc(o[1])}</option>`).join('')}</select>`);
@@ -586,7 +622,6 @@
   }
 
   function bindGlobal() {
-    els['btn-code'].addEventListener('click', () => (els.drawer.hidden ? openDrawer() : closeDrawer()));
     els['btn-panel'].addEventListener('click', () => togglePanel());
     els['btn-theme'].addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
     els['btn-help'].addEventListener('click', () => { els.help.hidden = !els.help.hidden; });
