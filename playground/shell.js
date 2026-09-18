@@ -111,7 +111,7 @@
 
   const els = {};
   function bindShell() {
-    ['views', 'tabs', 'toolbar', 'tb-play', 'tb-rates', 'tb-width', 'tb-width-badge', 'tb-width-sep', 'tb-zooms', 'tb-grid', 'tb-guides', 'tb-fps',
+    ['views', 'tabs', 'toolbar', 'tb-play', 'tb-rates', 'tb-width', 'tb-width-badge', 'tb-width-in', 'tb-width-sep', 'tb-zooms', 'tb-grid', 'tb-guides', 'tb-fps',
      'drawer', 'drawer-tabs', 'drawer-code', 'drawer-copy', 'drawer-files', 'drawer-legend', 'drawer-readme',
      'btn-panel', 'btn-theme', 'btn-help', 'help'].forEach(id => { els[id] = document.getElementById(id); });
   }
@@ -550,6 +550,8 @@
     };
     const getW = () => m.ui.frame;
     const setW = w => { m.ui.frame = w; refresh(m); };
+    // a typed or stepped width: not narrower than 280, at the stage's width it is auto again
+    const clamp = w => { const max = maxW(); w = Math.round(Math.max(w, 280)); return w >= max - 1 ? 0 : w; };
     let raf = 0;
     const apply = w => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => setW(w)); };
 
@@ -578,7 +580,7 @@
       });
     });
 
-    const rz = { el, getW, setW, sync() {
+    const rz = { el, getW, setW, clamp, sync() {
       const w = getW();
       el.style.setProperty('--frame-w', w ? w + 'px' : '100%');
       el.classList.toggle('is-fixed', !!w);
@@ -595,6 +597,29 @@
     $$('[data-rate]', els['tb-rates']).forEach(b => b.addEventListener('click', () => setRate(+b.dataset.rate)));
     els['tb-width'].innerHTML = FRAME_PRESETS.map(w => `<button type="button" data-w="${w}">${w || 'Auto'}</button>`).join('');
     $$('[data-w]', els['tb-width']).forEach(b => b.addEventListener('click', () => { if (active && active.rz) active.rz.setW(+b.dataset.w); }));
+    // the badge is a field: a number commits on Enter / blur, empty or wider than the stage means auto, arrows step by 10 (100 with Shift)
+    const inp = els['tb-width-in'];
+    const commit = () => {
+      const rz = active && active.rz; if (!rz) return;
+      const n = parseInt(inp.value, 10);
+      if (!inp.value.trim() || !(n > 0)) rz.setW(0); else rz.setW(rz.clamp(n));
+      syncWidth();
+    };
+    inp.addEventListener('focus', () => inp.select());
+    inp.addEventListener('change', commit);
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { commit(); inp.blur(); }
+      else if (e.key === 'Escape') { syncWidth(true); inp.blur(); }
+      else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        const rz = active && active.rz; if (!rz) return;
+        const step = (e.shiftKey ? 100 : 10) * (e.key === 'ArrowUp' ? 1 : -1);
+        rz.setW(rz.clamp((parseInt(inp.value, 10) || rz.el.offsetWidth) + step));
+        syncWidth(true);
+      }
+      e.stopPropagation(); // the shell's shortcuts (Space, digits…) stay out of the field
+    });
+    inp.addEventListener('keyup', e => e.stopPropagation());
     els['tb-zooms'].innerHTML = ZOOMS.map(z => `<button type="button" data-zoom="${z}">${z * 100}%</button>`).join('');
     $$('[data-zoom]', els['tb-zooms']).forEach(b => b.addEventListener('click', () => setZoom(+b.dataset.zoom)));
     els['tb-grid'].addEventListener('click', () => setTool('grid', !tools.grid));
@@ -615,12 +640,14 @@
     syncWidth();
   }
 
-  function syncWidth() {
+  function syncWidth(force) {
     const rz = active && active.rz;
     els['tb-width'].hidden = els['tb-width-badge'].hidden = els['tb-width-sep'].hidden = !rz;
     if (!rz) return;
     const w = rz.getW();
-    els['tb-width-badge'].innerHTML = w ? `${w} px` : `${rz.el.offsetWidth} px<small>auto</small>`;
+    const inp = els['tb-width-in'];
+    if (force || document.activeElement !== inp) inp.value = w || rz.el.offsetWidth;
+    $('small', els['tb-width-badge']).hidden = !!w;
     $$('[data-w]', els['tb-width']).forEach(b => b.classList.toggle('is-active', +b.dataset.w === w));
   }
 

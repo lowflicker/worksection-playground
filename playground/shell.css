@@ -152,6 +152,10 @@ body.no-panel .panel { display: none; }
 .tb button.is-on { color: var(--accent); }
 .tb__badge { flex: none; padding: 0 8px; font-size: 11px; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tb__badge small { color: var(--faint); margin-left: 3px; }
+/* the number is typed in place: the field looks like the text until it has focus */
+.tb .tb__badge input { height: 18px; margin: 0 1px 0 0; padding: 0 2px; border: 0; border-radius: 4px; background: none; color: inherit; font: inherit; font-variant-numeric: inherit; text-align: right; width: 4ch; field-sizing: content; min-width: 3ch; }
+.tb .tb__badge input:hover { background: var(--panel-2); }
+.tb .tb__badge input:focus-visible { outline: 1px solid var(--accent); outline-offset: 0; background: var(--panel); }
 .tb__sep { flex: none; width: 1px; height: 16px; background: var(--line); margin: 0 3px; }
 .tb__fps { flex: none; padding: 0 8px 0 4px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tb__fps.is-low { color: var(--bad); }
