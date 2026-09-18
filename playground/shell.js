@@ -148,7 +148,7 @@
   function bindShell() {
     ['views', 'home', 'catalog', 'crumb', 'btn-home', 'crumb-title', 'crumb-label', 'crumb-icon', 'crumb-menu', 'topbar', 'actions', 'toolbar', 'tb-play', 'tb-rates', 'tb-width', 'tb-width-badge', 'tb-width-in', 'tb-width-sep', 'tb-zooms', 'tb-grid', 'tb-guides', 'tb-fps',
      'drawer', 'drawer-tabs', 'drawer-code', 'drawer-copy', 'drawer-files', 'drawer-legend', 'drawer-readme',
-     'tb-notes', 'tb-notes-n', 'tb-note-add',
+     'notebar', 'nb-toggle', 'nb-count', 'nb-prev', 'nb-pos', 'nb-next', 'nb-add', 'nb-copy',
      'btn-panel', 'btn-theme', 'btn-help', 'help'].forEach(id => { els[id] = document.getElementById(id); });
   }
 
@@ -317,7 +317,7 @@
 
     // notes: the list, «new» and a Markdown copy for the handoff
     const nt = h('div', 'notes-list');
-    nt.innerHTML = `<div class="notes__list"><p class="shared__empty">…</p></div><div class="notes__add"><button type="button" data-do="new" title="Клацни елемент на сцені й напиши нотатку (Shift+N)">Нова нотатка</button><button type="button" data-do="copy" title="Увесь список як Markdown, для передачі розробнику">${ICON.link}Markdown</button></div><span class="save__status notes__status"></span>`;
+    nt.innerHTML = `<div class="notes__list"><p class="shared__empty">…</p></div><span class="save__status notes__status"></span>`;
     m.notesListEl = $('.notes__list', nt);
     m.notesStatusEl = $('.notes__status', nt);
     nt.addEventListener('click', e => { const b = e.target.closest('[data-do]'); if (!b) return; const row = b.closest('.notes__row'); notesAction(m, b.dataset.do, row && row.dataset.id); });
@@ -961,14 +961,17 @@
     closeNote(m);
     const p = pinOf(m, id); if (!p) return;
     n.open = id;
+    p.el.classList.add('is-open');
     p.card = noteCard(m, p);
     m.els.notes.append(p.card);
+    if (m === active) syncNotebar();
   }
   function closeNote(m) {
     const n = m.notes;
     const p = n.open && pinOf(m, n.open);
-    if (p && p.card) { p.card.remove(); p.card = null; }
+    if (p && p.card) { p.card.remove(); p.card = null; p.el.classList.remove('is-open'); }
     n.open = null;
+    if (m === active) syncNotebar();
   }
   // from the list or a link: the layer on, the element in view, the card open
   function openNote(m, id) {
@@ -1129,7 +1132,25 @@
     box.innerHTML = rows.length ? rows.map((r, i) => {
       const lost = !noteTarget(m, r.selector);
       return `<div class="notes__row${r.done ? ' is-done' : ''}${lost ? ' is-lost' : ''}" data-id="${esc(r.id)}"><button type="button" class="notes__item" data-do="open" title="${esc(lost ? 'Елемент не знайдено: ' + r.selector : r.selector)}"><b>${i + 1}</b><span>${esc(r.text)}</span><small>${esc([r.label || noteLabel(r.selector), r.author, lost ? 'елемента вже нема' : ''].filter(Boolean).join(' · '))}</small></button>${noteMine(r) ? `<button type="button" class="icon" data-do="del" title="Видалити">${ICON.close}</button>` : ''}</div>`;
-    }).join('') : '<p class="shared__empty">Ще нема нотаток. «Нова» — і клацни елемент</p>';
+    }).join('') : '<p class="shared__empty">Ще нема нотаток: «Нотатка» внизу сцени — і клацни елемент</p>';
+    if (m === active) syncNotebar();
+  }
+  // the bar under the stage: the toggle with the count of what is still to do, prev / next through the
+  // pins, «new» and the Markdown copy
+  function syncNotebar() {
+    const m = active; if (!m) return;
+    const rows = m.notes.rows || [], todo = rows.filter(r => !r.done).length;
+    const i = m.notes.open ? rows.findIndex(r => r.id === m.notes.open) : -1;
+    els['nb-toggle'].classList.toggle('is-on', tools.notes);
+    els['nb-count'].textContent = todo; els['nb-count'].hidden = !todo;
+    els['nb-pos'].textContent = rows.length ? (i >= 0 ? `${i + 1} / ${rows.length}` : String(rows.length)) : '–';
+    els['nb-prev'].disabled = els['nb-next'].disabled = rows.length < 2 && i >= 0 || !rows.length;
+    els.notebar.classList.toggle('is-off', !tools.notes);
+  }
+  function stepNote(m, d) {
+    const rows = m.notes.rows || []; if (!rows.length) return;
+    const i = m.notes.open ? rows.findIndex(r => r.id === m.notes.open) : -1;
+    openNote(m, rows[(i + d + rows.length) % rows.length].id);
   }
   async function notesAction(m, act, id) {
     if (act === 'new') return startPick(m);
@@ -1281,10 +1302,13 @@
     $$('[data-zoom]', els['tb-zooms']).forEach(b => b.addEventListener('click', () => setZoom(+b.dataset.zoom)));
     els['tb-grid'].addEventListener('click', () => setTool('grid', !tools.grid));
     els['tb-guides'].addEventListener('click', () => setTool('guides', !tools.guides));
-    els['tb-notes'].addEventListener('click', () => setTool('notes', !tools.notes));
-    els['tb-note-add'].addEventListener('click', () => { if (active) startPick(active); });
+    els['nb-toggle'].addEventListener('click', () => setTool('notes', !tools.notes));
+    els['nb-add'].addEventListener('click', () => { if (active) startPick(active); });
+    els['nb-copy'].addEventListener('click', () => { if (active) notesAction(active, 'copy'); });
+    els['nb-prev'].addEventListener('click', () => { if (active) stepNote(active, -1); });
+    els['nb-next'].addEventListener('click', () => { if (active) stepNote(active, 1); });
     // a click anywhere else closes the open card; the pins and cards handle their own clicks
-    document.addEventListener('click', e => { if (active && active.notes.open && !e.target.closest('.note-card, .note-pin, .notes__row')) closeNote(active); });
+    document.addEventListener('click', e => { if (active && active.notes.open && !e.target.closest('.note-card, .note-pin, .notes__row, .nb')) closeNote(active); });
     setZoom(tools.zoom, true);
     setTool('grid', tools.grid, true);
     setTool('guides', tools.guides, true);
@@ -1299,10 +1323,7 @@
     $$('[data-zoom]', els['tb-zooms']).forEach(b => b.classList.toggle('is-active', +b.dataset.zoom === tools.zoom));
     els['tb-grid'].classList.toggle('is-on', tools.grid);
     els['tb-guides'].classList.toggle('is-on', tools.guides);
-    els['tb-notes'].classList.toggle('is-on', tools.notes);
-    const nn = active && active.notes.rows ? active.notes.rows.filter(r => !r.done).length : 0;
-    els['tb-notes-n'].textContent = nn;
-    els['tb-notes-n'].hidden = !nn;
+    syncNotebar();
     document.body.classList.toggle('is-paused', paused);
     syncWidth();
     syncTbFade();
@@ -1557,6 +1578,7 @@
     if (!paused && pb.resume) pb.resume(m.ctx);
     if (pb.rate) pb.rate(m.ctx, rate);
     if (m.def.onShow) m.def.onShow(m.ctx);
+    m.els.stage.append(els.notebar); // the notes bar follows the stage on screen, like the tool pill
     if (!m.notes.rows) loadNotes(m); // once per module, the first time it is on screen
     // observers and sizes only exist once the view is displayed
     setTimeout(() => { for (const a of m.els.stage.getAnimations({ subtree: true })) { a.playbackRate = rate; if (paused) a.pause(); } refresh(m); }, 50);

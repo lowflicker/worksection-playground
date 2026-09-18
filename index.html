@@ -89,11 +89,25 @@
   <div class="tb__group" id="tb-zooms" title="Масштаб (Z)"></div>
   <div class="tb__group">
     <button type="button" id="tb-grid" title="Сітка 8 px (G)" aria-label="Сітка"><svg class="i" viewBox="0 0 16 16"><path d="M2 5.5h12M2 10.5h12M5.5 2v12M10.5 2v12"/></svg></button>
-    <button type="button" id="tb-notes" title="Нотатки до елементів (N)" aria-label="Нотатки"><svg class="i" viewBox="0 0 16 16"><path d="M2.5 3.5h11v7H7.5L4.5 13v-2.5h-2z"/></svg><span class="tb__count" id="tb-notes-n" hidden></span></button>
-    <button type="button" id="tb-note-add" title="Нова нотатка: клацни елемент на сцені (Shift+N)" aria-label="Нова нотатка"><svg class="i" viewBox="0 0 16 16"><path d="M8 2.5v6M5 5.5h6"/><path d="M2.5 9.5h11v3h-11z"/></svg></button>
     <button type="button" id="tb-guides" title="Центральні напрямні (L)" aria-label="Напрямні"><svg class="i" viewBox="0 0 16 16"><path d="M8 1.5v13M1.5 8h13"/><circle cx="8" cy="8" r="2.5"/></svg></button>
   </div>
   <span class="tb__fps" id="tb-fps" title="Кадрів за секунду і час кадру">— fps</span>
+</div>
+
+<!-- notes bar: pinned to the bottom of whichever stage is on screen -->
+<div class="nb" id="notebar">
+  <button type="button" id="nb-toggle" title="Показати або сховати нотатки (N)" aria-label="Нотатки">
+    <svg class="i" data-icon="on" viewBox="0 0 16 16"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>
+    <svg class="i" data-icon="off" viewBox="0 0 16 16"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><path d="M3 13 13 3"/></svg>
+    <span class="nb__count" id="nb-count" hidden></span>
+  </button>
+  <span class="tb__sep"></span>
+  <button type="button" id="nb-prev" title="Попередня нотатка" aria-label="Попередня"><svg class="i" viewBox="0 0 16 16"><path d="M10 3 5 8l5 5"/></svg></button>
+  <span class="nb__pos" id="nb-pos">–</span>
+  <button type="button" id="nb-next" title="Наступна нотатка" aria-label="Наступна"><svg class="i" viewBox="0 0 16 16"><path d="m6 3 5 5-5 5"/></svg></button>
+  <span class="tb__sep"></span>
+  <button type="button" class="nb__add" id="nb-add" title="Клацни елемент на сцені й напиши нотатку (Shift+N)"><svg class="i" viewBox="0 0 16 16"><path d="M8 3.5v9M3.5 8h9"/></svg>Нотатка</button>
+  <button type="button" id="nb-copy" title="Увесь список як Markdown, для передачі розробнику" aria-label="Markdown"><svg class="i" viewBox="0 0 16 16"><path d="M6.5 9.5 9.5 6.5M7 4.5l1.2-1.2a2.5 2.5 0 0 1 3.5 3.5L10.5 8M9 11.5l-1.2 1.2a2.5 2.5 0 0 1-3.5-3.5L5.5 8"/></svg></button>
 </div>
 
 <div class="actions" id="actions">

@@ -149,8 +149,8 @@ asks for a sign-in — a PKCE magic link to a `@worksection.ua` mailbox, no SDK 
 and the row policies are the gate; without `REMOTE` the same
 list lives in localStorage), notes pinned to a module's elements (table
 `notes`, a CSS path from the frame + text; the `.notes` layer over the stage,
-toggle `N`, new `Shift+N`, list in the panel, link `#<id>?n=<note>`; same
-sign-in), the optional plate under the block
+the bar at the bottom of the stage: toggle `N`, prev / next, new `Shift+N`,
+Markdown copy; list in the panel, link `#<id>?n=<note>`; same sign-in), the optional plate under the block
 (`stage.bg`; off by default, the block sits on the canvas), theme, panel hide, shortcuts (`?`), mobile
 sheet, collapsible groups, the catalogue (`Playground.home()`, key `H`) and the crumb pill with the module switch. localStorage prefix `ws-playground:`.
 Layering is the shell's too: `.stage__body` is a stacking context, so a module
