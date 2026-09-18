@@ -129,7 +129,7 @@
   let active = null;
   let paused = false;
   let rate = 1;
-  const tools = Object.assign({ zoom: 1, grid: false, guides: false, notes: true }, store.get(STORE + 'tools', {}));
+  const tools = Object.assign({ zoom: 1, grid: false, guides: false, notes: true, notebar: false }, store.get(STORE + 'tools', {}));
   const groupsCollapsed = store.get(STORE + 'groups', {});
 
   /* What a module is, and the glyph that says so. The kind files the catalogue
@@ -148,7 +148,7 @@
   function bindShell() {
     ['views', 'home', 'catalog', 'crumb', 'btn-home', 'crumb-title', 'crumb-label', 'crumb-icon', 'crumb-menu', 'topbar', 'actions', 'toolbar', 'tb-play', 'tb-rates', 'tb-width', 'tb-width-badge', 'tb-width-in', 'tb-width-sep', 'tb-zooms', 'tb-grid', 'tb-guides', 'tb-fps',
      'drawer', 'drawer-tabs', 'drawer-code', 'drawer-copy', 'drawer-files', 'drawer-legend', 'drawer-readme',
-     'notebar', 'nb-toggle', 'nb-count', 'nb-prev', 'nb-pos', 'nb-next', 'nb-add', 'nb-copy',
+     'notebar', 'nb-fold', 'nb-count-min', 'nb-toggle', 'nb-count', 'nb-prev', 'nb-pos', 'nb-next', 'nb-add', 'nb-copy',
      'btn-panel', 'btn-theme', 'btn-help', 'help'].forEach(id => { els[id] = document.getElementById(id); });
   }
 
@@ -1007,6 +1007,7 @@
     const n = m.notes;
     cancelPick(m);
     if (!tools.notes) setTool('notes', true);
+    if (!tools.notebar) setTool('notebar', true);
     n.pick = { el: null, box: h('div', 'note-box note-box--pick'), tag: h('div', 'note-tag') };
     m.els.notes.append(n.pick.box, n.pick.tag);
     m.els.notes.classList.add('is-picking');
@@ -1142,7 +1143,10 @@
     const rows = m.notes.rows || [], todo = rows.filter(r => !r.done).length;
     const i = m.notes.open ? rows.findIndex(r => r.id === m.notes.open) : -1;
     els['nb-toggle'].classList.toggle('is-on', tools.notes);
-    els['nb-count'].textContent = todo; els['nb-count'].hidden = !todo;
+    els['nb-count'].textContent = els['nb-count-min'].textContent = todo;
+    els['nb-count'].hidden = !todo; els['nb-count-min'].hidden = !todo || tools.notebar;
+    els.notebar.classList.toggle('is-min', !tools.notebar);
+    els['nb-fold'].title = tools.notebar ? 'Згорнути' : 'Нотатки до елементів' + (todo ? `: ${todo} до роботи` : '');
     els['nb-pos'].textContent = rows.length ? (i >= 0 ? `${i + 1} / ${rows.length}` : String(rows.length)) : '–';
     els['nb-prev'].disabled = els['nb-next'].disabled = rows.length < 2 && i >= 0 || !rows.length;
     els.notebar.classList.toggle('is-off', !tools.notes);
@@ -1302,6 +1306,7 @@
     $$('[data-zoom]', els['tb-zooms']).forEach(b => b.addEventListener('click', () => setZoom(+b.dataset.zoom)));
     els['tb-grid'].addEventListener('click', () => setTool('grid', !tools.grid));
     els['tb-guides'].addEventListener('click', () => setTool('guides', !tools.guides));
+    els['nb-fold'].addEventListener('click', () => setTool('notebar', !tools.notebar));
     els['nb-toggle'].addEventListener('click', () => setTool('notes', !tools.notes));
     els['nb-add'].addEventListener('click', () => { if (active) startPick(active); });
     els['nb-copy'].addEventListener('click', () => { if (active) notesAction(active, 'copy'); });

@@ -276,8 +276,9 @@ body.no-panel .panel { display: none; }
 .notes__status:empty { display: none; }
 
 /* the notes bar: a second pill, at the bottom of the stage */
+/* folded, it is one button in the bottom-left corner with the count; open, the pill grows from it */
 .nb {
-  position: absolute; left: 50%; bottom: var(--gutter); translate: -50% 0; z-index: var(--z-chrome); max-width: calc(100% - 2 * var(--gutter));
+  position: absolute; left: var(--gutter); bottom: var(--gutter); z-index: var(--z-chrome); max-width: calc(100% - 2 * var(--gutter));
   display: flex; align-items: center; gap: 4px; height: var(--toolbar-h); padding: 0 6px;
   background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
   border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 8px 24px -12px rgba(0,0,0,.35);
@@ -292,6 +293,13 @@ body.no-panel .panel { display: none; }
 .nb__pos { flex: none; min-width: 34px; text-align: center; font-size: 11px; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .nb__add { gap: 4px; padding-right: 9px !important; color: var(--text) !important; }
 .nb.is-off #nb-prev, .nb.is-off #nb-next, .nb.is-off .nb__pos { opacity: .4; }
+.nb.is-min .nb__more { display: none; }
+.nb.is-min { padding: 0 4px; }
+.nb__fold { position: relative; }
+.nb__fold [data-icon="fold"], .nb.is-min .nb__fold [data-icon="bubble"] { display: block; }
+.nb__fold [data-icon="bubble"], .nb.is-min .nb__fold [data-icon="fold"] { display: none; }
+.nb.is-min .nb__fold { color: var(--text); }
+.nb.is-min .nb__count { position: absolute; top: -3px; right: -3px; margin: 0; }
 body.is-home .nb { display: none; }
 
 /* screen overlays: 8px grid with a 64px major line, and centre guides */
