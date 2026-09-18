@@ -193,6 +193,13 @@ ${markup(s, '', false)}
     defaults,
     presets: Object.values(PRESETS),
     stage: { className: 'stage--fill' },
+    acceptance: [
+      { id: 'main-screen-follows-state', run: ctx => ctx.set({ main: 'phone' }), expect: () => root.querySelector('.hero__screens').dataset.main === 'phone' },
+      { id: 'view-selects-tab', run: ctx => ctx.set({ view: 2 }), wait: 30, expect: () => root.querySelectorAll('.hero__tab')[2].getAttribute('aria-selected') === 'true' || 'tab 2 not selected' },
+      { id: 'content-toggles-lead-and-list', run: ctx => ctx.set({ content: 'list' }), expect: () => root.querySelector('.hero__lead').hidden && !root.querySelector('.hero__list').hidden },
+      { id: 'header-copy-on-top', run: () => {}, expect: () => root.previousElementSibling && root.previousElementSibling.classList.contains('site-header') || 'no header above the hero' },
+      { id: 'cta-are-button-copies', run: () => {}, expect: () => root.querySelectorAll('.hero__cta > .btn').length === 2 || `${root.querySelectorAll('.hero__cta > .btn').length} buttons` },
+    ],
     controls: [
       { title: 'Скріншоти', items: [
         { type: 'seg', key: 'main', label: 'Головний скрін', options: [['desktop', 'Десктоп'], ['phone', 'Телефон']] },

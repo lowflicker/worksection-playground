@@ -289,7 +289,7 @@ ${Object.entries(dict).map(([k, v]) => `    //   '${k}': '${v}',`).join('\n')}
         } },
       ] },
       { title: 'Клік і сторонній віджет', items: [
-        { type: 'range', key: 'widgetDelay', label: 'Час завантаження віджета (імітація)', min: 0, max: 3000, step: 100, unit: 'ms' },
+        { type: 'range', key: 'widgetDelay', label: 'Час завантаження віджета (імітація)', min: 0, max: 3000, step: 100, unit: 'ms', proof: false },
         { type: 'select', key: 'whenActive', label: 'Інші кнопки, поки віджет відкритий', options: [['others', 'Відходять, активна стає хрестиком'], ['all', 'Ховаються всі, віджет закривається сам'], ['none', 'Лишаються']] },
         { type: 'select', key: 'whenActiveCompact', label: 'Те саме на мобільному', options: [['all', 'Ховаються всі, віджет на весь екран'], ['others', 'Відходять, активна стає хрестиком'], ['none', 'Лишаються']] },
         { type: 'buttons', items: [
@@ -333,6 +333,13 @@ ${Object.entries(dict).map(([k, v]) => `    //   '${k}': '${v}',`).join('\n')}
       ] },
     ],
     stage: { className: 'stage--fill' },
+    acceptance: [
+      { id: 'click-loads-then-opens-widget', run: async ctx => { ctx.set({ widgetDelay: 0 }); clickAction('support'); await new Promise(r => setTimeout(r, 80)); },
+        expect: () => (fa.activeId === 'support' && widget.classList.contains('is-on')) || `activeId=${fa.activeId}, widget ${widget.classList.contains('is-on') ? 'on' : 'off'}` },
+      { id: 'close-returns-to-idle', run: () => closeWidget(fa.activeId, fa), expect: () => fa.activeId === null && !widget.classList.contains('is-on') },
+      { id: 'single-preset-keeps-one-button', run: ctx => ctx.set(PRESETS[3].patch), wait: 50, expect: () => fa.items.length === 1 || `${fa.items.length} buttons` },
+      { id: 'language-resolves-labels', run: ctx => ctx.set({ lang: 'uk' }), expect: () => fa.options.t['fa.support.label'] === 'Написати в чат' },
+    ],
 
     mount(ctx) {
       state = ctx.state;

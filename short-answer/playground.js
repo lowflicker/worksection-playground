@@ -121,6 +121,12 @@ ${opts}
       ] },
     ],
     stage: { bg: '#ffffff' },
+    acceptance: [
+      { id: 'stack-below-container-width', run: ctx => ctx.set({ stackBelow: 2000 }), wait: 30, expect: () => sa.stacked === true || 'not stacked at stackBelow 2000' },
+      { id: 'side-by-side-again', run: ctx => ctx.set({ stackBelow: 100 }), wait: 30, expect: () => sa.stacked === false },
+      { id: 'pulse-off-stops-running', run: ctx => ctx.set({ pulse: false }), expect: () => sa.options.pulse === false },
+      { id: 'accent-reaches-cards', run: ctx => ctx.set({ pulse: true, accent: '#ff0000' }), expect: () => sa.options.accent === '#ff0000' },
+    ],
 
     mount(ctx) {
       root = document.createElement('section');

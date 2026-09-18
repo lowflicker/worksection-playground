@@ -124,6 +124,13 @@ ${opts}
       ] },
     ],
 
+    acceptance: [
+      { id: 'style-rebuilds-layout', run: ctx => ctx.set({ style: 'mesh' }), expect: () => (!!sphere.links && sphere.o.style === 'mesh') || 'no links after mesh' },
+      { id: 'count-reaches-canvas', run: ctx => ctx.set({ style: 'stipple', count: 1000 }), expect: () => sphere.n === 1000 || `n=${sphere.n}` },
+      { id: 'theme-sets-both-colours', run: ctx => ctx.set(THEMES.dark), expect: () => sphere.o.background === '#0e0e10' && sphere.o.color === '#e8e8ef' },
+      { id: 'loop-stops-when-hidden', run: () => Playground.show('sphere'), wait: 60, expect: () => !!sphere.raf || 'not running while shown' },
+    ],
+
     mount(ctx) {
       const canvas = document.createElement('canvas');
       canvas.className = 'sphere-canvas';

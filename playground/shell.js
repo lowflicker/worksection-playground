@@ -46,6 +46,10 @@
      playback  { pause(ctx), resume(ctx), rate(ctx, r) }   for motion the
                shell cannot reach through getAnimations() (timers, canvas)
      onShow    (ctx), onHide(ctx)
+     acceptance [{ id, run(ctx), wait?, expect(ctx) -> true | reason }]
+               rows Playground.check() runs after it has proven every keyed
+               control generically (alternative value -> state -> snippet or
+               the item's own proof(ctx); proof: false marks playground-only)
 
    ctx: { id, state, defaults, ui, frame, stage, instance, set(patch),
           reset(), refresh(), paused, rate }
@@ -865,15 +869,69 @@
     return {
       id: m.id, title: m.def.title, tabs: (m.def.tabs || []).map(t => t.id + (t.file ? ':file' : ':render')),
       presets: (m.def.presets || []).map(p => p.label), random: !!m.def.random, resizable: !!m.rz, playback: Object.keys(m.def.playback || {}),
+      acceptance: (m.def.acceptance || []).map(r => r.id),
       controls: (m.def.controls || []).map(g => ({ group: g.title, items: (g.items || []).map(it =>
         it.type + ':' + (it.key || (it.items ? it.items.map(b => b.label).join('|') : '')) + (it.type === 'range' ? `[${it.min}..${it.max}/${it.step == null ? 1 : it.step}]` : '') + (it.when ? '?' : '')) })),
       state: clone(m.state),
     };
   }
 
-  // smoke test: every module shown, first preset applied, reset, snippets rendered; state is restored afterwards
-  async function check() {
-    const report = { errors: [], warnings: [], modules: {} };
+  /* ---------- acceptance: every visible control proves it works, after Toolcraft's acceptance rows ----------
+     Generic proof for a keyed control: set an alternative value → the state holds it → something observable
+     changed (the item's own proof(ctx), else the module's snippet). A module adds rows in def.acceptance for
+     behaviour only the DOM shows: { id, run(ctx), wait?, expect(ctx) → true | reason }. */
+  const wait = ms => new Promise(res => setTimeout(res, ms));
+  const ALT = {
+    range: (it, v) => (v === it.max ? it.min : it.max),
+    select: (it, v) => { const o = it.options.find(o => String(o[0]) !== String(v)); return o ? o[0] : v; },
+    seg: (it, v) => { const o = it.options.find(o => String(o[0]) !== String(v)); return o ? o[0] : v; },
+    check: (it, v) => !v,
+    color: (it, v) => (String(v).toLowerCase() === '#123456' ? '#654321' : '#123456'),
+    swatch: (it, v) => { const o = it.options.find(o => o.id !== v); return o ? o.id : v; },
+    easing: (it, v) => (v === 'cubic-bezier(.19, 1, .22, 1)' ? 'linear' : 'cubic-bezier(.19, 1, .22, 1)'),
+  };
+  async function proveControls(m) {
+    const tab = (m.def.tabs || []).find(t => t.render);
+    const res = { pass: 0, fail: [], unproven: [] };
+    for (const f of m.fields) {
+      const it = f.item;
+      // hidden by when(): out of reach for the user right now, proven when its condition holds
+      if (!it.key || !ALT[it.type] || f.el.hidden) continue;
+      if (it.proof === false) { res.unproven.push(it.key + ': playground-only'); continue; }
+      const before = clone(getPath(m.state, it.key));
+      const alt = ALT[it.type](it, before);
+      if (same(alt, before)) { res.unproven.push(it.key + ': no alternative value'); continue; }
+      const observe = () => (it.proof ? it.proof(m.ctx) : tab ? tab.render(m.state, m.ctx) : null);
+      const obs0 = observe();
+      try {
+        setState(m, setPath({}, it.key, alt));
+        await wait(0);
+        const got = getPath(m.state, it.key);
+        if (!same(got, alt)) res.fail.push(`${it.key}: state is ${JSON.stringify(got)}, expected ${JSON.stringify(alt)}`);
+        else if (obs0 === null) res.unproven.push(it.key + ': nothing observable');
+        else if (same(obs0, observe())) res.fail.push(it.key + ': state changed but nothing observable did');
+        else res.pass++;
+        setState(m, setPath({}, it.key, before));
+      } catch (e) { res.fail.push(it.key + ': ' + (e.message || e)); }
+    }
+    return res;
+  }
+  async function proveRows(m) {
+    const res = { pass: 0, fail: [] };
+    for (const row of m.def.acceptance || []) {
+      try {
+        await row.run(m.ctx);
+        await wait(row.wait || 0);
+        const ok = row.expect(m.ctx);
+        if (ok === true) res.pass++; else res.fail.push(row.id + (typeof ok === 'string' ? ': ' + ok : ''));
+      } catch (e) { res.fail.push(row.id + ': ' + (e.message || e)); }
+    }
+    return res;
+  }
+
+  // check(id?): smoke + acceptance for every module (or one). State and the active view are restored afterwards
+  async function check(only) {
+    const report = { ok: true, errors: [], warnings: [], modules: {} };
     const onErr = e => {
       const msg = String((e.error && e.error.stack) || e.message || e).split('\n').slice(0, 2).join(' ');
       // Chrome reports this when layout changes inside a ResizeObserver callback; the modules do that on purpose and it is harmless
@@ -881,8 +939,8 @@
     };
     window.addEventListener('error', onErr);
     const start = active && active.id;
-    const wait = ms => new Promise(res => setTimeout(res, ms));
     for (const m of modules) {
+      if (only && m.id !== only) continue;
       const r = report.modules[m.id] = {};
       const before = snapshot(m);
       try {
@@ -896,14 +954,26 @@
         for (const t of m.def.tabs || []) if (t.render) { const txt = t.render(m.state, m.ctx); if (typeof txt !== 'string' || txt.length < 20) r['tab:' + t.id] = 'empty'; }
         if (m.def.hint) r.hint = m.def.hint(m.ctx) || '';
         for (const f of m.fields) if (f.item.type === 'status' && f.sync) f.sync(m.state);
-      } catch (e) { r.error = String(e.stack || e).split('\n').slice(0, 2).join(' '); }
+        const c = await proveControls(m);
+        r.controls = `${c.pass} proven` + (c.fail.length ? `, ${c.fail.length} FAILED` : '') + (c.unproven.length ? `, ${c.unproven.length} unproven` : '');
+        if (c.fail.length) r.controlsFailed = c.fail;
+        if (c.unproven.length) r.unproven = c.unproven;
+        reset(m);
+        if (m.def.acceptance) {
+          const a = await proveRows(m);
+          r.rows = `${a.pass} of ${(m.def.acceptance || []).length} passed`;
+          if (a.fail.length) r.rowsFailed = a.fail;
+        }
+        if (r.controlsFailed || r.rowsFailed || r.reset !== 'ok' || !r.shown) report.ok = false;
+      } catch (e) { r.error = String(e.stack || e).split('\n').slice(0, 2).join(' '); report.ok = false; }
+      if (m.def.reset) m.def.reset(m.ctx);
       restoreSnapshot(m, before);
     }
     await wait(120);
     window.removeEventListener('error', onErr);
+    if (report.errors.length) report.ok = false;
     if (start) show(start);
     report.fps = els['tb-fps'].textContent;
-    report.console = 'check the browser console for warnings';
     return report;
   }
 

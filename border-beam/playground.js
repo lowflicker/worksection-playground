@@ -160,7 +160,7 @@ ${varsBlock(s, '    ')}
     },
     controls: [
       { title: 'Сценарій', items: [
-        { type: 'select', key: 'demo', label: 'Елемент', options: Object.entries(DEMOS).map(([id, d]) => [id, d.label]) },
+        { type: 'select', key: 'demo', label: 'Елемент', options: Object.entries(DEMOS).map(([id, d]) => [id, d.label]), proof: ctx => ctx.frame.querySelector('.beam').className },
         { type: 'seg', key: 'mode', label: 'Режим', options: [['spin', 'Обертання по межі'], ['travel', 'Нижня межа']] },
         { type: 'seg', key: 'trigger', label: 'Тригер', options: [['always', 'Завжди'], ['hover', 'Наведення'], ['focus', 'Фокус']] },
         { type: 'buttons', items: [
@@ -205,6 +205,12 @@ ${varsBlock(s, '    ')}
       ] },
     ],
     stage: { resizable: false, bg: '#0e0e10' },
+    acceptance: [
+      { id: 'travel-mode-on-host', run: ctx => ctx.set({ mode: 'travel' }), expect: () => host.getAttribute('data-mode') === 'travel' && host.style.getPropertyValue('--beam-duration') === '3.1s' },
+      { id: 'hover-trigger-hides-until-hovered', run: ctx => ctx.set({ trigger: 'hover' }), wait: 20, expect: () => !host.hasAttribute('data-active') && inst.trigger === 'hover' },
+      { id: 'bar-demo-implies-travel', run: ctx => ctx.set({ trigger: 'always', demo: 'bar' }), expect: ctx => ctx.state.mode === 'travel' && host.classList.contains('bb-bar') },
+      { id: 'palette-reaches-css', run: ctx => ctx.set({ palette: 'candy' }), expect: () => host.style.getPropertyValue('--bc-1') === PALETTES.candy.colors[0] },
+    ],
 
     mount(ctx) {
       ctx.frame.classList.add('bb-frame');

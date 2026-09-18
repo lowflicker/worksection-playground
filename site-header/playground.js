@@ -120,6 +120,15 @@ ${vars.join('\n')}
     ],
     defaults,
     presets: [{ label: 'worksection.com', patch: Object.assign({}, defaults) }],
+    acceptance: [
+      { id: 'compact-class-toggles', run: () => root.classList.add('site-header--compact'), expect: () => compacted() },
+      { id: 'sheet-opens-and-closes', run: () => bar.open(), expect: () => bar.isOpen ? (bar.close(), !bar.isOpen) : 'did not open' },
+      { id: 'copies-follow-the-master', run: ctx => ctx.set({ radius: 12, alpha: 50 }), expect: () => {
+        const bars = [...document.querySelectorAll('.site-header')];
+        return (bars.length > 1 && bars.every(el => el.style.getPropertyValue('--sh-radius') === '12px')) || `${bars.length} bars, not all at 12px`;
+      } },
+      { id: 'sticky-off-reaches-css', run: ctx => ctx.set({ sticky: false }), expect: () => getComputedStyle(root).position !== 'sticky' },
+    ],
     controls: [
       { title: 'Пігулка', items: [
         { type: 'range', key: 'width', label: 'Ширина у спокої', min: 800, max: 1600, step: 20, unit: 'px' },

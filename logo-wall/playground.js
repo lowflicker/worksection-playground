@@ -118,6 +118,13 @@ ${NAMES.map(n => `      'logos/${n}.svg',`).join('\n')}
       ] },
     ],
 
+    acceptance: [
+      { id: 'rows-rebuild-slots', run: ctx => ctx.set({ rows: 3 }), wait: 30, expect: () => wall.slots.length === wall.cols * 3 || `${wall.slots.length} slots for ${wall.cols} cols × 3` },
+      { id: 'columns-follow-breakpoint', run: ctx => ctx.set({ columns: { desktop: 3, tablet: 3, mobile: 3, small: 3 } }), wait: 30, expect: () => wall.cols === 3 || `cols=${wall.cols}` },
+      { id: 'stop-halts-autoplay', run: () => wall.stop(), expect: () => wall.running === false },
+      { id: 'start-resumes', run: () => wall.start(), expect: () => wall.running === true },
+    ],
+
     mount(ctx) {
       root = document.createElement('section');
       root.setAttribute('aria-label', 'Clients');

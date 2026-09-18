@@ -131,6 +131,12 @@ ${vars.join('\n')}
       { label: 'Без beam', patch: { beam: false } },
     ],
     stage: { bg: '#eaebeb' },
+    acceptance: [
+      { id: 'beam-only-on-dark-primary', run: () => {}, expect: () => items.every(it => (it.handle.el.classList.contains('beam') === it.handle.el.classList.contains('btn-primary'))) || 'beam on a non-primary or missing on a primary' },
+      { id: 'beam-off-clears-copies-too', run: ctx => ctx.set({ beam: false }), expect: () => !document.querySelector('.btn.beam') || 'a .btn.beam is still around' },
+      { id: 'beam-on-reaches-hero-cta', run: ctx => ctx.set({ beam: true }), expect: () => document.querySelectorAll('.hero__cta .btn.beam[data-active]').length === 1 || 'hero CTA has no active beam' },
+      { id: 'hover-trigger-waits', run: ctx => ctx.set({ trigger: 'hover' }), wait: 20, expect: () => items.filter(it => it.handle.el.classList.contains('beam')).every(it => !it.handle.el.hasAttribute('data-active')) },
+    ],
     controls: [
       { title: 'Beam на головній', items: [
         { type: 'check', key: 'beam', label: 'Промінь по межі темної кнопки' },

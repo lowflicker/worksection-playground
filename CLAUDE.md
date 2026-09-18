@@ -72,8 +72,11 @@ Reading is the main cost. In this order:
    Do not modify existing files through shell scripts (python/sed): the
    harness echoes the whole changed file back into context. `Write` only for
    new files.
-5. **Verify cheaply.** `await Playground.check()` — one call, all modules:
-   shown, first preset, reset, snippets, hints; state restored. Then
+5. **Verify cheaply.** `await Playground.check()` (or `check('hero')`) — one
+   call: smoke (shown, preset, reset, snippets) + acceptance (every keyed
+   control proven: alternative value → state → snippet or `proof(ctx)`;
+   then the module's `acceptance` rows). `ok: true` or the failing ids;
+   state restored. Then
    `read_console_messages` (errors only), then targeted `javascript_tool`
    asserts. A screenshot only when the change is visual, one, `scale: 0.5`.
    Do not re-check modules you did not touch. Batch browser steps with
@@ -102,6 +105,11 @@ playback?, onShow?, onHide? })`
 - `playback` hooks only for motion outside `getAnimations()` (timers, canvas).
 - `ctx` = `{ id, state, defaults, ui, frame, stage, instance, set, reset, refresh, paused, rate }`.
   Call `ctx.refresh()` from module events. Playground-only CSS → `Playground.css()`.
+- `acceptance: [{ id, run(ctx), wait?, expect(ctx) → true | reason }]` — rows for
+  behaviour only the DOM shows (a class, a child count, an instance flag).
+  Every module has 4–5. A keyed item may set `proof(ctx)` (its own observable)
+  or `proof: false` (playground-only knob). New control → it is proven
+  automatically; new behaviour → add a row.
 - Shared components: `Playground.provide(name, { create(host, opts) → { el, update(state) }, state(), markup?(opts, state) })`
   in the master, `Playground.consume(name, host, opts?)` in the consumer,
   `Playground.publish(name, state)` from the master's `apply`,
@@ -120,6 +128,7 @@ sheet, collapsible groups. localStorage prefix `ws-playground:`.
    simplest), `border-beam/` (CSS vars, demo surfaces, derive), `logo-wall/`
    (options + presets), `float-actions/` (fake environment around the module).
 3. `index.html`: `<link>` in head, module `<script>` + `playground.js` at the end of body.
+4. `acceptance` rows in the adapter; `await Playground.check('my-block')` must be `ok`.
 
 ## Working here
 
@@ -149,5 +158,6 @@ sheet, collapsible groups. localStorage prefix `ws-playground:`.
 - 2026-09-16: `hero-section/` (Figma hero, tap-to-swap on phones; `img/build.py` rebuilds the screenshots from PNG).
 - 2026-09-17: `site-header/` (worksection.com top bar; its demo stacks it on the hero).
 - 2026-09-18: header shows only the bar, hero = first screen (header + hero); `site-button/` (site's .btn mirror + mono beam), hero CTAs are its copies.
+- 2026-09-18: shell redesigned after Toolcraft (glass panel, tool pill, section reset); `easing` control (bezier editor); `check()` = acceptance, all green.
 - Old folder `Desktop/vis-effects-for-ui` is superseded; work from this repo.
 - `.claude/launch.json` runs `python3` (no bare `python` on this Mac).
