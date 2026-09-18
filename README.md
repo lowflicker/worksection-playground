@@ -6,15 +6,15 @@
 
 | Вкладка | Модуль | Що це | Що брати на сайт |
 |---|---|---|---|
-| S : Clients | [`logo-wall/`](logo-wall) | логотипи клієнтів, свап через блюр хвилею | `logo-wall.css`, `logo-wall.js`, свої SVG |
-| S : Short answer | [`short-answer/`](short-answer) | вердикт і варіанти, зв'язані живими конекторами | `short-answer.css`, `short-answer.js` |
+| Clients | [`logo-wall/`](logo-wall) | логотипи клієнтів, свап через блюр хвилею | `logo-wall.css`, `logo-wall.js`, свої SVG |
+| Short answer | [`short-answer/`](short-answer) | вердикт і варіанти, зв'язані живими конекторами | `short-answer.css`, `short-answer.js` |
 | Float actions | [`float-actions/`](float-actions) | кнопки support і ringostat поверх сайту | `float-actions.css`, `float-actions.js` |
 | Border beam | [`border-beam/`](border-beam) | веселкове світло по межі елемента, чистий CSS | `beam.css`, `beam.js` |
 | Dot sphere | [`dot-sphere/`](dot-sphere) | 3D-сфера з точок на canvas, реагує на курсор | `sphere.js` |
 | Integrations wall | [`integrations-wall/`](integrations-wall) | стіна логотипів інтеграцій: зміщена сітка озирається за курсором, дрейфує, тане до країв | `wall.css`, `wall.js`, свої SVG |
-| S : Hero | [`hero-section/`](hero-section) | хіро з вкладками і двома скріншотами, на телефоні тап міняє головний | `hero.css`, `hero.js`, своя розмітка і скріншоти |
-| S : Header | [`site-header/`](site-header) | шапка worksection.com: липка пігулка, стискається на скролі, бургер і лист на вузькому | `header.css`, `header.js`, своя розмітка |
-| C : Button | [`site-button/`](site-button) | кнопки сайту (дзеркало `.btn` з worksection.com) і промінь border-beam у моно на головній | лише `.btn-beam` з `button.css` + `beam.css`, `beam.js` |
+| Hero | [`hero-section/`](hero-section) | хіро з вкладками і двома скріншотами, на телефоні тап міняє головний | `hero.css`, `hero.js`, своя розмітка і скріншоти |
+| Header | [`site-header/`](site-header) | шапка worksection.com: липка пігулка, стискається на скролі, бургер і лист на вузькому | `header.css`, `header.js`, своя розмітка |
+| Button | [`site-button/`](site-button) | кнопки сайту (дзеркало `.btn` з worksection.com) і промінь border-beam у моно на головній | лише `.btn-beam` з `button.css` + `beam.css`, `beam.js` |
 
 ## Для розробника
 

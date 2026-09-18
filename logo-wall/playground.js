@@ -1,4 +1,4 @@
-/* Playground definition for Logo wall (S : Clients).
+/* Playground definition for Logo wall (Clients).
    Not part of the module: a site needs only logo-wall.css + logo-wall.js
    and its own SVG files.
    Everything here is what the playground shell (playground/shell.js) asks
@@ -64,8 +64,9 @@ ${NAMES.map(n => `      'logos/${n}.svg',`).join('\n')}
   Playground.register({
     id: 'logos',
     title: 'Logo blur swap',
-    tab: 'S : Clients',
-    summary: 'Блок «S : Clients»: логотипи клієнтів, свап через блюр хвилею.',
+    tab: 'Clients',
+    kind: 'section',
+    summary: 'Блок «Clients»: логотипи клієнтів, свап через блюр хвилею.',
     dir: 'logo-wall',
     tabs: [
       { id: 'html', label: 'index.html', render: snippet },

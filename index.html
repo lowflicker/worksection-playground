@@ -32,15 +32,24 @@
 <!-- home: the catalogue of modules; a module view hides it -->
 <section class="home" id="home" hidden>
   <header class="home__head">
-    <div>
+    <div class="home__intro">
       <span class="home__brand"><i class="mark"></i>Worksection playground</span>
       <p class="home__sub">Блоки промо-сайту й UI-ефекти: відкрий модуль, крути параметри, забирай код.</p>
     </div>
   </header>
   <div id="catalog">
-    <section class="home__group" data-kind="section"><h2>Секції</h2><div class="home__grid"></div></section>
-    <section class="home__group" data-kind="component"><h2>Компоненти</h2><div class="home__grid"></div></section>
-    <section class="home__group" data-kind="effect"><h2>Ефекти</h2><div class="home__grid"></div></section>
+    <section class="home__group" data-kind="section">
+      <div class="home__kind"><h2>Секції</h2><span class="home__count"></span></div>
+      <div class="home__grid"></div>
+    </section>
+    <section class="home__group" data-kind="component">
+      <div class="home__kind"><h2>Компоненти</h2><span class="home__count"></span></div>
+      <div class="home__grid"></div>
+    </section>
+    <section class="home__group" data-kind="effect">
+      <div class="home__kind"><h2>Ефекти</h2><span class="home__count"></span></div>
+      <div class="home__grid"></div>
+    </section>
   </div>
 </section>
 
@@ -53,8 +62,13 @@
   <button type="button" class="crumb__home" id="btn-home" title="Каталог (H)" aria-label="Каталог">
     <svg class="i" viewBox="0 0 16 16"><path d="M2.5 7.5 8 2.5l5.5 5v6h-4v-4h-3v4h-4z"/></svg>
   </button>
-  <button type="button" class="crumb__title" id="crumb-title" aria-haspopup="menu" aria-expanded="false"><span id="crumb-label"></span><svg class="i" viewBox="0 0 16 16"><path d="m4.5 6.5 3.5 3.5 3.5-3.5"/></svg></button>
-  <div class="crumb__menu" id="crumb-menu" role="menu" hidden></div>
+  <button type="button" class="crumb__title" id="crumb-title" aria-haspopup="menu" aria-expanded="false"><span class="crumb__badge" id="crumb-icon" aria-hidden="true"></span><span id="crumb-label"></span><svg class="i" viewBox="0 0 16 16"><path d="m4.5 6.5 3.5 3.5 3.5-3.5"/></svg></button>
+  <!-- the switch, filed the same way as the catalogue; the shell fills each group -->
+  <div class="crumb__menu" id="crumb-menu" role="menu" hidden>
+    <div class="crumb__group" data-kind="section"   role="group" aria-label="Секції"><p class="crumb__kind">Секції</p></div>
+    <div class="crumb__group" data-kind="component" role="group" aria-label="Компоненти"><p class="crumb__kind">Компоненти</p></div>
+    <div class="crumb__group" data-kind="effect"    role="group" aria-label="Ефекти"><p class="crumb__kind">Ефекти</p></div>
+  </div>
 </div>
 
 <!-- stage toolbar: one element, moved into whichever stage is on screen -->
@@ -104,7 +118,6 @@
     <dt><kbd class="k">\</kbd></dt><dd>сховати панель</dd>
     <dt><kbd class="k">T</kbd></dt><dd>тема</dd>
     <dt><kbd class="k">H</kbd></dt><dd>каталог</dd>
-    <dt><kbd class="k">1</kbd>…<kbd class="k">9</kbd></dt><dd>модулі</dd>
     <dt><kbd class="k">Esc</kbd></dt><dd>закрити</dd>
   </dl>
 </div>

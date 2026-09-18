@@ -37,7 +37,7 @@ README.md               developer overview + how to add a module.
 
 Globals / ids: `LogoWall`→`logos`, `ShortAnswer`→`answer`, `FloatActions`→`fab`,
 `BorderBeam`→`beam`, `DotSphere`→`sphere`, `Hero`→`hero`, `SiteHeader`→`header`, button (no JS, `button.css`)→`button`, `IntegrationsWall`→`integrations`.
-`tab` prefixes: `S :` = section of the site, `C :` = component reused inside sections, none = effect; the home page (`index.html` with no hash) is a catalogue grouped by these; a module opens at `#<id>`. Each module exposes `.defaults`.
+`kind`: `'section'` = section of the site, `'component'` = component reused inside sections, `'effect'` (the default) = everything else. It files the catalogue card and the entry in the switch, and picks the glyph in front of the name; `tab` is just the short label. The home page (`index.html` with no hash) is a catalogue grouped by kind; a module opens at `#<id>`. Each module exposes `.defaults`.
 `hero-section/` is markup-first: the adapter builds the HTML, `hero.js` only
 enhances it; its breakpoints are container queries, so the frame width
 presets (390 / 320) show the narrow composition. Its stage is the site's
@@ -87,7 +87,7 @@ Reading is the main cost. In this order:
 
 ## The contract (full text: header of `playground/shell.js`)
 
-`Playground.register({ id, title, tab?, summary?, dir, tabs, defaults,
+`Playground.register({ id, title, tab?, kind?, summary?, dir, tabs, defaults,
 presets?, random?, controls, stage?, mount, apply, derive?, reset?, hint?,
 playback?, onShow?, onHide? })`
 
@@ -118,8 +118,9 @@ playback?, onShow?, onHide? })`
   Never import another adapter's markup by hand.
 
 Shell owns (never reimplement in an adapter): pause / speed, frame width,
-zoom, grid, guides, fps, code drawer + copy, save / share link
-(`#<id>?s=<base64>`), stage bg, theme, panel hide, shortcuts (`?`), mobile
+zoom, frame height (`stage.resizableH`), grid, guides, fps, code drawer + copy,
+save / share link (`#<id>?s=<base64>`), the optional plate under the block
+(`stage.bg`; off by default, the block sits on the canvas), theme, panel hide, shortcuts (`?`), mobile
 sheet, collapsible groups, the catalogue (`Playground.home()`, key `H`) and the crumb pill with the module switch. localStorage prefix `ws-playground:`.
 
 ## Adding a module

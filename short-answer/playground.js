@@ -1,4 +1,4 @@
-/* Playground definition for Short answer (S : Short answer).
+/* Playground definition for Short answer (Short answer).
    Not part of the module: a site needs only short-answer.css + short-answer.js.
    Everything here is what the playground shell (playground/shell.js) asks
    for: the state, the controls, the presets and the generated snippet. */
@@ -75,8 +75,9 @@ ${opts}
   Playground.register({
     id: 'answer',
     title: 'Short answer',
-    tab: 'S : Short answer',
-    summary: 'Блок «S : Short answer»: вердикт і варіанти, зв\'язані живими конекторами.',
+    tab: 'Short answer',
+    kind: 'section',
+    summary: 'Блок «Short answer»: вердикт і варіанти, зв\'язані живими конекторами.',
     dir: 'short-answer',
     tabs: [
       { id: 'html', label: 'index.html', render: snippet },
@@ -120,7 +121,6 @@ ${opts}
         { type: 'color', key: 'accent', label: 'Акцент' },
       ] },
     ],
-    stage: { bg: '#ffffff' },
     acceptance: [
       { id: 'stack-below-container-width', run: ctx => ctx.set({ stackBelow: 2000 }), wait: 30, expect: () => sa.stacked === true || 'not stacked at stackBelow 2000' },
       { id: 'side-by-side-again', run: ctx => ctx.set({ stackBelow: 100 }), wait: 30, expect: () => sa.stacked === false },

@@ -1,4 +1,4 @@
-/* Playground definition for the Worksection button (C : Button).
+/* Playground definition for the Worksection button (Button).
    Not part of the module: a site needs only button.css (plus beam.css +
    beam.js from border-beam/ for the beam variant).
    The button is a shared component: this tab is the master, other modules
@@ -114,7 +114,8 @@ ${vars.join('\n')}
   Playground.register({
     id: 'button',
     title: 'Button: кнопки сайту',
-    tab: 'C : Button',
+    tab: 'Button',
+    kind: 'component',
     summary: 'Кнопки сайту, система .btn з worksection.com як є. На темній головній — промінь border-beam у моно.',
     dir: 'site-button',
     tabs: [
@@ -130,7 +131,6 @@ ${vars.join('\n')}
       { label: 'На ховер', patch: { beam: true, trigger: 'hover' } },
       { label: 'Без beam', patch: { beam: false } },
     ],
-    stage: { bg: '#eaebeb' },
     acceptance: [
       { id: 'beam-only-on-dark-primary', run: () => {}, expect: () => items.every(it => (it.handle.el.classList.contains('beam') === it.handle.el.classList.contains('btn-primary'))) || 'beam on a non-primary or missing on a primary' },
       { id: 'beam-off-clears-copies-too', run: ctx => ctx.set({ beam: false }), expect: () => !document.querySelector('.btn.beam') || 'a .btn.beam is still around' },
@@ -148,7 +148,7 @@ ${vars.join('\n')}
         { type: 'range', key: 'width', label: 'Товщина обводки', min: 0.5, max: 3, step: 0.5, unit: 'px', when: beamOn },
         { type: 'range', key: 'bloomBlur', label: 'Розмиття bloom', min: 0, max: 20, step: 1, unit: 'px', when: beamOn },
         { type: 'range', key: 'innerFeather', label: 'Глибина внутрішнього сяйва', min: 0, max: 40, step: 1, unit: 'px', when: beamOn },
-        { type: 'note', text: 'Палітра моно і радіус зашиті в button.css (.btn-beam), радіус іде від розміру й btn-rounded. Ці повзунки стають перевизначеннями у сніпеті. Ті самі значення отримують копії кнопок у S : Hero.' },
+        { type: 'note', text: 'Палітра моно і радіус зашиті в button.css (.btn-beam), радіус іде від розміру й btn-rounded. Ці повзунки стають перевизначеннями у сніпеті. Ті самі значення отримують копії кнопок у Hero.' },
       ] },
     ],
 
@@ -173,7 +173,7 @@ ${vars.join('\n')}
     },
     hint(ctx) {
       if (!ctx.state.beam) return 'Промінь вимкнено, кнопки статичні';
-      return ctx.state.trigger === 'hover' ? 'Наведи на «Get started», щоб запустити промінь' : 'Промінь іде по межі темної кнопки; ті самі кнопки стоять у S : Hero';
+      return ctx.state.trigger === 'hover' ? 'Наведи на «Get started», щоб запустити промінь' : 'Промінь іде по межі темної кнопки; ті самі кнопки стоять у Hero';
     },
   });
 })();

@@ -98,7 +98,8 @@ ${s.logos.map(id => '    ' + tile(id, true)).join('\n')}
       const r = (a, b, d = 0) => +(a + Math.random() * (b - a)).toFixed(d);
       return { columns: 0, rows: 0, tile: r(40, 80), gap: r(8, 36), stagger: Math.random() < 0.3 ? 0 : r(0.2, 0.5, 2), pan: r(-0.6, 0.8, 2), drift: r(0, 40), driftPeriod: r(6, 24) };
     },
-    stage: { className: 'stage--fill stage--iwall', bg: '#f4f2f0' },
+    // a block, not a backdrop: 640x640 by default, and both edges drag
+    stage: { className: 'stage--fill stage--iwall', bg: '#f4f2f0', frame: 640, frameH: 640, resizableH: true },
     controls: [
       { title: 'Сітка', items: [
         { type: 'range', key: 'columns', label: 'Колонок', min: 0, max: 20, step: 1, fmt: v => v ? String(v) : 'авто' },
@@ -108,7 +109,7 @@ ${s.logos.map(id => '    ' + tile(id, true)).join('\n')}
         { type: 'range', key: 'stagger', label: 'Зсув непарних рядків', min: 0, max: 1, step: 0.05, fmt: v => Math.round(v * 100) + ' %' },
         { type: 'range', key: 'radius', label: 'Радіус плитки', min: 0, max: 48, step: 1, unit: 'px' },
         { type: 'range', key: 'logo', label: 'Логотип', min: 12, max: 64, step: 1, unit: 'px' },
-        { type: 'status', render: () => wall ? `Сітка <b>${wall.cols}×${wall.rowsN}</b>, клітинок <b>${wall.n}</b> · логотипів <b>${wall.source.length}</b> · аркуш <b>${wall.sheet.offsetWidth}×${wall.sheet.offsetHeight}</b> px` : '' },
+        { type: 'status', render: ctx => wall ? `Сітка <b>${wall.cols}×${wall.rowsN}</b>, клітинок <b>${wall.n}</b> · логотипів <b>${wall.source.length}</b> · блок <b>${ctx.ui.frame || 'авто'}×${ctx.ui.frameH || 'авто'}</b> · аркуш <b>${wall.sheet.offsetWidth}×${wall.sheet.offsetHeight}</b> px` : '' },
       ] },
       { title: 'Рух', items: [
         { type: 'range', key: 'pan', label: 'Озирання за курсором', min: -1, max: 1, step: 0.05, fmt: v => v.toFixed(2) },

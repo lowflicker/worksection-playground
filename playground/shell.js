@@ -15,8 +15,10 @@
    unless marked required:
      id        string   required. URL hash and storage key
      title     string   required. Panel heading
-     tab       string   Short label for the crumb menu, defaults to title; its prefix
-                        (`S :` section, `C :` component) files the catalogue card
+     tab       string   Short label for the switch pill and menu, defaults to title
+     kind      'section' | 'component' | 'effect'   files the catalogue card and
+               the switch entry, and picks the glyph in front of the name.
+               Defaults to 'effect'
      summary   string   One line under the heading
      dir       string   Module folder, for the README link
      tabs      [{ id, label, file }] or [{ id, label, render(state, ctx) }]
@@ -40,7 +42,14 @@
        buttons: items [{ label, primary, run(ctx) }]
        status:  render(ctx) => html
        note:    text
-     stage     { className, bg, resizable }   resizable defaults to true
+     stage     { className, bg, resizable, resizableH, frame, frameH }
+               bg is a plate under the block, for a module that needs a page
+               colour of its own behind it; without it the block sits straight
+               on the shell's canvas, and the Сцена group can add one.
+               resizable defaults to true: the left and right edges drag.
+               resizableH adds the bottom edge, for a module that owns its
+               height instead of filling the stage. frame / frameH are the
+               default size in px; 0 (the default) means "fill the stage"
      mount     (ctx) required. Build the demo inside ctx.frame
      apply     (ctx, patch) required. Push a state patch into the live demo
      derive    (patch, state) => patch   extra keys implied by a change,
@@ -113,9 +122,21 @@
   const tools = Object.assign({ zoom: 1, grid: false, guides: false }, store.get(STORE + 'tools', {}));
   const groupsCollapsed = store.get(STORE + 'groups', {});
 
+  /* What a module is, and the glyph that says so. The kind files the catalogue
+     card and the switch entry; it used to be parsed out of an `S :` / `C :`
+     prefix on the tab label, which is why those labels carried one. */
+  const KIND = {
+    section: { label: 'Секції', icon:
+      '<svg class="i" viewBox="0 0 16 16"><rect x="2.5" y="1.5" width="11" height="13" rx="2"/><path d="M2.5 6h11M2.5 10h11"/></svg>' },
+    component: { label: 'Компоненти', icon:
+      '<svg class="i" viewBox="0 0 16 16"><path d="M8 2.2 13.8 8 8 13.8 2.2 8z"/></svg>' },
+    effect: { label: 'Ефекти', icon:
+      '<svg class="i" viewBox="0 0 16 16"><path d="M8 2 9.3 6.2 13.5 7.5 9.3 8.8 8 13 6.7 8.8 2.5 7.5 6.7 6.2z"/></svg>' },
+  };
+
   const els = {};
   function bindShell() {
-    ['views', 'home', 'catalog', 'crumb', 'btn-home', 'crumb-title', 'crumb-label', 'crumb-menu', 'topbar', 'actions', 'toolbar', 'tb-play', 'tb-rates', 'tb-width', 'tb-width-badge', 'tb-width-in', 'tb-width-sep', 'tb-zooms', 'tb-grid', 'tb-guides', 'tb-fps',
+    ['views', 'home', 'catalog', 'crumb', 'btn-home', 'crumb-title', 'crumb-label', 'crumb-icon', 'crumb-menu', 'topbar', 'actions', 'toolbar', 'tb-play', 'tb-rates', 'tb-width', 'tb-width-badge', 'tb-width-in', 'tb-width-sep', 'tb-zooms', 'tb-grid', 'tb-guides', 'tb-fps',
      'drawer', 'drawer-tabs', 'drawer-code', 'drawer-copy', 'drawer-files', 'drawer-legend', 'drawer-readme',
      'btn-panel', 'btn-theme', 'btn-help', 'help'].forEach(id => { els[id] = document.getElementById(id); });
   }
@@ -123,10 +144,14 @@
   /* ===== Registering a module: the view skeleton, the panel, the demo ===== */
   function register(def) {
     if (!def || !def.id || !def.defaults || !def.mount || !def.apply) throw new Error('Playground.register: id, defaults, mount and apply are required');
-    const stageDef = Object.assign({ resizable: true, bg: '#f5f5f5' }, def.stage || {});
+    // bg is the plate under the block: unset means the block sits straight on the
+    // shell's canvas, which is what a site block should do unless it needs a page
+    // colour of its own behind it (the beam demo does)
+    const stageDef = Object.assign({ resizable: true, bg: '' }, def.stage || {});
     const m = {
       id: def.id, def, defaults: clone(def.defaults), state: clone(def.defaults),
-      ui: { frame: 0, bg: stageDef.bg }, fields: [], groups: [], rz: null, instance: null,
+      ui: { frame: stageDef.frame || 0, frameH: stageDef.frameH || 0, bg: stageDef.bg },
+      fields: [], groups: [], rz: null, instance: null,
     };
     byId[m.id] = m;
     modules.push(m);
@@ -148,17 +173,20 @@
     els.views.append(app);
     m.els = { app, stage, body, frame, hint, panel, scroll };
 
-    // the catalogue card and the crumb menu entry; the kind comes from the tab prefix (S : section, C : component)
-    const kind = /^S\s*:/.test(def.tab || '') ? 'section' : /^C\s*:/.test(def.tab || '') ? 'component' : 'effect';
+    // the catalogue card and the switch entry, both filed under the module's kind
+    m.kind = KIND[def.kind] ? def.kind : 'effect';
     const files = (def.tabs || []).filter(t => t.file).map(t => `<span>${esc(t.label)}</span>`).join('');
-    const card = h('button', 'card', `<span class="card__name">${esc(def.title)}</span><span class="card__sum">${esc(def.summary || '')}</span><span class="card__files">${files}</span>`);
+    const card = h('button', 'card', `<span class="card__name">${KIND[m.kind].icon}${esc(def.title)}</span><span class="card__sum">${esc(def.summary || '')}</span><span class="card__files">${files}</span>`);
     card.type = 'button'; card.dataset.view = m.id;
     card.addEventListener('click', () => show(m.id));
-    $(`.home__group[data-kind="${kind}"] .home__grid`, els.catalog).append(card);
-    const item = h('button', '', esc(def.tab || def.title));
+    const group = $(`.home__group[data-kind="${m.kind}"]`, els.catalog);
+    $('.home__grid', group).append(card);
+    const kindHead = $('.home__kind h2', group);
+    if (!kindHead.previousElementSibling) kindHead.insertAdjacentHTML('beforebegin', KIND[m.kind].icon);
+    const item = h('button', '', KIND[m.kind].icon + esc(def.tab || def.title));
     item.type = 'button'; item.dataset.view = m.id; item.setAttribute('role', 'menuitem');
     item.addEventListener('click', () => { closeMenu(); show(m.id); });
-    els['crumb-menu'].append(item);
+    $(`.crumb__group[data-kind="${m.kind}"]`, els['crumb-menu']).append(item);
 
     // the module's view of the shell
     m.ctx = {
@@ -188,8 +216,9 @@
   }
 
   function reset(m) {
-    m.ui.frame = 0;
-    m.ui.bg = (m.def.stage && m.def.stage.bg) || '#f5f5f5';
+    m.ui.frame = (m.def.stage && m.def.stage.frame) || 0;
+    m.ui.frameH = (m.def.stage && m.def.stage.frameH) || 0;
+    m.ui.bg = (m.def.stage && m.def.stage.bg) || '';
     for (const k of Object.keys(m.state)) delete m.state[k];
     Object.assign(m.state, clone(m.defaults));
     m.def.apply(m.ctx, clone(m.defaults));
@@ -207,8 +236,13 @@
     }
     if (m.presetBtns) m.presetBtns.forEach(b => b.el.classList.toggle('is-active', Object.keys(b.patch).every(k => same(getPath(s, k), b.patch[k]))));
     m.els.hint.textContent = m.def.hint ? (m.def.hint(m.ctx) || '') : '';
-    m.els.stage.style.setProperty('--stage-bg', m.ui.bg);
-    if (m.bgInput) m.bgInput.value = m.ui.bg;
+    m.els.stage.classList.toggle('stage--bare', !m.ui.bg);
+    if (m.ui.bg) m.els.stage.style.setProperty('--stage-bg', m.ui.bg);
+    if (m.bgInput) {
+      if (m.ui.bg) m.bgInput.value = m.ui.bg;
+      m.bgInput.disabled = !m.ui.bg;
+      m.bgOn.checked = !!m.ui.bg;
+    }
     if (m.rz) m.rz.sync();
     if (m === active) { syncToolbar(); renderDrawer(); }
     saveStatus(m);
@@ -286,10 +320,13 @@
     // scene: things about the stage, not the module
     const scene = h('div');
     const bgField = h('div', 'field inline');
-    const bgId = uid();
-    bgField.innerHTML = `<label for="${bgId}">Фон під блоком</label><input type="color" id="${bgId}">`;
-    m.bgInput = $('input', bgField);
+    const bgId = uid(), bgOnId = uid();
+    bgField.innerHTML = `<div class="check"><input type="checkbox" id="${bgOnId}"><label for="${bgOnId}">Підкладка під блоком</label></div><input type="color" id="${bgId}">`;
+    m.bgOn = $('input[type=checkbox]', bgField);
+    m.bgInput = $('input[type=color]', bgField);
+    m.bgInput.value = m.ui.bg || '#f5f5f5';
     m.bgInput.addEventListener('input', () => { m.ui.bg = m.bgInput.value; refresh(m); });
+    m.bgOn.addEventListener('change', () => { m.ui.bg = m.bgOn.checked ? (m.bgInput.value || '#f5f5f5') : ''; refresh(m); });
     scene.append(bgField);
     scroll.append(group(m, { title: 'Сцена', collapsed: true }, scene));
   }
@@ -538,10 +575,17 @@
   function closeEasing() { if (pop) pop.hidden = true; if (popOn) popOn.anchor.classList.remove('is-open'); popOn = null; }
 
   /* ===== Save / share: the browser keeps the state, links carry it ===== */
-  const snapshot = m => ({ state: clone(m.state), ui: { frame: m.ui.frame, bg: m.ui.bg } });
+  const snapshot = m => ({ state: clone(m.state), ui: { frame: m.ui.frame, frameH: m.ui.frameH, bg: m.ui.bg } });
   function restoreSnapshot(m, d) {
     if (!d || typeof d !== 'object') return;
-    if (d.ui) { m.ui.frame = d.ui.frame || 0; if (d.ui.bg) m.ui.bg = d.ui.bg; }
+    const sd = m.def.stage || {};
+    if (d.ui) {
+      // a key that is absent (a save from before the module had that size) falls
+      // back to the module's default, not to 0 — 0 means "fill the stage"
+      m.ui.frame  = 'frame'  in d.ui ? (d.ui.frame  || 0) : (sd.frame  || 0);
+      m.ui.frameH = 'frameH' in d.ui ? (d.ui.frameH || 0) : (sd.frameH || 0);
+      m.ui.bg = 'bg' in d.ui ? (d.ui.bg || '') : (sd.bg || '');
+    }
     if (d.state) setState(m, d.state);
   }
 
@@ -583,12 +627,27 @@
       const st = getComputedStyle(p);
       return (p.clientWidth - parseFloat(st.paddingLeft) - parseFloat(st.paddingRight)) / tools.zoom;
     };
+    // the height the frame could have: the body minus its padding and minus
+    // whatever else is rendered in it (the hint, and the gap it brings)
+    const maxH = () => {
+      const p = el.parentNode; if (!p) return 0;
+      const st = getComputedStyle(p);
+      let h = p.clientHeight - parseFloat(st.paddingTop) - parseFloat(st.paddingBottom);
+      const gap = parseFloat(st.rowGap) || 0;
+      for (const sib of p.children) if (sib !== el && sib.offsetParent !== null) h -= sib.offsetHeight + gap;
+      return h / tools.zoom;
+    };
     const getW = () => m.ui.frame;
     const setW = w => { m.ui.frame = w; refresh(m); };
+    const getH = () => m.ui.frameH;
+    const setH = hh => { m.ui.frameH = hh; refresh(m); };
     // a typed or stepped width: not narrower than 280, at the stage's width it is auto again
     const clamp = w => { const max = maxW(); w = Math.round(Math.max(w, 280)); return w >= max - 1 ? 0 : w; };
+    const clampH = hh => { const max = maxH(); hh = Math.round(Math.max(hh, 160)); return hh >= max - 1 ? 0 : hh; };
     let raf = 0;
     const apply = w => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => setW(w)); };
+    let rafH = 0;
+    const applyH = hh => { cancelAnimationFrame(rafH); rafH = requestAnimationFrame(() => setH(hh)); };
 
     ['l', 'r'].forEach(side => {
       const hd = h('div', `rz__handle rz__handle--${side}`, '<span class="rz__grip"></span>');
@@ -615,10 +674,34 @@
       });
     });
 
-    const rz = { el, getW, setW, clamp, sync() {
-      const w = getW();
+    // the bottom edge, for modules that own their height instead of filling the stage
+    if (m.def.stage && m.def.stage.resizableH) {
+      const hd = h('div', 'rz__handle rz__handle--b', '<span class="rz__grip"></span>');
+      hd.tabIndex = 0; hd.setAttribute('role', 'slider'); hd.setAttribute('aria-label', 'Висота блоку, стрілки вгору і вниз');
+      el.append(hd);
+      let sy = 0, sh = 0, on = false;
+      hd.addEventListener('pointerdown', e => { on = true; sy = e.clientY; sh = el.offsetHeight; try { hd.setPointerCapture(e.pointerId); } catch (err) {} el.classList.add('is-dragging'); });
+      hd.addEventListener('pointermove', e => {
+        if (!on) return;
+        applyH(clampH(sh + (e.clientY - sy) / tools.zoom));
+      });
+      const endH = () => { if (!on) return; on = false; el.classList.remove('is-dragging'); };
+      hd.addEventListener('pointerup', endH);
+      hd.addEventListener('pointercancel', endH);
+      hd.addEventListener('keydown', e => {
+        const d = e.key === 'ArrowUp' ? -10 : e.key === 'ArrowDown' ? 10 : 0;
+        if (!d) return;
+        e.preventDefault();
+        setH(clampH((getH() || el.offsetHeight) + d));
+      });
+    }
+
+    const rz = { el, getW, setW, clamp, getH, setH, clampH, sync() {
+      const w = getW(), hh = getH();
       el.style.setProperty('--frame-w', w ? w + 'px' : '100%');
+      el.style.setProperty('--frame-h', hh ? hh + 'px' : '');
       el.classList.toggle('is-fixed', !!w);
+      el.classList.toggle('is-fixed-h', !!hh);
       if (m === active) syncWidth();
     } };
     new ResizeObserver(() => { if (!getW()) requestAnimationFrame(rz.sync); }).observe(el);
@@ -850,7 +933,7 @@
       if (e.target && e.target.closest && e.target.closest('input, textarea, select, [contenteditable]')) return;
       // e.code is layout-independent (works on the Ukrainian layout too); fall back to the key for synthetic events
       const k = e.key || '';
-      const c = e.code || (k === ' ' ? 'Space' : k === '[' ? 'BracketLeft' : k === ']' ? 'BracketRight' : k === '\\' ? 'Backslash' : /^[a-z]$/i.test(k) ? 'Key' + k.toUpperCase() : /^[1-9]$/.test(k) ? 'Digit' + k : '');
+      const c = e.code || (k === ' ' ? 'Space' : k === '[' ? 'BracketLeft' : k === ']' ? 'BracketRight' : k === '\\' ? 'Backslash' : /^[a-z]$/i.test(k) ? 'Key' + k.toUpperCase() : '');
       if (c === 'Space') { e.preventDefault(); setPaused(!paused); }
       else if (c === 'BracketLeft') setRate(RATES[Math.max(0, RATES.indexOf(rate) - 1)]);
       else if (c === 'BracketRight') setRate(RATES[Math.min(RATES.length - 1, RATES.indexOf(rate) + 1)]);
@@ -862,7 +945,6 @@
       else if (c === 'KeyH') home();
       else if (c === 'Backslash') togglePanel();
       else if (e.key === '?') els.help.hidden = !els.help.hidden;
-      else if (/^Digit[1-9]$/.test(c)) { const m = modules[+c.slice(5) - 1]; if (m) show(m.id); }
     });
   }
 
@@ -925,6 +1007,7 @@
     els.topbar.append(els.actions);   // back from the catalogue head, at the row's right edge
     m.els.stage.prepend(els.topbar);
     els['crumb-label'].textContent = m.def.tab || m.def.title;
+    els['crumb-icon'].innerHTML = KIND[m.kind].icon;
     $$('[data-view]', els['crumb-menu']).forEach(b => b.classList.toggle('is-active', b.dataset.view === m.id));
     history.replaceState(null, '', '#' + m.id);
     store.set(STORE + 'view', m.id);
@@ -954,8 +1037,16 @@
     store.set(STORE + 'view', '');
   }
 
+  /* how many modules ended up in each kind, once they have all registered */
+  function countCatalogue() {
+    $$('.home__group', els.catalog).forEach(g => {
+      $('.home__count', g).textContent = $$('.card', g).length || '';
+    });
+  }
+
   /* ---------- boot: a module from the hash, else the catalogue ---------- */
   function boot() {
+    countCatalogue();
     const [hashView, hashQuery] = location.hash.slice(1).split('?');
     restoreAll(hashView, hashQuery);
     modules.forEach(bindSheet);

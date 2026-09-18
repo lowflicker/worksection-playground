@@ -1,8 +1,8 @@
-/* Playground definition for Hero (S : Hero).
+/* Playground definition for Hero (Hero).
    Not part of the module: a site needs only hero.css + hero.js, its own
    markup and screenshots.
    The stage is a window of its own, the first screen of the site: the site
-   header on top (the component the S : Header tab provides through the
+   header on top (the component the Header tab provides through the
    shell; it follows that tab's settings) and the hero under it, scrolling
    as a page would.
    Everything else is what the playground shell (playground/shell.js) asks
@@ -82,7 +82,7 @@
             <img src="${base}img/dashboard-phone.webp" width="804" height="1748" alt="Worksection dashboard on a phone" loading="lazy" decoding="async">
           </picture>
         </button>`;
-  // the CTAs are the site's button component (C : Button is the master): its markup in the snippet, its copies on the stage
+  // the CTAs are the site's button component (Button is the master): its markup in the snippet, its copies on the stage
   const CTA = [{ variant: 'primary', label: 'Get started' }, { variant: 'secondary', label: 'Contact sales' }];
   const cta = (variant, label) => {
     const b = Playground.component('site-button');
@@ -182,8 +182,9 @@ ${markup(s, '', false)}
   Playground.register({
     id: 'hero',
     title: 'Hero: адаптивні скріншоти',
-    tab: 'S : Hero',
-    summary: 'Блок «S : Hero»: заголовок, CTA, вкладки і два скріншоти. На телефоні тап міняє головний скрін.',
+    tab: 'Hero',
+    kind: 'section',
+    summary: 'Блок «Hero»: заголовок, CTA, вкладки і два скріншоти. На телефоні тап міняє головний скрін.',
     dir: 'hero-section',
     tabs: [
       { id: 'html', label: 'index.html', render: snippet },
@@ -266,7 +267,7 @@ ${markup(s, '', false)}
       </div></div></div>`);
       root = ctx.frame.querySelector('.hero');
       hero = new Hero(root);
-      // the site header above the hero and the CTA buttons: S : Header and C : Button are the masters, these copies follow their settings
+      // the site header above the hero and the CTA buttons: Header and Button are the masters, these copies follow their settings
       Playground.consume('site-header', ctx.frame.querySelector('.hero-browser__page'));
       for (const b of CTA) Playground.consume('site-button', root.querySelector('.hero__cta'), Object.assign({ size: 48, rounded: true }, b));
       ctx.instance = hero;
