@@ -8,6 +8,12 @@
 
    Everything visual lives in beam.css.
 
+   Cost control: the beam repaints three masked gradient layers every frame, so
+   a beam nobody can see is pure waste. One shared IntersectionObserver freezes
+   every beam that is off screen and thaws it just before it scrolls back in —
+   an off-screen beam is NOT free otherwise, the browser keeps ticking it.
+   Opt out with { pauseOffscreen: false }.
+
    Usage:
      <div class="beam" data-beam data-trigger="always">…</div>
      <script src="beam.js"></script>          // auto-inits on DOMContentLoaded
@@ -21,13 +27,37 @@
 
   var INSTANCES = new WeakMap();
 
+  /* one observer for every beam on the page, created on first use.
+     It holds only weak references to the hosts, so a removed element is
+     collected whether or not destroy() was called. */
+  var offscreen = null;
+  function watcher() {
+    if (!offscreen && global.IntersectionObserver) {
+      offscreen = new IntersectionObserver(function (entries) {
+        for (var i = 0; i < entries.length; i++) {
+          var beam = INSTANCES.get(entries[i].target);
+          if (!beam) continue;
+          beam._onScreen = entries[i].isIntersecting;
+          beam._sync();
+        }
+      }, { rootMargin: '128px' });     // thaw a little before it comes into view
+    }
+    return offscreen;
+  }
+
+  /* only the events the trigger actually needs get a listener: an "always"
+     beam binds nothing at all */
+  var TRIGGERS = { hover: ['pointerenter', 'pointerleave'], focus: ['focusin', 'focusout'] };
+
   function Beam(el, options) {
     var opts = options || {};
 
     this.el = el;
     this.trigger = opts.trigger || el.dataset.trigger || 'always';
-    this.fadeOutMs = opts.fadeOutMs != null ? opts.fadeOutMs : readMs(el, '--beam-fade-out', 500);
+    this.fadeOutMs = opts.fadeOutMs != null ? opts.fadeOutMs : null;  // read on first hide
     this._timer = null;
+    this._paused = false;       // pause() asked for it
+    this._onScreen = true;      // optimistic: the observer corrects it next frame
 
     // the bloom layer is pure decoration — create it so the markup stays clean
     if (!el.querySelector(':scope > .beam__bloom')) {
@@ -35,33 +65,61 @@
       bloom.className = 'beam__bloom';
       bloom.setAttribute('aria-hidden', 'true');
       el.insertBefore(bloom, el.firstChild);
+      this._ownBloom = bloom;
     }
 
     // let the stylesheet honour prefers-reduced-motion for this host
     if (opts.respectReducedMotion !== false) el.setAttribute('data-reduce-motion', '');
 
+    INSTANCES.set(el, this);
     this._bind();
     if (this.trigger === 'always') this.show();
 
-    INSTANCES.set(el, this);
+    if (opts.pauseOffscreen !== false) {
+      var w = watcher();
+      if (w) { this._watcher = w; w.observe(el); }
+    }
   }
 
   Beam.prototype._bind = function () {
     var self = this;
     var el = this.el;
+    var events = TRIGGERS[this.trigger];
+    this._handlers = null;
+    if (!events) return;
 
-    this._handlers = {
+    this._handlers = this.trigger === 'hover' ? {
       pointerenter: function () { if (self.trigger === 'hover') self.show(); },
-      pointerleave: function () { if (self.trigger === 'hover') self.hide(); },
-      focusin:      function () { if (self.trigger === 'focus') self.show(); },
-      focusout:     function () {
+      pointerleave: function () { if (self.trigger === 'hover') self.hide(); }
+    } : {
+      focusin:  function () { if (self.trigger === 'focus') self.show(); },
+      focusout: function () {
         if (self.trigger === 'focus' && !el.contains(document.activeElement)) self.hide();
       }
     };
 
-    Object.keys(this._handlers).forEach(function (type) {
-      el.addEventListener(type, self._handlers[type]);
-    });
+    for (var i = 0; i < events.length; i++) {
+      el.addEventListener(events[i], this._handlers[events[i]]);
+    }
+  };
+
+  Beam.prototype._unbind = function () {
+    if (!this._handlers) return;
+    for (var type in this._handlers) {
+      if (Object.prototype.hasOwnProperty.call(this._handlers, type)) {
+        this.el.removeEventListener(type, this._handlers[type]);
+      }
+    }
+    this._handlers = null;
+  };
+
+  /** data-paused is the CSS switch: on when the page asked for a pause, or
+      when the beam is off screen. Written only when it actually changes. */
+  Beam.prototype._sync = function () {
+    var frozen = this._paused || !this._onScreen;
+    if (frozen === this.el.hasAttribute('data-paused')) return;
+    if (frozen) this.el.setAttribute('data-paused', '');
+    else this.el.removeAttribute('data-paused');
   };
 
   /** Restart the beam from angle 0 — used when the trigger fires again. */
@@ -82,19 +140,25 @@
     clearTimeout(this._timer);
     this.el.removeAttribute('data-active');
     this.el.setAttribute('data-fading', '');
+    if (this.fadeOutMs == null) this.fadeOutMs = readMs(this.el, '--beam-fade-out', 500);
     this._timer = setTimeout(function () {
+      self._timer = null;
       self.el.removeAttribute('data-fading');
     }, this.fadeOutMs);
     return this;
   };
 
-  Beam.prototype.pause = function () { this.el.setAttribute('data-paused', ''); return this; };
-  Beam.prototype.play  = function () { this.el.removeAttribute('data-paused'); return this; };
+  Beam.prototype.pause = function () { this._paused = true;  this._sync(); return this; };
+  Beam.prototype.play  = function () { this._paused = false; this._sync(); return this; };
   Beam.prototype.toggle = function (on) { return on ? this.show() : this.hide(); };
 
   Beam.prototype.setTrigger = function (trigger) {
-    this.trigger = trigger;
-    this.el.dataset.trigger = trigger;
+    if (trigger !== this.trigger) {
+      this._unbind();
+      this.trigger = trigger;
+      this.el.dataset.trigger = trigger;
+      this._bind();
+    }
     if (trigger === 'always') this.show();
     else this.hide();
     return this;
@@ -109,9 +173,10 @@
   Beam.prototype.destroy = function () {
     var self = this;
     clearTimeout(this._timer);
-    Object.keys(this._handlers).forEach(function (type) {
-      self.el.removeEventListener(type, self._handlers[type]);
-    });
+    this._timer = null;
+    this._unbind();
+    if (this._watcher) { this._watcher.unobserve(this.el); this._watcher = null; }
+    if (this._ownBloom) { this._ownBloom.remove(); this._ownBloom = null; }
     ['data-active', 'data-fading', 'data-paused', 'data-reduce-motion']
       .forEach(function (a) { self.el.removeAttribute(a); });
     INSTANCES.delete(this.el);

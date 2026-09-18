@@ -130,10 +130,8 @@
     var(--beam-colors);
 
   /* keep only the ring: the full box minus its own content box */
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
 
   opacity: calc(var(--beam-opacity) * var(--beam-stroke-alpha)
                 * var(--beam-stroke-opacity) * var(--beam-strength));
@@ -155,22 +153,6 @@
   box-shadow: inset 0 0 9px 1px rgba(255, 255, 255, var(--beam-inner-shadow));
 
   /* a wide soft arc, intersected with a frame that fades toward the middle */
-  -webkit-mask-image:
-    conic-gradient(from var(--beam-angle),
-      transparent 0%,
-      transparent           calc((var(--beam-head) - var(--beam-arc) * 3.000) * 1%),
-      rgba(255,255,255,.10) calc((var(--beam-head) - var(--beam-arc) * 2.500) * 1%),
-      rgba(255,255,255,.35) calc((var(--beam-head) - var(--beam-arc) * 1.833) * 1%),
-      #fff                  calc((var(--beam-head) - var(--beam-arc) * 1.167) * 1%),
-      #fff                  calc((var(--beam-head) + var(--beam-arc) * 1.167) * 1%),
-      rgba(255,255,255,.35) calc((var(--beam-head) + var(--beam-arc) * 1.667) * 1%),
-      rgba(255,255,255,.10) calc((var(--beam-head) + var(--beam-arc) * 2.167) * 1%),
-      transparent           calc((var(--beam-head) + var(--beam-arc) * 2.417) * 1%),
-      transparent 100%),
-    linear-gradient(#fff, transparent var(--beam-inner-feather),
-                    transparent calc(100% - var(--beam-inner-feather)), #fff),
-    linear-gradient(to right, #fff, transparent var(--beam-inner-feather),
-                    transparent calc(100% - var(--beam-inner-feather)), #fff);
   mask-image:
     conic-gradient(from var(--beam-angle),
       transparent 0%,
@@ -222,10 +204,8 @@
     transparent           calc((var(--beam-head) + var(--beam-arc)       ) * 1%),
     transparent 100%);
 
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
 
   filter: blur(var(--beam-bloom-blur))
           brightness(var(--beam-brightness)) saturate(var(--beam-saturate));
@@ -303,11 +283,6 @@
     radial-gradient(ellipse calc(21px * var(--beam-w)) calc(24px * var(--beam-h)) at calc(var(--beam-x) * 100% + 66px) calc(100%),       var(--bc-8), transparent),
     radial-gradient(ellipse calc(18px * var(--beam-w)) calc(26px * var(--beam-h)) at calc(var(--beam-x) * 100% - 66px) calc(100% - 1px), var(--bc-4), transparent);
   box-shadow: inset 0 0 9px 1px rgba(255, 255, 255, calc(var(--beam-inner-shadow) * .37));
-  -webkit-mask-image:
-    radial-gradient(ellipse calc(78px * var(--beam-w)) calc(60px * var(--beam-h)) at calc(var(--beam-x) * 100%) 100%,
-      #fff 0%, rgba(255,255,255,.5) 45%, transparent 100%),
-    linear-gradient(#fff, transparent var(--beam-inner-feather), transparent calc(100% - var(--beam-inner-feather)), #fff),
-    linear-gradient(to right, #fff, transparent var(--beam-inner-feather), transparent calc(100% - var(--beam-inner-feather)), #fff);
   mask-image:
     radial-gradient(ellipse calc(78px * var(--beam-w)) calc(60px * var(--beam-h)) at calc(var(--beam-x) * 100%) 100%,
       #fff 0%, rgba(255,255,255,.5) 45%, transparent 100%),
@@ -321,8 +296,7 @@
 /* the spikes: needles of colour standing on the bottom edge */
 .beam[data-mode="travel"] .beam__bloom {
   padding: 0;
-  -webkit-mask: none;
-          mask: none;
+  mask: none;
   background:
     radial-gradient(ellipse calc(0.8px * var(--beam-spike)  * var(--beam-spike-scale)) calc(92px * var(--beam-h) * var(--beam-spike-scale)) at  8% calc(100% - 2px), var(--bc-1), var(--bc-1) 30%, transparent 88%),
     radial-gradient(ellipse calc( 10px * var(--beam-spike2) * var(--beam-spike-scale)) calc(35px * var(--beam-h) * var(--beam-spike-scale)) at 22% calc(100% - 4px), var(--bc-4), transparent 95%),
