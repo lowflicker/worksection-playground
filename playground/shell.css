@@ -9,7 +9,7 @@
    ========================================================================== */
 
 :root {
-  --bg: oklch(0.985 0 0); --fg: oklch(0.145 0 0);
+  --bg: oklch(0.985 0 0); --fg: oklch(0.145 0 0); --canvas: oklch(0.955 0 0);
   --panel: oklch(1 0 0); --glass: oklab(1 0 0 / .78); --panel-2: oklab(0.145 0 0 / .05); --panel-3: oklab(0.145 0 0 / .09);
   --line: oklab(0.145 0 0 / .12); --line-2: oklab(0.145 0 0 / .24);
   --text: oklch(0.145 0 0); --on-text: oklch(0.985 0 0); --muted: oklab(0.145 0 0 / .6); --faint: oklab(0.145 0 0 / .38);
@@ -21,12 +21,13 @@
   color-scheme: light;
 }
 :root[data-theme="dark"] {
-  --bg: oklch(0.145 0 0); --fg: oklch(0.985 0 0);
-  --panel: oklch(0.205 0 0); --glass: oklab(0.205 0 0 / .78); --panel-2: oklab(0.985 0 0 / .05); --panel-3: oklab(0.985 0 0 / .09);
+  --bg: oklch(0.145 0 0); --fg: oklch(0.985 0 0); --canvas: oklch(0.08 0 0);
+  --panel: oklch(0.205 0 0); --primary: oklab(0.985 0 0 / .12); --primary-line: oklab(0.985 0 0 / .18); --glass: oklab(0.205 0 0 / .78); --panel-2: oklab(0.985 0 0 / .05); --panel-3: oklab(0.985 0 0 / .09);
   --line: oklab(0.985 0 0 / .12); --line-2: oklab(0.985 0 0 / .24);
   --text: oklch(0.985 0 0); --on-text: oklch(0.145 0 0); --muted: oklab(0.985 0 0 / .6); --faint: oklab(0.985 0 0 / .38);
   --accent: #0c8ce9; --warn: #f0a04b; --bad: #ff6b6b;
   --code-bg: oklch(0.17 0 0); --code-fg: oklch(0.85 0 0); --code-hi: rgba(240, 170, 60, .18);
+  --primary-fg: var(--text); --primary-hover: oklab(0.985 0 0 / .18);
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -45,8 +46,8 @@ button {
   transition: background .12s, border-color .12s, color .12s;
 }
 button:hover { background: var(--panel-3); border-color: var(--line-2); }
-button.primary { background: var(--text); color: var(--on-text); border-color: transparent; }
-button.primary:hover { background: color-mix(in oklab, var(--text) 85%, var(--bg)); }
+button.primary { background: var(--primary, var(--text)); color: var(--primary-fg, var(--on-text)); border-color: var(--primary-line, transparent); }
+button.primary:hover { background: var(--primary-hover, color-mix(in oklab, var(--text) 85%, var(--bg))); }
 button.icon { width: 28px; padding: 0; color: var(--muted); }
 button.icon:hover { color: var(--text); }
 button.ghost { border-color: transparent; background: transparent; color: var(--muted); }
@@ -62,7 +63,7 @@ kbd.k { display: inline-block; min-width: 18px; padding: 1px 5px; border: 1px so
 .topbar {
   position: relative; z-index: 30; height: var(--topbar-h);
   display: flex; align-items: center; gap: 14px; padding: 0 12px;
-  background: var(--bg); border-bottom: 1px solid var(--line);
+  background: var(--canvas);
 }
 .topbar__brand { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap; }
 .topbar__mark { width: 10px; height: 10px; border-radius: 3px; background: var(--accent); }
@@ -84,7 +85,7 @@ kbd.k { display: inline-block; min-width: 18px; padding: 1px 5px; border: 1px so
 .help dt { text-align: right; white-space: nowrap; }
 .help dd { margin: 0; color: var(--muted); }
 
-.app { display: grid; grid-template-columns: minmax(0, 1fr) calc(var(--panel-w) + var(--gutter)); height: calc(100vh - var(--topbar-h)); }
+.app { display: grid; grid-template-columns: minmax(0, 1fr) calc(var(--panel-w) + var(--gutter)); height: calc(100vh - var(--topbar-h)); background: var(--canvas); }
 body.no-panel .app { grid-template-columns: minmax(0, 1fr); }
 body.no-panel .panel { display: none; }
 
@@ -92,7 +93,7 @@ body.no-panel .panel { display: none; }
 .stage {
   position: relative; z-index: 0; isolation: isolate;
   display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden;
-  background: var(--stage-bg, #f5f5f5);
+  background: var(--canvas);
 }
 .stage__body {
   flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain;
@@ -109,6 +110,15 @@ body.no-panel .panel { display: none; }
 .stage-hint { width: 100%; color: var(--muted); font-size: 12px; text-align: center; mix-blend-mode: difference; color: rgba(255,255,255,.75); }
 .stage-hint:empty { display: none; }
 .frame { width: 100%; margin: 0 auto; }
+/* the artboard: the module's own background, a hairline and a soft shadow, so the block reads as a thing on the canvas */
+.stage__body > .rz, .stage__body > .frame {
+  background: var(--stage-bg, #f5f5f5); border-radius: 12px;
+  box-shadow: 0 0 0 1px var(--line), 0 24px 48px -28px rgba(0, 0, 0, .55);
+}
+.stage__body > .rz > .frame, .stage__body > .frame { padding-block: 32px; }
+.stage__body > .rz > .frame { border-radius: inherit; overflow: clip; }
+.stage--fill .stage__body > .rz, .stage--fill .stage__body > .frame { background: none; box-shadow: none; border-radius: 0; }
+.stage--fill .stage__body > .rz > .frame, .stage--fill .stage__body > .frame { padding-block: 0; overflow: visible; }
 /* screen overlays: 8px grid with a 64px major line, and centre guides */
 .stage::before, .stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2; display: none; }
 .stage[data-grid]::before {
@@ -152,7 +162,7 @@ body.is-paused #tb-play [data-icon="pause"] { display: none; }
 /* --- resizable frame: drag the edges; width presets live in the tool pill --- */
 .rz { position: relative; width: 100%; max-width: var(--frame-w, 100%); margin: 0 auto; transition: max-width 600ms cubic-bezier(.22, 1, .36, 1); }
 .rz.is-dragging { transition: none; }
-.rz.is-fixed { outline: 1px dashed rgba(127,127,127,.6); outline-offset: 6px; }
+.rz.is-fixed { outline: 1px dashed rgba(127,127,127,.6); outline-offset: 8px; }
 .rz__handle { position: absolute; top: 0; bottom: 0; width: 22px; cursor: ew-resize; touch-action: none; z-index: 5; outline: 0; }
 .rz__handle--l { left: -11px; } .rz__handle--r { right: -11px; }
 .rz__grip {

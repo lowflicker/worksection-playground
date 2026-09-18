@@ -277,7 +277,7 @@
     const scene = h('div');
     const bgField = h('div', 'field inline');
     const bgId = uid();
-    bgField.innerHTML = `<label for="${bgId}">Фон сцени</label><input type="color" id="${bgId}">`;
+    bgField.innerHTML = `<label for="${bgId}">Фон під блоком</label><input type="color" id="${bgId}">`;
     m.bgInput = $('input', bgField);
     m.bgInput.addEventListener('input', () => { m.ui.bg = m.bgInput.value; refresh(m); });
     scene.append(bgField);
