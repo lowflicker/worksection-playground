@@ -1,8 +1,8 @@
 /* Playground definition for the site header.
    Not part of the module: a site needs only header.css + header.js.
-   The markup is built here (the site has its own menu), and the frame gets a
-   stand-in page under the bar so the compaction on scroll has something to
-   scroll. Everything else is what the shell asks for. */
+   The markup is built here (the site has its own menu). The frame holds the
+   bar and nothing else: there is no page to scroll, so the compact state is
+   toggled by a button. Everything else is what the shell asks for. */
 (function () {
   'use strict';
 
@@ -82,50 +82,9 @@ ${vars.join('\n')}
 </style>` : ''}`;
   };
 
-  Playground.css(`
-    /* a window of its own: the bar sticks to this scroller, not to the stage, exactly as it will to the site's window */
-    .sh-browser { position: relative; width: 100%; flex: 1 1 auto; min-height: 320px; border-radius: 12px; overflow: hidden; background: #eaebeb; box-shadow: 0 0 0 1px #e4e4e4, 0 16px 40px -16px rgba(0,0,0,.18); }
-    .sh-browser__scroll { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; }
-    .sh-page { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: rgba(0,0,0,.93); container-type: inline-size; }
-    .sh-page__hero { padding: 24px 24px 0; text-align: center; }
-    .sh-page__title { margin: 12px auto 0; max-width: 14ch; font-family: "Fixel Display", "Fixel Variable", inherit; font-size: clamp(32px, 6cqw, 64px); font-weight: 500; line-height: 1.05; letter-spacing: -.02em; }
-    .sh-page__lead { margin: 20px auto 0; max-width: 52ch; font-size: clamp(14px, 1.3cqw, 16px); line-height: 1.5; color: rgba(0,0,0,.66); }
-    .sh-page__cta { display: flex; justify-content: center; gap: 8px; margin-top: 28px; }
-    .sh-page__cta span { display: inline-flex; align-items: center; height: 40px; padding: 0 20px; border-radius: 40px; font-size: 14px; font-weight: 600; background: #1e201f; color: #fff; }
-    .sh-page__cta span + span { background: rgba(22,34,34,.09); color: rgba(0,0,0,.93); }
-    .sh-page__stage { height: 62cqw; max-height: 720px; margin: 40px 24px 0; border-radius: 16px 16px 0 0; background: #fff; box-shadow: 0 0 0 1px rgba(13,28,20,.14), 0 24px 48px -24px rgba(0,0,0,.25); }
-    .sh-page__block { height: 320px; margin: 24px; border-radius: 16px; background: rgba(255,255,255,.6); }
-  `);
-
-  const page = () => `<div class="sh-browser"><div class="sh-browser__scroll"><div class="sh-page">
-    ${markup()}
-    <div class="sh-page__hero">
-      <h1 class="sh-page__title">Project management built for teams, not just tasks</h1>
-      <p class="sh-page__lead">Тут стоятиме S : Hero. Ця сторінка лише для скролу: пігулка над нею стискається, меню відкриваються, на вузькому фреймі бургер відкриває лист.</p>
-      <div class="sh-page__cta"><span>Get started</span><span>Contact sales</span></div>
-      <div class="sh-page__stage"></div>
-    </div>
-    <div class="sh-page__block"></div>
-    <div class="sh-page__block"></div>
-  </div></div></div>`;
-
-  // The real S : Hero under the bar, as on the site. It comes from the hero's own demo page
-  // over HTTP (the adapters never see each other); the stand-in above stays if that fails
-  async function placeHero(holder) {
-    if (!window.Hero) return;
-    const html = await fetch('hero-section/demo.html').then(r => r.ok ? r.text() : '');
-    const m = html.match(/<section class="hero"[\s\S]*?<\/section>/);
-    if (!m) return;
-    const tpl = document.createElement('template');
-    tpl.innerHTML = m[0].replace(/(^|[\s"',])img\//g, '$1hero-section/img/');
-    const hero = tpl.content.firstElementChild;
-    hero.removeAttribute('id');
-    holder.replaceWith(hero);
-    new Hero(hero);
-  }
-
-  let root = null, bar = null, scroller = null;
+  let root = null, bar = null;
   const layout = () => root.clientWidth >= 1240 ? 'широка' : root.clientWidth >= 620 ? 'планшет' : 'телефон';
+  const compacted = () => root.classList.contains('site-header--compact');
 
   Playground.register({
     id: 'header',
@@ -140,7 +99,6 @@ ${vars.join('\n')}
     ],
     defaults,
     presets: [{ label: 'worksection.com', patch: Object.assign({}, defaults) }],
-    stage: { className: 'stage--fill' },
     controls: [
       { title: 'Пігулка', items: [
         { type: 'range', key: 'width', label: 'Ширина у спокої', min: 800, max: 1600, step: 20, unit: 'px' },
@@ -149,7 +107,7 @@ ${vars.join('\n')}
         { type: 'range', key: 'alpha', label: 'Непрозорість фону', min: 40, max: 100, step: 5, unit: ' %' },
         { type: 'range', key: 'blur', label: 'Розмиття під пігулкою', min: 0, max: 24, step: 1, unit: 'px' },
         { type: 'range', key: 'top', label: 'Відступ зверху', min: 0, max: 32, step: 2, unit: 'px' },
-        { type: 'status', render: () => `Ширина: <b>${root.clientWidth}px</b> · розкладка: <b>${layout()}</b> · пігулка: <b>${root.classList.contains('site-header--compact') ? 'стиснута' : 'у спокої'}</b>` },
+        { type: 'status', render: () => `Ширина: <b>${root.clientWidth}px</b> · розкладка: <b>${layout()}</b> · пігулка: <b>${compacted() ? 'стиснута' : 'у спокої'}</b>` },
       ] },
       { title: 'Поведінка', items: [
         { type: 'check', key: 'sticky', label: 'Липка (sticky)' },
@@ -159,24 +117,27 @@ ${vars.join('\n')}
         { type: 'range', key: 'hoverDelay', label: 'Затримка відкриття', min: 0, max: 400, step: 20, unit: 'ms', when: s => s.trigger === 'hover' },
         { type: 'range', key: 'closeDelay', label: 'Затримка закриття', min: 0, max: 600, step: 20, unit: 'ms', when: s => s.trigger === 'hover' },
         { type: 'buttons', items: [
-          { label: 'Нагору', run: () => scroller.scrollTo({ top: 0, behavior: 'smooth' }) },
-          { label: 'Прокрутити вниз', primary: true, run: () => scroller.scrollTo({ top: 400, behavior: 'smooth' }) },
+          // nothing to scroll here, so the compact state is flipped by hand; the class is the same one the module sets
+          { label: 'Стиснути / у спокої', primary: true, run: () => root.classList.toggle('site-header--compact') },
           { label: 'Меню', run: () => bar.toggle() },
         ] },
-        { type: 'note', text: 'Стиснення без слухача скролу: перед шапкою стоїть сентинел на 1 px, IntersectionObserver дивиться, чи він ще у в’юпорті. Тому працює і на сайті, де скролиться window, і тут, де скролиться це вікно. Ширина шапки читається з контейнера, тож пресети фрейму (390 / 320) показують мобільну розкладку.' },
+        { type: 'note', text: 'На сайті стиснення без слухача скролу: перед шапкою стоїть сентинел на 1 px, IntersectionObserver дивиться, чи він ще у в’юпорті. Тут сторінки немає, тож стан перемикає кнопка. Ширина шапки читається з контейнера, тож пресети фрейму (390 / 320) показують мобільну розкладку.' },
       ] },
     ],
 
     mount(ctx) {
-      ctx.frame.insertAdjacentHTML('beforeend', page());
+      ctx.frame.insertAdjacentHTML('beforeend', markup());
       root = ctx.frame.querySelector('.site-header');
-      scroller = ctx.frame.querySelector('.sh-browser__scroll');
-      scroller.addEventListener('scroll', () => requestAnimationFrame(ctx.refresh), { passive: true });
       bar = new SiteHeader(root);
       ctx.instance = bar;
-      placeHero(ctx.frame.querySelector('.sh-page__hero'));
       root.addEventListener('header:compact', () => requestAnimationFrame(ctx.refresh));
-      root.addEventListener('header:open', () => requestAnimationFrame(ctx.refresh));
+      // the sheet is sized to the window on a site; here it gets what is left of the stage under the bar
+      root.addEventListener('header:open', () => {
+        const body = ctx.stage.querySelector('.stage__body').getBoundingClientRect();
+        const top = root.getBoundingClientRect().top;
+        root.style.setProperty('--sh-sheet-h', Math.max(320, Math.round(body.bottom - top - 40)) + 'px');
+        requestAnimationFrame(ctx.refresh);
+      });
       root.addEventListener('header:close', () => requestAnimationFrame(ctx.refresh));
       new ResizeObserver(() => requestAnimationFrame(ctx.refresh)).observe(root);
     },
@@ -192,7 +153,7 @@ ${vars.join('\n')}
     hint() {
       if (bar.isOpen) return 'Мобільне меню відкрите: Escape або хрестик закриває';
       if (root.clientWidth < 1240) return `Розкладка «${layout()}»: меню в бургері, у пігулці лишились бренд і реєстрація`;
-      return root.classList.contains('site-header--compact') ? 'Пігулка стиснута до ширини після скролу' : 'Прокрути сторінку: пігулка стиснеться. Наведи на «Продукт», щоб відкрити меню';
+      return compacted() ? 'Пігулка стиснута, як після скролу на сайті' : 'Наведи на «Продукт», щоб відкрити меню. «Стиснути» показує стан після скролу';
     },
   });
 })();

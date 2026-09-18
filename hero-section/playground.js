@@ -1,7 +1,10 @@
 /* Playground definition for Hero (S : Hero).
    Not part of the module: a site needs only hero.css + hero.js, its own
    markup and screenshots.
-   Everything here is what the playground shell (playground/shell.js) asks
+   The stage is a window of its own, the first screen of the site: the real
+   header on top (pulled from site-header/demo.html over HTTP, the adapters
+   never see each other) and the hero under it, scrolling as a page would.
+   Everything else is what the playground shell (playground/shell.js) asks
    for: the state, the controls, the presets and the generated snippet. */
 (function () {
   'use strict';
@@ -161,6 +164,29 @@ ${markup(s, '', false)}
   const narrow = () => root && root.clientWidth < 640;
   const pct = v => Math.round(v * 100) + ' %';
 
+  Playground.css(`
+    /* the first screen of the site: the bar sticks to this scroller, not to the stage, exactly as it will to the window */
+    .hero-browser { position: relative; width: 100%; flex: 1 1 auto; min-height: 320px; border-radius: 12px; overflow: hidden; background: #fff; box-shadow: 0 0 0 1px #e4e4e4, 0 16px 40px -16px rgba(0,0,0,.18); }
+    .hero-browser__scroll { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; }
+    .hero-browser__below { height: 40cqw; min-height: 240px; margin: 24px; border-radius: 16px; background: rgba(22,34,34,.05); }
+    .hero-browser__page { container-type: inline-size; }
+  `);
+
+  // the site header above the hero, as on the site. It comes from the header's own demo page
+  // over HTTP; without it (no server, no module) the hero simply stands at the top of the window
+  async function placeHeader(scroll) {
+    const html = await fetch('site-header/demo.html').then(r => r.ok ? r.text() : '').catch(() => '');
+    const m = html.match(/<header class="site-header"[\s\S]*?<\/header>/);
+    // the module script may load after this adapter; by the time the fetch resolves every script has run
+    if (!m || !window.SiteHeader) return;
+    const tpl = document.createElement('template');
+    tpl.innerHTML = m[0];
+    const bar = tpl.content.firstElementChild;
+    bar.removeAttribute('id');
+    scroll.firstElementChild.prepend(bar);
+    new SiteHeader(bar);
+  }
+
   Playground.register({
     id: 'hero',
     title: 'Hero: адаптивні скріншоти',
@@ -174,6 +200,7 @@ ${markup(s, '', false)}
     ],
     defaults,
     presets: Object.values(PRESETS),
+    stage: { className: 'stage--fill' },
     controls: [
       { title: 'Скріншоти', items: [
         { type: 'seg', key: 'main', label: 'Головний скрін', options: [['desktop', 'Десктоп'], ['phone', 'Телефон']] },
@@ -234,9 +261,13 @@ ${markup(s, '', false)}
     ],
 
     mount(ctx) {
-      ctx.frame.insertAdjacentHTML('beforeend', markup(defaults, DIR, true));
+      ctx.frame.insertAdjacentHTML('beforeend', `<div class="hero-browser"><div class="hero-browser__scroll"><div class="hero-browser__page">
+        ${markup(defaults, DIR, true)}
+        <div class="hero-browser__below"></div>
+      </div></div></div>`);
       root = ctx.frame.querySelector('.hero');
       hero = new Hero(root);
+      placeHeader(ctx.frame.querySelector('.hero-browser__scroll'));
       ctx.instance = hero;
       // taps in the demo flow back into the panel
       root.addEventListener('hero:main', e => { if (ctx.state.main !== e.detail.main) ctx.set({ main: e.detail.main }); });

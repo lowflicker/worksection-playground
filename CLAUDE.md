@@ -39,10 +39,12 @@ Globals / ids: `LogoWall`→`logos`, `ShortAnswer`→`answer`, `FloatActions`→
 `BorderBeam`→`beam`, `DotSphere`→`sphere`, `Hero`→`hero`, `SiteHeader`→`header`. Each exposes `.defaults`.
 `hero-section/` is markup-first: the adapter builds the HTML, `hero.js` only
 enhances it; its breakpoints are container queries, so the frame width
-presets (390 / 320) show the narrow composition. `site-header/` is the same
-kind (markup-first, container queries); its stage is its own scroller window
-(`stage--fill`) with the real hero under the bar, pulled from
-`hero-section/demo.html` over HTTP (the adapters never reference each other).
+presets (390 / 320) show the narrow composition. Its stage is the site's
+first screen: a scroller window (`stage--fill`) with the real header on top,
+pulled from `site-header/demo.html` over HTTP (the adapters never reference
+each other), and the hero under it. `site-header/` is the same kind
+(markup-first, container queries) and shows the bar alone: no page, the
+compact state is a toggle button, the mobile sheet is sized to the stage.
 
 ## Token discipline
 
