@@ -33,30 +33,31 @@
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body { margin: 0; background: var(--bg); color: var(--text); font-size: 12px; line-height: 1.4; overflow: hidden; -webkit-font-smoothing: antialiased; }
-a { color: var(--accent); }
+/* shell primitives stop at the frame: a module's own buttons, links and inputs keep their look */
+a:not(.frame *) { color: var(--accent); }
 svg.i { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; display: block; flex: none; }
 [hidden] { display: none !important; }
 
 /* --- shared primitives --- */
-button {
+button:not(.frame *) {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   height: 28px; padding: 0 10px; border-radius: 8px; cursor: pointer;
   border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
   font: inherit; font-size: 12px; font-weight: 500; white-space: nowrap;
   transition: background .12s, border-color .12s, color .12s;
 }
-button:hover { background: var(--panel-3); border-color: var(--line-2); }
+button:not(.frame *):hover { background: var(--panel-3); border-color: var(--line-2); }
 button.primary { background: var(--primary, var(--text)); color: var(--primary-fg, var(--on-text)); border-color: var(--primary-line, transparent); }
 button.primary:hover { background: var(--primary-hover, color-mix(in oklab, var(--text) 85%, var(--bg))); }
 button.icon { width: 28px; padding: 0; color: var(--muted); }
 button.icon:hover { color: var(--text); }
 button.ghost { border-color: transparent; background: transparent; color: var(--muted); }
 button.ghost:hover { background: var(--panel-2); color: var(--text); }
-select, input[type=text] {
+select:not(.frame *), input[type=text]:not(.frame *) {
   height: 28px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px;
   background: var(--panel-2); color: var(--text); font: inherit; font-size: 12px;
 }
-select:focus-visible, input:focus-visible, button:focus-visible { outline: 2px solid color-mix(in oklab, var(--accent) 60%, transparent); outline-offset: 1px; }
+select:focus-visible, input:focus-visible, button:not(.frame *):focus-visible { outline: 2px solid color-mix(in oklab, var(--accent) 60%, transparent); outline-offset: 1px; }
 kbd.k { display: inline-block; min-width: 18px; padding: 1px 5px; border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 4px; font: 10.5px/14px ui-monospace, Menlo, monospace; color: var(--text); text-align: center; background: var(--panel-2); }
 
 /* --- topbar: brand, module switcher, global actions --- */

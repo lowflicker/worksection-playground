@@ -172,7 +172,7 @@ ${markup(s, '', false)}
 
   Playground.css(`
     /* the first screen of the site: the bar sticks to this scroller, not to the stage, exactly as it will to the window */
-    .hero-browser { position: relative; width: 100%; flex: 1 1 auto; min-height: 320px; border-radius: 12px; overflow: hidden; background: #fff; box-shadow: 0 0 0 1px #e4e4e4, 0 16px 40px -16px rgba(0,0,0,.18); }
+    .hero-browser { position: relative; width: 100%; flex: 1 1 auto; min-height: 320px; border-radius: 12px; overflow: hidden; background: #eaebeb; box-shadow: 0 0 0 1px #e4e4e4, 0 16px 40px -16px rgba(0,0,0,.18); }
     .hero-browser__scroll { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; }
     .hero-browser__below { height: 40cqw; min-height: 240px; margin: 24px; border-radius: 16px; background: rgba(22,34,34,.05); }
     .hero-browser__page { container-type: inline-size; }
