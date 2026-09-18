@@ -63,7 +63,8 @@
 
   /* --- markup --------------------------------------------------------------------------------- */
   // opts: { variant, size, rounded, label, href, tag, icon: none | an ICONS id, iconPos: after | before | only,
-  //         status: default | active | disabled, beam }
+  //         status: default | active | disabled, beam, beamPace }
+  //   beamPace: a consumer's multiplier on the master's beam duration (2 = twice as slow, the header's bar)
   //   variant is a VARIANTS id ('primary', 'secondary-invert', …); invert: true is the consumers' shorthand for the -invert look
   const norm = o => {
     const variant = o.invert && CLS[o.variant + '-invert'] ? o.variant + '-invert' : o.variant;
@@ -82,6 +83,7 @@
       o.tag === 'a' ? `href="${esc(o.href)}"` : 'type="button"',
       o.status === 'disabled' ? 'disabled' : '',
       beam ? `data-beam data-trigger="${s.trigger}"` : '',
+      beam && o.beamPace && o.beamPace !== 1 ? `style="--beam-duration: ${+(s.duration * o.beamPace).toFixed(2)}s"` : '',
     ].filter(Boolean).join(' ');
     const icon = o.icon === 'none' ? '' : `<ws-icon>${iconSvg(o.icon, o.size)}</ws-icon>`;
     const text = `<span>${esc(o.label)}</span>`;
@@ -113,7 +115,7 @@
     if (!on) return;
     if (item.inst.trigger !== s.trigger) item.inst.setTrigger(s.trigger);
     el.dataset.trigger = s.trigger;
-    for (const [k, [prop, unit]] of Object.entries(VARS)) el.style.setProperty(prop, s[k] + unit);
+    for (const [k, [prop, unit]] of Object.entries(VARS)) el.style.setProperty(prop, (k === 'duration' ? +(s[k] * (opts.beamPace || 1)).toFixed(2) : s[k]) + unit);
   }
 
   let state = null;

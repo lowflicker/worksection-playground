@@ -41,7 +41,7 @@
   const ACTIONS = [
     { variant: 'plain', label: 'Log in', beam: false },
     { variant: 'accent', label: 'Book a demo', beam: false },
-    { variant: 'primary', label: 'Registration' },
+    { variant: 'primary', label: 'Registration', beamPace: 2 }, // the bar is calmer than the hero: half the speed
   ];
   const btnOpts = a => Object.assign({ size: 36, rounded: true }, a);
   const action = a => {

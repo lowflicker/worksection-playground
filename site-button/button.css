@@ -8,7 +8,9 @@
    1. the ws-icon box, which the site keeps in common.css (a global reset
       lives there too, so that file is never loaded in the playground);
    2. the beam variant, .btn-beam, the mono border light from border-beam/
-      on the dark primary button (new, handed to the developers).
+      on the dark primary button (new, handed to the developers);
+   3. one design change to the site: the small sizes (btn-32 / btn-36) are
+      set in medium, not semibold — see the rule at the end.
 
    Markup (the site's own):
      <a class="btn btn-48 btn-primary btn-rounded" href="…"><span>Get started</span></a>
@@ -54,3 +56,9 @@
   &.btn-56 { --beam-radius: 14px; }
   &.btn-rounded { --beam-radius: 50px; }
 }
+
+/* --- small sizes in medium ---------------------------------------------------
+   A design change to the site (2026-09): buttons.css sets btn-32 / btn-36 in
+   --font-body-semi-xs (600); at 13 px that reads heavy, so the label takes the
+   medium token instead. Same size and line height, only the weight differs. */
+.btn.btn-32 span, .btn.btn-36 span { font: var(--font-body-med-xs); }

@@ -31,7 +31,7 @@
       <button type="button" class="site-header__btn site-header__btn--plain site-header__lang">…<span>EN</span>…</button>
       <a class="btn btn-36 btn-plain btn-rounded" href="…"><span>Log in</span></a>
       <a class="btn btn-36 btn-accent btn-rounded" href="…"><span>Book a demo</span></a>
-      <a class="btn btn-36 btn-primary btn-rounded btn-beam beam" data-beam data-trigger="always" href="…"><span>Registration</span></a>
+      <a class="btn btn-36 btn-primary btn-rounded btn-beam beam" data-beam data-trigger="always" style="--beam-duration: 4.8s" href="…"><span>Registration</span></a>
       <button type="button" class="site-header__burger" aria-expanded="false" aria-label="Menu"><svg …/><svg …/></button>
     </div>
   </div>
