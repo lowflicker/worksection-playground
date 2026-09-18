@@ -301,23 +301,25 @@ body.no-panel .panel { display: none; }
 .note-card__styles dt { color: var(--note-faint); }
 .note-card__styles dd { margin: 0; color: var(--note-fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .note-at { background: oklab(from var(--accent) l a b / .25); color: #9fd0ff; border-radius: 4px; padding: 0 2px; font-weight: 500; }
-/* the kind: a dot in the kind's colour and a word, no box; the list under it is the same four rows */
+/* the kind: a dot in the kind's colour and a muted word, nothing else; the list under it is the same
+   four rows. Selectors carry .note-kind so the card's generic button plate cannot win over them. */
 .note-kind { position: relative; margin-left: auto; }
-.note-kind__btn, .note-kind__menu button { height: 20px; padding: 0 4px; gap: 6px; border: 0; background: transparent; color: var(--note-muted); font-size: 11px; font-weight: 500; }
-.note-kind__btn:hover, .note-kind__menu button:hover { background: oklab(1 0 0 / .08); border: 0; color: var(--note-fg); }
-.note-kind__btn .i, .note-kind__menu .i { width: 12px; height: 12px; color: var(--kind-change); }
-.note-kind__btn .i:last-child { width: 10px; height: 10px; color: var(--note-faint); margin-left: -3px; }
-.note-kind__btn[data-kind="attention"] .i:first-child, .note-kind__menu [data-pick="attention"] .i { color: var(--kind-attention); }
-.note-kind__btn[data-kind="question"] .i:first-child, .note-kind__menu [data-pick="question"] .i { color: var(--kind-question); }
-.note-kind__btn[data-kind="bug"] .i:first-child, .note-kind__menu [data-pick="bug"] .i { color: var(--kind-bug); }
-.note-kind__menu { position: absolute; top: calc(100% + 2px); right: 0; z-index: 3; min-width: 104px; padding: 3px; border-radius: 8px; background: oklab(0.14 0 0 / .96); box-shadow: 0 12px 28px -10px rgba(0,0,0,.7); display: flex; flex-direction: column; }
-.note-kind__menu button { justify-content: flex-start; width: 100%; height: 24px; padding: 0 6px; border-radius: 5px; font-weight: 400; }
-.note-kind__menu button.is-on { color: var(--note-fg); }
+.note-kind .note-kind__btn, .note-kind .note-kind__menu button {
+  height: 20px; padding: 0 4px; gap: 6px; border: 0; border-radius: 5px; background: transparent; box-shadow: none;
+  color: var(--note-muted); font-size: 11px; font-weight: 500;
+}
+.note-kind .note-kind__btn:hover, .note-kind .note-kind__menu button:hover { background: oklab(1 0 0 / .08); border: 0; color: var(--note-fg); }
+.note-kind .i { display: none; }
+.note-kind .note-kind__btn .i:last-child { display: block; width: 10px; height: 10px; color: var(--note-faint); margin-left: -3px; }
+.note-kind__dot, .note-card__kind::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--kind-change); flex: none; }
+[data-kind="attention"] > .note-kind__dot, .note-card__kind[data-kind="attention"]::before { background: var(--kind-attention); }
+[data-kind="question"] > .note-kind__dot, .note-card__kind[data-kind="question"]::before { background: var(--kind-question); }
+[data-kind="bug"] > .note-kind__dot, .note-card__kind[data-kind="bug"]::before { background: var(--kind-bug); }
+.note-kind__menu { position: absolute; top: calc(100% + 2px); right: 0; z-index: 3; min-width: 100px; padding: 3px; border-radius: 8px; background: oklab(0.14 0 0 / .96); box-shadow: 0 12px 28px -10px rgba(0,0,0,.7); display: flex; flex-direction: column; }
+.note-kind .note-kind__menu button { justify-content: flex-start; width: 100%; height: 24px; padding: 0 6px; font-weight: 400; }
+.note-kind .note-kind__menu button.is-on { color: var(--note-fg); }
 .note-card__kind { display: inline-flex; align-items: center; gap: 5px; padding: 0; background: transparent !important; color: var(--note-muted); font-size: 10.5px; font-weight: 500; letter-spacing: 0; }
-.note-card__kind .i { width: 11px; height: 11px; margin: 0; vertical-align: 0; color: var(--kind-change); }
-.note-card__kind[data-kind="attention"] .i { color: var(--kind-attention); }
-.note-card__kind[data-kind="question"] .i { color: var(--kind-question); }
-.note-card__kind[data-kind="bug"] .i { color: var(--kind-bug); }
+.note-card__kind .i { display: none; }
 .note-at__list { position: absolute; left: 12px; right: 12px; bottom: calc(100% - 4px); z-index: 2; display: flex; flex-wrap: wrap; gap: 3px; padding: 5px; border-radius: 8px; background: oklab(0.16 0 0 / .97); box-shadow: 0 12px 32px -8px rgba(0,0,0,.7), 0 0 0 1px var(--note-line) inset; }
 .note-card__answer { position: relative; }
 .note-card__answer .note-at__list { left: 0; right: auto; bottom: calc(100% + 4px); }

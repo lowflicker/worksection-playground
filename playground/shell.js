@@ -963,7 +963,7 @@
   function kindPicker(value, onChange) {
     const el = h('div', 'note-kind');
     let v = value || 'change';
-    const draw = () => { el.innerHTML = `<button type="button" class="note-kind__btn" data-kind="${v}" aria-haspopup="listbox" title="Тип нотатки">${kindIcon(v)}<span>${kindLabel(v)}</span>${ICON.caret}</button><div class="note-kind__menu" role="listbox" hidden>${KINDS.map(([k, l, i]) => `<button type="button" role="option" data-pick="${k}" class="${k === v ? 'is-on' : ''}" aria-selected="${k === v}">${i}<span>${l}</span></button>`).join('')}</div>`; };
+    const draw = () => { el.innerHTML = `<button type="button" class="note-kind__btn" data-kind="${v}" aria-haspopup="listbox" title="Тип нотатки"><i class="note-kind__dot"></i><span>${kindLabel(v)}</span>${ICON.caret}</button><div class="note-kind__menu" role="listbox" hidden>${KINDS.map(([k, l]) => `<button type="button" role="option" data-pick="${k}" data-kind="${k}" class="${k === v ? 'is-on' : ''}" aria-selected="${k === v}"><i class="note-kind__dot"></i><span>${l}</span></button>`).join('')}</div>`; };
     draw();
     el.addEventListener('click', e => {
       const pick = e.target.closest('[data-pick]');
