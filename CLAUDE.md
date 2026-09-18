@@ -60,11 +60,14 @@ toggle button, the mobile sheet is sized to the stage.
 
 **Shared components** (masters publish, copies follow; edit only the master):
 - header: `site-header/playground.js` provides `site-header`; the hero consumes it.
-- button: `site-button/playground.js` provides `site-button` (opts `{ variant, size, rounded, label, href, beam }`);
-  the hero consumes two for its CTAs and takes their snippet markup from
-  `Playground.component('site-button').markup()`. `button.css` mirrors the site's
-  own `.btn` system (classes, tokens, values from worksection.com); only
-  `.btn-beam` is new. Load order: `beam.css` before `button.css`.
+- button: `site-button/playground.js` provides `site-button` (opts `{ variant, size,
+  rounded, label, href, tag, icon, status, invert, beam }`; `variant` is a look id:
+  `primary`, `secondary-invert`, `primary-white`…); the hero consumes two for its
+  CTAs and takes their snippet markup from `Playground.component('site-button').markup()`.
+  The `.btn` system is the site's own `site-css/buttons.css`, verbatim — the source
+  of truth: the panel lists exactly its classes, the sheet shows every look × size.
+  `button.css` adds only the `ws-icon` box and `.btn-beam`. Load order:
+  `tokens.css` → `buttons.css` → `beam.css` → `button.css`.
 - Demo pages (`*/demo.html`) carry static copies of component markup for
   developers — keep them in sync when a master changes.
 
@@ -182,6 +185,6 @@ the shell, never from its own CSS.
 - 2026-09-18: shell redesigned after Toolcraft (glass panel, tool pill, section reset); `easing` control (bezier editor); `check()` = acceptance, all green.
 - 2026-09-18: no topbar: home catalogue + crumb pill; shell primitives are `:where(:not(.frame *))` so they never restyle module markup.
 - 2026-09-18: `integrations-wall/` (Ramp-like logo sheet: stagger, pointer pan, drift, ellipse mask; demo marks from Simple Icons / Devicon CDN).
-- 2026-09-18: `site-css/` — the site's tokens (loaded) + reference stylesheets; `button.css` reads the tokens instead of its own copy.
+- 2026-09-18: `site-css/` — the site's tokens (loaded) + reference stylesheets; Button runs on the site's `buttons.css` verbatim: configurator + every-look sheet, `button.css` = ws-icon box + `.btn-beam`.
 - Old folder `Desktop/vis-effects-for-ui` is superseded; work from this repo.
 - `.claude/launch.json` runs `python3` (no bare `python` on this Mac).

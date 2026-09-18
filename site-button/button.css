@@ -1,118 +1,36 @@
 /* ==========================================================================
-   Worksection button: a mirror of the site's .btn system, with the class
-   names, the nesting and the tokens exactly as in worksection.com's CSS, so
-   the playground and the demos render buttons the way the site does. The
-   tokens (--text-base-*, --base-*, --button-accent-*, --font-body-*) come
-   from site-css/tokens.css, loaded before this file; the original is
-   site-css/buttons.css.
+   Worksection button — what the playground adds on top of the site's own
+   .btn system. The system itself is not here: site-css/buttons.css is the
+   site's assets/css/buttons.css verbatim and is loaded before this file, so
+   every class, size and state the playground shows is the one in the site's
+   code. This file holds only what the site does not have at that address:
 
-   On the site none of this is needed: the classes already exist there.
-   What is new is the beam variant at the bottom, .btn-beam, which puts the
-   mono border light from border-beam/ on the dark button.
+   1. the ws-icon box, which the site keeps in common.css (a global reset
+      lives there too, so that file is never loaded in the playground);
+   2. the beam variant, .btn-beam, the mono border light from border-beam/
+      on the dark primary button (new, handed to the developers).
 
-   Markup:
+   Markup (the site's own):
      <a class="btn btn-48 btn-primary btn-rounded" href="…"><span>Get started</span></a>
-     <a class="btn btn-48 btn-secondary btn-rounded" href="…"><span>Contact sales</span></a>
-     <button class="btn btn-36 btn-accent btn-rounded"><span>Book a demo</span></button>
-   Sizes      btn-32 btn-36 (both 32 px) btn-40 btn-48 btn-56
-   Variants   btn-primary btn-secondary btn-tertiary btn-accent btn-plain btn-white btn-ghost
-   Modifiers  btn-rounded (pill) btn-invert (on dark surfaces) btn-square btn-active
+     <button class="btn btn-40 btn-secondary" type="button"><span>Дивитись демо</span><ws-icon><svg …></svg></ws-icon></button>
+     <button class="btn btn-32 btn-secondary btn-square" type="button"><ws-icon><svg …></svg></ws-icon></button>
+   Sizes      btn-32 btn-36 (both 32 px high) btn-40 btn-48 btn-56
+   Variants   btn-primary (+ btn-invert | btn-white) btn-secondary (+ btn-invert)
+              btn-tertiary (+ btn-invert) btn-accent btn-plain btn-ghost
+   Modifiers  btn-rounded (pill) btn-square (icon only, width = height; not in btn-56)
+              btn-active (pressed) [disabled] (looks like btn-ghost, no pointer events)
+   Icon       <ws-icon><svg width="16|20" …></ws-icon>, 16 px in btn-32/36, 20 px above;
+              a path without fill takes the variant's colour (ws-icon svg { fill })
 
-   Beam (needs beam.css before this file, and beam.js):
+   Beam (beam.css before this file, beam.js on the page):
      <a class="btn btn-48 btn-primary btn-rounded btn-beam beam" data-beam data-trigger="always" href="…"><span>Get started</span></a>
    ========================================================================== */
 
-.btn {
-  box-sizing: border-box;
-  display: inline-flex;            /* the site has flex; inline keeps a lone button in text flow */
-  justify-content: center;
-  align-items: center;
-  border: 0;
-  cursor: pointer;
-  text-decoration: none;
-  transition: background .15s, box-shadow .15s, color .15s;
-  & span { white-space: nowrap; }
-  & svg { flex: none; fill: currentColor; }
-
-  /* --- sizes --- */
-  &.btn-32, &.btn-36 {
-    padding: 6px 8px; border-radius: 10px; height: 32px;
-    & svg { width: 16px; height: 16px; }
-    & span { font: var(--font-body-semi-xs); padding: 0 4px; }
-    &.btn-square { width: 32px; }
-  }
-  &.btn-36.btn-square { width: 36px; }
-  &.btn-40 {
-    padding: 8px 12px; border-radius: 12px; height: 40px;
-    & span { font: var(--font-body-med-md); padding: 0 8px; }
-    &.btn-square { width: 40px; }
-  }
-  &.btn-48 {
-    padding: 12px 16px; border-radius: 12px; height: 48px;
-    & span { font: var(--font-body-med-lg); padding: 0 8px; }
-    &.btn-square { width: 48px; }
-  }
-  &.btn-56 {
-    padding: 12px 16px; border-radius: 14px; height: 56px;
-    & span { font: var(--font-body-med-lg); padding: 0 8px; }
-  }
-
-  /* --- variants --- */
-  &.btn-plain {
-    color: var(--text-base-secondary); background: var(--base-white-a-0);
-    &:hover { color: var(--text-base-primary); }
-  }
-  &.btn-accent {
-    color: var(--button-accent-text); background: var(--button-accent-surf-default);
-    box-shadow: 0 3px 1px -1px var(--base-white-a-50) inset, 0 -8px 28px 4px var(--base-greengrey-a-150) inset, 0 0 0 1px var(--button-accent-outline), 0 1px 2px -.5px var(--base-greengrey-a-150), 0 3px 4px -1.5px var(--base-greengrey-a-150), 0 8px 10px -4px var(--base-greengrey-a-100);
-    &:hover { background: var(--button-accent-surf-hover); box-shadow: 0 0 0 1.5px var(--button-accent-surf-press), 0 1px 2px -.5px var(--base-greengrey-a-150), 0 3px 4px -1.5px var(--base-greengrey-a-150), 0 8px 10px -4px var(--base-greengrey-a-100); }
-    &:active, &.btn-active { background: var(--button-accent-surf-press); box-shadow: 0 0 0 1.5px var(--button-accent-surf-press); }
-  }
-  &.btn-primary {
-    color: var(--text-base-invert-primary); background: var(--base-greengrey-990);
-    box-shadow: 0 0 0 1px var(--base-greengrey-950), 0 2px 2px -1px var(--base-greengrey-a-200), 0 4px 4px -2px var(--base-greengrey-a-200), 0 6px 8px -3px var(--base-greengrey-a-150);
-    &:hover { background: var(--base-greengrey-900); box-shadow: 0 0 0 1px var(--base-greengrey-900), 0 2px 2px -1px var(--base-greengrey-a-200), 0 4px 4px -2px var(--base-greengrey-a-200), 0 6px 8px -3px var(--base-greengrey-a-150); }
-    &:active, &.btn-active { background: var(--base-greengrey-800); box-shadow: 0 0 0 1px var(--base-greengrey-800); }
-    &.btn-invert {
-      background: var(--base-white-solid); color: var(--text-base-primary);
-      box-shadow: 0 -4px 0 -1px var(--base-greengrey-a-100) inset, 0 0 0 1px var(--base-slate-a-200), 0 1px 2px -.5px var(--base-slate-a-150), 0 3px 4px -1.5px var(--base-slate-a-200), 0 8px 10px -4px var(--base-slate-a-100);
-      &:hover { background: var(--base-greengrey-100); box-shadow: 0 0 0 1px var(--base-slate-a-200), 0 1px 2px -.5px var(--base-slate-a-150), 0 3px 4px -1.5px var(--base-slate-a-200), 0 8px 10px -4px var(--base-slate-a-100); }
-      &:active, &.btn-active { background: var(--base-greengrey-150); box-shadow: 0 0 0 1px var(--base-slate-a-200); }
-    }
-  }
-  &.btn-white {
-    background: var(--base-white-solid); color: var(--text-base-primary);
-    box-shadow: 0 0 0 1px var(--base-greengrey-a-150), 0 1px 2px -.5px var(--base-slate-a-150), 0 3px 4px -1.5px var(--base-slate-a-200), 0 8px 10px -4px var(--base-slate-a-100), 0 -4px 0 -1px var(--base-greengrey-a-100) inset;
-    &:hover { background: var(--base-greengrey-100); box-shadow: 0 0 0 1px var(--base-greengrey-a-150), 0 1px 2px -.5px var(--base-slate-a-150), 0 3px 4px -1.5px var(--base-slate-a-200), 0 8px 10px -4px var(--base-slate-a-100); }
-    &:active, &.btn-active { background: var(--base-greengrey-150); box-shadow: 0 0 0 1px var(--base-greengrey-a-200); }
-  }
-  &.btn-secondary {
-    color: var(--text-base-primary); background: var(--base-greengrey-a-100); box-shadow: 0 0 0 1px var(--border-mid-high);
-    &:hover { background: var(--base-greengrey-a-150); box-shadow: 0 0 0 1px var(--base-greengrey-a-150); }
-    &:active, &.btn-active { background: var(--base-greengrey-a-200); box-shadow: 0 0 0 1px var(--base-greengrey-a-200); }
-    &.btn-invert {
-      background: var(--base-white-a-20); color: var(--text-base-invert-primary);
-      box-shadow: 0 0 0 1px var(--border-invert-midhigh), 0 1px 1px -.5px var(--base-neutral-a-400), 0 4px 6px -2px var(--base-neutral-a-300), 0 2px 8px 0 var(--base-white-a-20) inset;
-      &:hover { background: var(--base-white-a-30); }
-      &:active, &.btn-active { background: var(--base-white-a-40); box-shadow: 0 0 0 1px var(--border-invert-mid); }
-    }
-  }
-  &.btn-tertiary {
-    color: var(--text-base-primary); background: var(--base-white-a-0); box-shadow: 0 0 0 1px var(--border-mid-high);
-    &:hover { background: var(--base-greengrey-a-100); box-shadow: 0 0 0 1px var(--base-greengrey-a-100); }
-    &:active, &.btn-active { background: var(--base-greengrey-a-200); box-shadow: 0 0 0 1px var(--base-greengrey-a-200); }
-    &.btn-invert {
-      color: var(--text-base-invert-primary); box-shadow: 0 0 0 1px var(--border-invert-midhigh);
-      &:hover { background: var(--base-white-a-30); box-shadow: 0 0 0 1px var(--base-white-a-30); }
-      &:active, &.btn-active { background: var(--base-white-a-60); box-shadow: 0 0 0 1px var(--base-white-a-60); }
-    }
-  }
-  &.btn-ghost, &[disabled] {
-    color: var(--text-base-ghost); background: var(--base-greengrey-a-100); box-shadow: 0 0 0 1px var(--base-greengrey-a-100);
-    pointer-events: none;
-  }
-  &.btn-rounded { border-radius: 50px !important; }
-  &:focus-visible { outline: 2px solid var(--button-accent-outline); outline-offset: 2px; }
+/* the icon box, as in the site's common.css (ws-icon is an unregistered
+   custom element there too: a styled inline box, no script) */
+.btn ws-icon {
+  width: 20px; height: 20px; padding: 2px; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center;
 }
 
 /* --- beam: the mono border light (border-beam/) on the dark button ----------

@@ -4,52 +4,113 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Button demo</title>
-<!-- the site's tokens first (button.css reads them), beam.css before button.css: .btn-beam overrides the effect's variables -->
+<!-- the site's tokens, then the site's own .btn system verbatim; beam.css before button.css: .btn-beam overrides the effect's variables -->
 <link rel="stylesheet" href="../site-css/tokens.css">
+<link rel="stylesheet" href="../site-css/buttons.css">
 <link rel="stylesheet" href="../border-beam/beam.css">
 <link rel="stylesheet" href="button.css">
 <style>
-  body { margin: 0; padding: 48px 24px; background: #eaebeb; font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: rgba(0,0,0,.5); }
-  section { max-width: 960px; margin: 0 auto 40px; }
+  body { margin: 0; padding: 48px 24px; background: var(--base-greengrey-100); font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: var(--text-base-secondary); }
+  section { max-width: 1040px; margin: 0 auto 40px; }
   h2 { margin: 0 0 16px; font-size: 12px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; }
+  code { font: 11px/16px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .sheet { display: grid; grid-template-columns: repeat(5, max-content); gap: 16px 24px; align-items: center; padding: 24px 32px 32px; border-radius: 16px; background: var(--bg-surf-0); box-shadow: 0 0 0 1px var(--border-mid-high); overflow-x: auto; }
+  .sheet--dark { background: var(--base-greengrey-990); box-shadow: none; color: var(--text-base-invert-secondary); }
+  .sheet .cap { grid-column: 1 / -1; margin-top: 8px; }
   .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-  .dark { padding: 24px; border-radius: 16px; background: #1e201f; }
 </style>
 </head>
 <body>
 <section>
-  <h2>Хіро: btn-48 btn-rounded, головна з променем</h2>
-  <div class="row">
-    <a class="btn btn-48 btn-primary btn-rounded btn-beam beam" data-beam data-trigger="always" href="#"><span>Get started</span></a>
-    <a class="btn btn-48 btn-secondary btn-rounded" href="#"><span>Contact sales</span></a>
-    <a class="btn btn-48 btn-tertiary btn-rounded" href="#"><span>Як це працює</span></a>
-    <button type="button" class="btn btn-48 btn-accent btn-rounded"><span>Забронювати демо</span></button>
-    <a class="btn btn-48 btn-plain btn-rounded" href="#"><span>Увійти</span></a>
-  </div>
-</section>
-<section>
-  <h2>Сайт за замовчуванням: btn-48, кути 12 px</h2>
-  <div class="row">
-    <a class="btn btn-48 btn-primary" href="#"><span>Спробуйте Worksection</span></a>
-    <a class="btn btn-48 btn-secondary" href="#"><span>Contact sales</span></a>
-    <a class="btn btn-48 btn-white" href="#"><span>Білий</span></a>
-    <a class="btn btn-48 btn-ghost" href="#"><span>Ghost</span></a>
-  </div>
-</section>
-<section>
-  <h2>Шапка: btn-36 btn-rounded</h2>
-  <div class="row">
-    <a class="btn btn-36 btn-plain btn-rounded" href="#"><span>Увійти</span></a>
-    <button type="button" class="btn btn-36 btn-accent btn-rounded"><span>Забронювати демо</span></button>
-    <a class="btn btn-36 btn-primary btn-rounded" href="#"><span>Реєстрація</span></a>
+  <h2>Кожен варіант × кожен розмір: btn-32 · btn-36 · btn-40 · btn-48 · btn-56</h2>
+  <div class="sheet">
+    <code>btn-32</code><code>btn-36</code><code>btn-40</code><code>btn-48</code><code>btn-56</code>
+    <code class="cap">btn-primary</code>
+    <a class="btn btn-32 btn-primary" href="#"><span>Get started</span></a>
+    <a class="btn btn-36 btn-primary" href="#"><span>Get started</span></a>
+    <a class="btn btn-40 btn-primary" href="#"><span>Get started</span></a>
+    <a class="btn btn-48 btn-primary" href="#"><span>Get started</span></a>
+    <a class="btn btn-56 btn-primary" href="#"><span>Get started</span></a>
+    <code class="cap">btn-primary btn-white</code>
+    <a class="btn btn-32 btn-primary btn-white" href="#"><span>Get started</span></a>
+    <a class="btn btn-36 btn-primary btn-white" href="#"><span>Get started</span></a>
+    <a class="btn btn-40 btn-primary btn-white" href="#"><span>Get started</span></a>
+    <a class="btn btn-48 btn-primary btn-white" href="#"><span>Get started</span></a>
+    <a class="btn btn-56 btn-primary btn-white" href="#"><span>Get started</span></a>
+    <code class="cap">btn-secondary</code>
+    <a class="btn btn-32 btn-secondary" href="#"><span>Get started</span></a>
+    <a class="btn btn-36 btn-secondary" href="#"><span>Get started</span></a>
+    <a class="btn btn-40 btn-secondary" href="#"><span>Get started</span></a>
+    <a class="btn btn-48 btn-secondary" href="#"><span>Get started</span></a>
+    <a class="btn btn-56 btn-secondary" href="#"><span>Get started</span></a>
+    <code class="cap">btn-tertiary</code>
+    <a class="btn btn-32 btn-tertiary" href="#"><span>Get started</span></a>
+    <a class="btn btn-36 btn-tertiary" href="#"><span>Get started</span></a>
+    <a class="btn btn-40 btn-tertiary" href="#"><span>Get started</span></a>
+    <a class="btn btn-48 btn-tertiary" href="#"><span>Get started</span></a>
+    <a class="btn btn-56 btn-tertiary" href="#"><span>Get started</span></a>
+    <code class="cap">btn-accent</code>
+    <button class="btn btn-32 btn-accent" type="button"><span>Get started</span></button>
+    <button class="btn btn-36 btn-accent" type="button"><span>Get started</span></button>
+    <button class="btn btn-40 btn-accent" type="button"><span>Get started</span></button>
+    <button class="btn btn-48 btn-accent" type="button"><span>Get started</span></button>
+    <button class="btn btn-56 btn-accent" type="button"><span>Get started</span></button>
+    <code class="cap">btn-plain</code>
+    <a class="btn btn-32 btn-plain" href="#"><span>Get started</span></a>
+    <a class="btn btn-36 btn-plain" href="#"><span>Get started</span></a>
+    <a class="btn btn-40 btn-plain" href="#"><span>Get started</span></a>
+    <a class="btn btn-48 btn-plain" href="#"><span>Get started</span></a>
+    <a class="btn btn-56 btn-plain" href="#"><span>Get started</span></a>
+    <code class="cap">btn-ghost (= [disabled])</code>
+    <a class="btn btn-32 btn-ghost" href="#"><span>Get started</span></a>
+    <a class="btn btn-36 btn-ghost" href="#"><span>Get started</span></a>
+    <a class="btn btn-40 btn-ghost" href="#"><span>Get started</span></a>
+    <a class="btn btn-48 btn-ghost" href="#"><span>Get started</span></a>
+    <a class="btn btn-56 btn-ghost" href="#"><span>Get started</span></a>
   </div>
 </section>
 <section>
   <h2>На темному: btn-invert</h2>
-  <div class="row dark">
-    <a class="btn btn-48 btn-primary btn-invert" href="#"><span>Спробуйте Worksection</span></a>
-    <a class="btn btn-48 btn-secondary btn-invert" href="#"><span>Contact sales</span></a>
-    <a class="btn btn-48 btn-tertiary btn-invert" href="#"><span>Забронювати демо</span></a>
+  <div class="sheet sheet--dark">
+    <code>btn-32</code><code>btn-36</code><code>btn-40</code><code>btn-48</code><code>btn-56</code>
+    <code class="cap">btn-primary btn-invert</code>
+    <a class="btn btn-32 btn-primary btn-invert" href="#"><span>Get started</span></a>
+    <a class="btn btn-36 btn-primary btn-invert" href="#"><span>Get started</span></a>
+    <a class="btn btn-40 btn-primary btn-invert" href="#"><span>Get started</span></a>
+    <a class="btn btn-48 btn-primary btn-invert" href="#"><span>Get started</span></a>
+    <a class="btn btn-56 btn-primary btn-invert" href="#"><span>Get started</span></a>
+    <code class="cap">btn-secondary btn-invert</code>
+    <a class="btn btn-32 btn-secondary btn-invert" href="#"><span>Get started</span></a>
+    <a class="btn btn-36 btn-secondary btn-invert" href="#"><span>Get started</span></a>
+    <a class="btn btn-40 btn-secondary btn-invert" href="#"><span>Get started</span></a>
+    <a class="btn btn-48 btn-secondary btn-invert" href="#"><span>Get started</span></a>
+    <a class="btn btn-56 btn-secondary btn-invert" href="#"><span>Get started</span></a>
+    <code class="cap">btn-tertiary btn-invert</code>
+    <a class="btn btn-32 btn-tertiary btn-invert" href="#"><span>Get started</span></a>
+    <a class="btn btn-36 btn-tertiary btn-invert" href="#"><span>Get started</span></a>
+    <a class="btn btn-40 btn-tertiary btn-invert" href="#"><span>Get started</span></a>
+    <a class="btn btn-48 btn-tertiary btn-invert" href="#"><span>Get started</span></a>
+    <a class="btn btn-56 btn-tertiary btn-invert" href="#"><span>Get started</span></a>
+  </div>
+</section>
+<section>
+  <h2>Модифікатори: btn-rounded · іконка ws-icon · btn-square · btn-active · disabled</h2>
+  <div class="row">
+    <a class="btn btn-48 btn-primary btn-rounded" href="#"><span>Get started</span></a>
+    <button class="btn btn-48 btn-secondary" type="button"><span>Дивитись демо</span><ws-icon><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M6.37569 3.57564C6.61 3.34132 6.9899 3.34132 7.22422 3.57564L11.2242 7.57564C11.3367 7.68816 11.4 7.84077 11.4 7.9999C11.4 8.15903 11.3367 8.31165 11.2242 8.42417L7.22422 12.4242C6.9899 12.6585 6.61 12.6585 6.37569 12.4242C6.14137 12.1899 6.14137 11.81 6.37569 11.5756L9.95142 7.9999L6.37569 4.42417C6.14137 4.18985 6.14137 3.80995 6.37569 3.57564Z"/></svg></ws-icon></button>
+    <button class="btn btn-36 btn-plain" type="button"><ws-icon><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M6.37569 3.57564C6.61 3.34132 6.9899 3.34132 7.22422 3.57564L11.2242 7.57564C11.3367 7.68816 11.4 7.84077 11.4 7.9999C11.4 8.15903 11.3367 8.31165 11.2242 8.42417L7.22422 12.4242C6.9899 12.6585 6.61 12.6585 6.37569 12.4242C6.14137 12.1899 6.14137 11.81 6.37569 11.5756L9.95142 7.9999L6.37569 4.42417C6.14137 4.18985 6.14137 3.80995 6.37569 3.57564Z"/></svg></ws-icon><span>Увійти</span></button>
+    <button class="btn btn-32 btn-secondary btn-square" type="button"><ws-icon><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M6.37569 3.57564C6.61 3.34132 6.9899 3.34132 7.22422 3.57564L11.2242 7.57564C11.3367 7.68816 11.4 7.84077 11.4 7.9999C11.4 8.15903 11.3367 8.31165 11.2242 8.42417L7.22422 12.4242C6.9899 12.6585 6.61 12.6585 6.37569 12.4242C6.14137 12.1899 6.14137 11.81 6.37569 11.5756L9.95142 7.9999L6.37569 4.42417C6.14137 4.18985 6.14137 3.80995 6.37569 3.57564Z"/></svg></ws-icon></button>
+    <button class="btn btn-40 btn-secondary btn-square" type="button"><ws-icon><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M6.37569 3.57564C6.61 3.34132 6.9899 3.34132 7.22422 3.57564L11.2242 7.57564C11.3367 7.68816 11.4 7.84077 11.4 7.9999C11.4 8.15903 11.3367 8.31165 11.2242 8.42417L7.22422 12.4242C6.9899 12.6585 6.61 12.6585 6.37569 12.4242C6.14137 12.1899 6.14137 11.81 6.37569 11.5756L9.95142 7.9999L6.37569 4.42417C6.14137 4.18985 6.14137 3.80995 6.37569 3.57564Z"/></svg></ws-icon></button>
+    <button class="btn btn-48 btn-secondary btn-active" type="button"><span>btn-active</span></button>
+    <button class="btn btn-48 btn-secondary" type="button" disabled><span>disabled</span></button>
+  </div>
+</section>
+<section>
+  <h2>Нове: btn-beam — промінь на головній кнопці (beam.css + beam.js з border-beam/)</h2>
+  <div class="row">
+    <a class="btn btn-48 btn-primary btn-rounded btn-beam beam" data-beam data-trigger="always" href="#"><span>Get started</span></a>
+    <a class="btn btn-48 btn-primary btn-beam beam" data-beam data-trigger="hover" href="#"><span>На наведення</span></a>
+    <a class="btn btn-36 btn-primary btn-rounded btn-beam beam" data-beam data-trigger="always" href="#"><span>Реєстрація</span></a>
   </div>
 </section>
 
