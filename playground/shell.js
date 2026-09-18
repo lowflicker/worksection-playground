@@ -950,8 +950,32 @@
   }
   const noteTarget = (m, sel) => { try { return m.els.frame.querySelector(sel); } catch (e) { return null; } };
   // what a note is about: the pin's colour and the list's filter
-  const KINDS = [['change', 'Зміна'], ['attention', 'Увага'], ['question', 'Питання'], ['bug', 'Баг']];
-  const kindLabel = k => (KINDS.find(x => x[0] === k) || KINDS[0])[1];
+  const KINDS = [
+    ['change', 'Зміна', '<svg class="i" viewBox="0 0 16 16"><path d="M3 5.5h9l-2.5-2.5M13 10.5H4l2.5 2.5"/></svg>'],
+    ['attention', 'Увага', '<svg class="i" viewBox="0 0 16 16"><path d="M8 2.5 14 13H2z"/><path d="M8 6.5v3.2M8 11.4v.1"/></svg>'],
+    ['question', 'Питання', '<svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M6.2 6.4a1.8 1.8 0 1 1 2.6 1.6c-.5.3-.8.6-.8 1.2M8 11.3v.1"/></svg>'],
+    ['bug', 'Баг', '<svg class="i" viewBox="0 0 16 16"><path d="M5.5 7a2.5 2.5 0 0 1 5 0v3.5a2.5 2.5 0 0 1-5 0z"/><path d="M6 4.5l-1-1.5M10 4.5l1-1.5M5.5 8.5H3M13 8.5h-2.5M5.7 11.3 4 13M10.3 11.3 12 13M3.5 5.5l2 1.2M12.5 5.5l-2 1.2"/></svg>'],
+  ];
+  const kindOf = k => KINDS.find(x => x[0] === k) || KINDS[0];
+  const kindLabel = k => kindOf(k)[1];
+  const kindIcon = k => kindOf(k)[2];
+  // a small dropdown: the current kind as icon + word, a list of the four under it
+  function kindPicker(value, onChange) {
+    const el = h('div', 'note-kind');
+    let v = value || 'change';
+    const draw = () => { el.innerHTML = `<button type="button" class="note-kind__btn" data-kind="${v}" aria-haspopup="listbox" title="Тип нотатки">${kindIcon(v)}<span>${kindLabel(v)}</span>${ICON.caret}</button><div class="note-kind__menu" role="listbox" hidden>${KINDS.map(([k, l, i]) => `<button type="button" role="option" data-pick="${k}" class="${k === v ? 'is-on' : ''}" aria-selected="${k === v}">${i}<span>${l}</span></button>`).join('')}</div>`; };
+    draw();
+    el.addEventListener('click', e => {
+      const pick = e.target.closest('[data-pick]');
+      if (pick) { v = pick.dataset.pick; draw(); if (onChange) onChange(v); return; }
+      if (e.target.closest('.note-kind__btn')) $('.note-kind__menu', el).hidden = !$('.note-kind__menu', el).hidden;
+    });
+    el.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('.note-kind__menu', el).hidden) { e.stopPropagation(); $('.note-kind__menu', el).hidden = true; } });
+    const away = e => { if (!el.isConnected) return document.removeEventListener('click', away); if (!el.contains(e.target)) { const mm = $('.note-kind__menu', el); if (mm) mm.hidden = true; } };
+    document.addEventListener('click', away);
+    Object.defineProperty(el, 'value', { get: () => v });
+    return el;
+  }
   // the element's styles at the time of the note: what a developer would open DevTools for
   const STYLE_PROPS = ['font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'color', 'background-color', 'border-radius', 'box-shadow', 'padding', 'gap', 'width', 'height'];
   function snapStyles(el) {
@@ -1071,6 +1095,7 @@
     send: '<svg class="i" viewBox="0 0 16 16"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5"/></svg>',
     trash: '<svg class="i" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5v-1h3v1M4.5 4.5l.6 8h5.8l.6-8"/></svg>',
     pen: '<svg class="i" viewBox="0 0 16 16"><path d="m10.5 3 2.5 2.5-7 7H3.5V10z"/></svg>',
+    aim: '<svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="4.5"/><path d="M8 1.5v3M8 11.5v3M1.5 8h3M11.5 8h3"/></svg>',
   };
   // the card is a thread, after Figma's comments: who and when, the text, what it is pinned to, the
   // replies, a field to answer in; resolve and a menu (link, edit and delete for the author) up top
@@ -1086,9 +1111,9 @@
           <button type="button" class="icon${row.done ? ' is-on' : ''}" data-do="done" title="${row.done ? 'Знову відкрити' : 'Вирішено'}">${NOTE_ICON.check}</button>
           <button type="button" class="icon" data-do="menu" title="Ще" aria-haspopup="menu">${NOTE_ICON.more}</button>
           <button type="button" class="icon" data-do="close" title="Закрити (Esc)">${ICON.close}</button></span></div>
-        <div class="note-card__menu" hidden><button type="button" data-do="link">${ICON.link}Скопіювати посилання</button>${row.snapshot ? `<button type="button" data-do="state">${ICON.reset}Показати стан нотатки</button>` : ''}${mine ? `<button type="button" data-do="edit">${NOTE_ICON.pen}Редагувати</button><button type="button" class="is-bad" data-do="del">${NOTE_ICON.trash}Видалити</button>` : ''}</div>
+        <div class="note-card__menu" hidden><button type="button" data-do="link">${ICON.link}Скопіювати посилання</button>${row.snapshot ? `<button type="button" data-do="state">${ICON.reset}Показати стан нотатки</button>` : ''}${mine ? `<button type="button" data-do="edit">${NOTE_ICON.pen}Редагувати текст і тип</button><button type="button" data-do="repoint">${NOTE_ICON.aim}Перев'язати до іншого</button><button type="button" class="is-bad" data-do="del">${NOTE_ICON.trash}Видалити</button>` : ''}</div>
         <div class="note-card__text">${mentions(row.text)}</div>
-        <div class="note-card__chips"><span class="note-card__kind" data-kind="${esc(row.kind || 'change')}">${esc(kindLabel(row.kind))}</span><code class="note-card__sel" title="${esc(row.selector)}">${esc(noteName(row))}</code></div>
+        <div class="note-card__chips"><span class="note-card__kind" data-kind="${esc(row.kind || 'change')}">${kindIcon(row.kind)}${esc(kindLabel(row.kind))}</span><code class="note-card__sel" title="${esc(row.selector)}">${esc(noteName(row))}</code></div>
         ${row.styles && Object.keys(row.styles).length ? `<details class="note-card__styles"><summary>Стилі елемента <small>${Object.keys(row.styles).length}</small></summary><dl>${Object.entries(row.styles).sort((a, b) => STYLE_PROPS.indexOf(a[0]) - STYLE_PROPS.indexOf(b[0])).map(([k, v]) => `<dt>${esc(k)}</dt><dd title="${esc(v)}">${esc(v)}</dd>`).join('')}</dl></details>` : ''}
         ${(row.note_replies || []).length ? `<div class="note-card__thread">${row.note_replies.map(r => `<div class="note-card__reply" data-reply="${esc(r.id)}"><div class="note-card__head">${person(r.author, r.created_at)}${!REMOTE.url || (auth.user && r.owner === auth.user.id) ? `<button type="button" class="icon" data-do="unreply" title="Видалити відповідь">${ICON.close}</button>` : ''}</div><div class="note-card__text">${mentions(r.text)}</div></div>`).join('')}</div>` : ''}
         <form class="note-card__answer"><input type="text" placeholder="Відповісти…" maxlength="600" autocomplete="off"><button type="submit" class="icon" title="Надіслати (Enter)">${NOTE_ICON.send}</button></form>`;
@@ -1110,7 +1135,8 @@
       const t = $('.note-card__text', card);
       const ta = h('textarea', 'note-card__edit'); ta.value = row.text; ta.rows = 3; ta.maxLength = 600;
       const rowEl = h('div', 'note-card__row'); rowEl.innerHTML = `<span></span><span class="note-card__tools"><button type="button" data-do="cancel-edit">Скасувати</button><button type="button" class="primary" data-do="save-edit">Зберегти</button></span>`;
-      t.replaceWith(ta); ta.after(rowEl); ta.focus();
+      const kp = kindPicker(row.kind || 'change'); rowEl.firstElementChild.replaceWith(kp); card.kindPicker = kp;
+      t.replaceWith(ta); ta.after(rowEl); ta.focus(); mentionable(ta, card);
       ta.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) $('[data-do="save-edit"]', card).click(); if (e.key === 'Escape') { e.stopPropagation(); render(); } });
     };
     card.addEventListener('click', async e => {
@@ -1131,9 +1157,11 @@
       else if (act === 'cancel-edit') render();
       else if (act === 'save-edit') {
         const text = $('textarea', card).value.trim(); if (!text) return;
-        try { await notesDb.update(row.id, { text }); row.text = text; render(); renderNotesList(m); }
+        const kind = card.kindPicker ? card.kindPicker.value : (row.kind || 'change');
+        try { await notesDb.update(row.id, { text, kind }); row.text = text; row.kind = kind; p.el.dataset.kind = kind; render(); renderNotesList(m); }
         catch (err) { notesStatus(m, 'Не вдалося зберегти: ' + err.message, true); }
       }
+      else if (act === 'repoint') { closeNote(m); startPick(m, row); }
       else if (act === 'del') {
         if (!confirm('Видалити цю нотатку для всіх?')) return;
         try { await notesDb.remove(row.id); closeNote(m); m.notes.rows = m.notes.rows.filter(r => r.id !== row.id); buildPins(m); renderNotesList(m); syncToolbar(); }
@@ -1240,7 +1268,6 @@
     m.els.notes.classList.add('is-picking'); // still a modal moment on the stage
     const card = h('div', 'note-card note-card--compose');
     card.innerHTML = `<div class="note-card__head">${auth.user ? person(auth.user.name, new Date().toISOString()) : '<span class="note-card__avatar">?</span><span class="note-card__who"><b>Нова нотатка</b><small>до елемента</small></span>'}</div>
-      <div class="note-card__kinds">${KINDS.map(([k, l], i) => `<button type="button" data-kind="${k}" class="${i ? '' : 'is-on'}">${l}</button>`).join('')}</div>
       <textarea rows="3" placeholder="Що тут не так, як на сайті, або на що звернути увагу. @ім'я — сказати комусь" maxlength="600"></textarea>
       <code class="note-card__sel"></code>
       <div class="note-card__row"><button type="button" data-do="up" title="Взяти батьківський елемент">Ширше</button><span class="note-card__tools"><button type="button" data-do="cancel">Скасувати</button><button type="button" class="primary" data-do="save">Зберегти</button></span></div>`;
@@ -1254,14 +1281,13 @@
     relabel();
     if (text) ta.value = text;
     mentionable(ta, card);
-    n.compose.kind = 'change';
+    const kp = kindPicker('change'); $('.note-card__head', card).append(kp);
     card.addEventListener('click', e => {
-      const k = e.target.closest('[data-kind]');
-      if (k) { n.compose.kind = k.dataset.kind; $$('[data-kind]', card).forEach(x => x.classList.toggle('is-on', x === k)); ta.focus(); return; }
+      if (e.target.closest('.note-kind')) return;
       const b = e.target.closest('[data-do]'); if (!b) return;
       if (b.dataset.do === 'cancel') cancelPick(m);
       else if (b.dataset.do === 'up') { const up = n.compose.el.parentElement; if (up && up !== m.els.frame) { n.compose.el = up; relabel(); } }
-      else if (b.dataset.do === 'save') saveNote(m, { selector: sel(), label: noteLabel(sel()), area: n.compose.area, text: ta.value.trim(), kind: n.compose.kind, styles: n.compose.area ? null : snapStyles(n.compose.el), snapshot: snapshot(m) });
+      else if (b.dataset.do === 'save') saveNote(m, { selector: sel(), label: noteLabel(sel()), area: n.compose.area, text: ta.value.trim(), kind: kp.value, styles: n.compose.area ? null : snapStyles(n.compose.el), snapshot: snapshot(m) });
     });
     ta.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); $('[data-do="save"]', card).click(); } if (e.key === 'Escape') { e.stopPropagation(); cancelPick(m); } });
     m.els.notes.append(n.compose.box, card);
