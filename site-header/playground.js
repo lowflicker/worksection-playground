@@ -14,12 +14,12 @@
     close: '<svg viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M3.98 3.98a.6.6 0 0 1 .85 0L8 7.15l3.18-3.18a.6.6 0 1 1 .85.85L8.85 8l3.18 3.18a.6.6 0 1 1-.85.85L8 8.85l-3.18 3.18a.6.6 0 1 1-.85-.85L7.15 8 3.98 4.82a.6.6 0 0 1 0-.85Z"/></svg>',
   };
 
-  // the menu as the site has it; a real site fills this from its own routing
+  // the menu exactly as worksection.com/en has it (2026-09); a real site fills this from its own routing
   const MENU = [
-    { label: 'Продукт', links: [['Задачі', '#'], ['Діаграма Ганта', '#'], ['Канбан', '#'], ['Облік часу', '#'], ['Звіти', '#'], ['Інтеграції', '#']] },
-    { label: 'Рішення', links: [['Для агенцій', '#'], ['Для IT-команд', '#'], ['Для будівництва', '#'], ['Для виробництва', '#']] },
-    { label: 'Допомога', links: [['База знань', '#'], ['Відеоуроки', '#'], ['Блог', '#'], ['Підтримка', '#']] },
-    { label: 'Ціни', href: '#' },
+    { label: 'Product', links: [['Overview', '/en/overview.html'], ['Plans and prices', '/en/price.html'], ['Why Worksection?', '/en/why_worksection.html'], ['Security', '/en/security.html'], ['Integration', '/en/integrations.html'], ['Blog', '/en/blog.html']] },
+    { label: 'Solutions', cols: 2, links: [['Project Management', '/en/for-project-management.html'], ['Digital Marketing', '/en/marketing.html'], ['Creative/PR/Consulting', '/en/for-digital.html'], ['Product Companies', '/en/for-product-development.html'], ['Construction Companies', '/en/for-construction.html'], ['Time tracking', '/en/time-tracker.html'], ['HR & Management', '/en/for-hr.html'], ['Sales & New Biz', '/en/for-sales.html'], ['Agile', '/en/agile.html'], ['Business-Cases', '/en/blog/business-cases/']] },
+    { label: 'Help', links: [['Support', '/en/support.html'], ['Knowledge Base', '/en/faq/'], ['Video Lessons', 'https://www.youtube.com/channel/UCUPGdkPcnXNdiSGYsBdCxZA'], ['Agreements', '/en/agreement/']] },
+    { label: 'Pricing', href: '/en/price.html' },
   ];
 
   // playground-only knobs → custom properties on .site-header
@@ -30,7 +30,7 @@
   const item = m => m.links
     ? `<div class="site-header__group">
             <button type="button" class="site-header__item" aria-expanded="false"><span>${m.label}</span>${ICONS.down}</button>
-            <div class="site-header__panel">
+            <div class="site-header__panel${m.cols === 2 ? ' site-header__panel--2' : ''}">
               ${m.links.map(([t, h]) => `<a class="site-header__link" href="${h}">${t}</a>`).join('\n              ')}
             </div>
           </div>`
@@ -40,16 +40,16 @@
   <div class="site-header__bar">
     <div class="site-header__left">
       <a class="site-header__brand" href="/" aria-label="Worksection">${ICONS.logo}<span>worksection</span></a>
-      <nav class="site-header__menu" aria-label="Головне меню">
+      <nav class="site-header__menu" aria-label="Main menu">
         ${MENU.map(item).join('\n        ')}
       </nav>
     </div>
     <div class="site-header__actions">
-      <button type="button" class="site-header__btn site-header__btn--plain site-header__lang" aria-label="Мова: українська">${ICONS.globe}<span>UA</span>${ICONS.down}</button>
-      <a class="site-header__btn site-header__btn--plain" href="#"><span>Увійти</span></a>
-      <a class="site-header__btn site-header__btn--accent" href="#"><span>Забронювати демо</span></a>
-      <a class="site-header__btn site-header__btn--primary" href="#"><span>Реєстрація</span></a>
-      <button type="button" class="site-header__burger" aria-expanded="false" aria-label="Меню">${ICONS.burger}${ICONS.close}</button>
+      <button type="button" class="site-header__btn site-header__btn--plain site-header__lang" aria-label="Language: English">${ICONS.globe}<span>EN</span>${ICONS.down}</button>
+      <a class="site-header__btn site-header__btn--plain" href="#"><span>Log in</span></a>
+      <a class="site-header__btn site-header__btn--accent" href="#"><span>Book a demo</span></a>
+      <a class="site-header__btn site-header__btn--primary" href="#"><span>Registration</span></a>
+      <button type="button" class="site-header__burger" aria-expanded="false" aria-label="Menu">${ICONS.burger}${ICONS.close}</button>
     </div>
   </div>
 </header>`;
@@ -184,7 +184,7 @@ ${vars.join('\n')}
     hint() {
       if (bar.isOpen) return 'Мобільне меню відкрите: Escape або хрестик закриває';
       if (root.clientWidth < 1240) return `Розкладка «${layout()}»: меню в бургері, у пігулці лишились бренд і реєстрація`;
-      return compacted() ? 'Пігулка стиснута, як після скролу на сайті' : 'Наведи на «Продукт», щоб відкрити меню. «Стиснути» показує стан після скролу';
+      return compacted() ? 'Пігулка стиснута, як після скролу на сайті' : 'Наведи на «Product», щоб відкрити меню. «Стиснути» показує стан після скролу';
     },
   });
 })();

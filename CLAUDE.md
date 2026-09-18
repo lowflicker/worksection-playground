@@ -171,7 +171,9 @@ the shell, never from its own CSS.
 
 - Run: `preview_start` with `playground` (or `python -m http.server 5174`).
   `file://` does not work for the playground; `demo.html` does.
-- Language: UI strings, hints, READMEs, commit-visible copy in Ukrainian;
+- Language: the interfaces themselves — everything inside a module's markup
+  (nav, copy, labels, demo content) — in English, as on worksection.com.
+  Shell strings, hints, READMEs, commit-visible copy in Ukrainian;
   code, comments, commit messages in English. Comments say why, tersely.
 - Style: 2-space, single quotes, IIFE + `'use strict'`, ES2020 ok. Match the
   surrounding file.

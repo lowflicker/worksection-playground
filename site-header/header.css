@@ -178,6 +178,7 @@
   transition: opacity .18s, translate .18s, visibility 0s .18s;
 }
 .site-header__panel::before { content: ""; position: absolute; left: 0; right: 0; top: -10px; height: 10px; } /* keeps hover alive across the gap */
+.site-header__panel--2 { display: grid; grid-template-columns: 1fr 1fr; column-gap: 8px; } /* «Solutions» on the site runs in two columns */
 .site-header__group[data-open] .site-header__panel { opacity: 1; visibility: visible; translate: 0 0; transition: opacity .18s, translate .18s; }
 .site-header__link {
   display: block;

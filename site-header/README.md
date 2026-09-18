@@ -11,24 +11,24 @@
   <div class="site-header__bar">
     <div class="site-header__left">
       <a class="site-header__brand" href="/"><svg …/><span>worksection</span></a>
-      <nav class="site-header__menu" aria-label="Головне меню">
+      <nav class="site-header__menu" aria-label="Main menu">
         <div class="site-header__group">
-          <button type="button" class="site-header__item" aria-expanded="false"><span>Продукт</span><svg …/></button>
-          <div class="site-header__panel">
-            <a class="site-header__link" href="…">Задачі</a>
+          <button type="button" class="site-header__item" aria-expanded="false"><span>Product</span><svg …/></button>
+          <div class="site-header__panel">                <!-- site-header__panel--2: two columns, as «Solutions» -->
+            <a class="site-header__link" href="…">Overview</a>
             …
           </div>
         </div>
         …
-        <a class="site-header__item" href="…"><span>Ціни</span></a>
+        <a class="site-header__item" href="…"><span>Pricing</span></a>
       </nav>
     </div>
     <div class="site-header__actions">
-      <button type="button" class="site-header__btn site-header__btn--plain site-header__lang">…<span>UA</span>…</button>
-      <a class="site-header__btn site-header__btn--plain" href="…"><span>Увійти</span></a>
-      <a class="site-header__btn site-header__btn--accent" href="…"><span>Забронювати демо</span></a>
-      <a class="site-header__btn site-header__btn--primary" href="…"><span>Реєстрація</span></a>
-      <button type="button" class="site-header__burger" aria-expanded="false" aria-label="Меню"><svg …/><svg …/></button>
+      <button type="button" class="site-header__btn site-header__btn--plain site-header__lang">…<span>EN</span>…</button>
+      <a class="site-header__btn site-header__btn--plain" href="…"><span>Log in</span></a>
+      <a class="site-header__btn site-header__btn--accent" href="…"><span>Book a demo</span></a>
+      <a class="site-header__btn site-header__btn--primary" href="…"><span>Registration</span></a>
+      <button type="button" class="site-header__burger" aria-expanded="false" aria-label="Menu"><svg …/><svg …/></button>
     </div>
   </div>
 </header>
