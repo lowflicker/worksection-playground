@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Worksection playground</title>
 <link rel="stylesheet" href="playground/shell.css">
+<!-- Work Sans 600: the wordmark in the header module is set in it (--sh-font-brand).
+     Loaded as print, then switched to all, so the webfont never blocks first paint. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" media="print" onload="this.media='all'"
+      href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@600&display=swap">
 <script>
   // theme before first paint: the saved choice, else the system one
   try { document.documentElement.dataset.theme = localStorage.getItem('ws-playground:theme') ? JSON.parse(localStorage.getItem('ws-playground:theme')) : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }

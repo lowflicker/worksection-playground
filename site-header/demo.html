@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Header demo</title>
+<!-- Work Sans 600: the wordmark in the header module is set in it (--sh-font-brand).
+     Loaded as print, then switched to all, so the webfont never blocks first paint. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" media="print" onload="this.media='all'"
+      href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@600&display=swap">
 <style>
   body { margin: 0; background: #eaebeb; font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; }
   .filler { height: 60vh; }
@@ -11,7 +17,7 @@
 </head>
 <body>
 
-<!-- Шапка над S : Hero: обидва модулі як є, шапка йде першою в body -->
+<!-- Шапка над Hero: обидва модулі як є, шапка йде першою в body -->
 <link rel="stylesheet" href="header.css">
 
 <!-- шапка йде першою в <body>, одразу над хіро; sticky, тож вона тримається зверху сама.

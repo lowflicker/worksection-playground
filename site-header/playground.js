@@ -58,6 +58,7 @@
     const vars = Object.entries(VARS).filter(([k]) => s[k] !== CSS_DEFAULTS[k]).map(([k, [p, u]]) => `  ${p}: ${s[k]}${u};`);
     if (s.alpha !== CSS_DEFAULTS.alpha) vars.push(`  --sh-surface: rgba(255, 255, 255, ${(s.alpha / 100).toFixed(2)});`);
     return `<link rel="stylesheet" href="header.css">
+<!-- вордмарк набраний Work Sans 600 (--sh-font-brand): сторінка має дати цей шрифт -->
 
 <!-- шапка йде першою в <body>, одразу над хіро; sticky, тож вона тримається зверху сама.
      Меню написане один раз: мобільний лист header.js збирає з нього -->
@@ -110,7 +111,8 @@ ${vars.join('\n')}
   Playground.register({
     id: 'header',
     title: 'Header: шапка сайту',
-    tab: 'S : Header',
+    tab: 'Header',
+    kind: 'section',
     summary: 'Шапка worksection.com: липка пігулка з меню і CTA, стискається на скролі, на вузькому лягає в бургер і лист.',
     dir: 'site-header',
     tabs: [
