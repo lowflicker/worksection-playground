@@ -57,11 +57,6 @@
 
   const defaults = Object.assign({}, Hero.defaults, { content: 'lead', badge: true }, FIGMA);
 
-  const EASINGS = [
-    ['cubic-bezier(.22, 1, .36, 1)', 'out-quint'], ['cubic-bezier(.16, 1, .3, 1)', 'out-expo'], ['cubic-bezier(.65, 0, .35, 1)', 'in-out-cubic'],
-    ['cubic-bezier(.34, 1.4, .64, 1)', 'back-out'], ['cubic-bezier(.4, 0, .2, 1)', 'standard'], ['ease-in-out', 'ease-in-out'],
-  ];
-
   let hero = null, root = null;
 
   /* the block's markup; every view has its own pair of screenshots from Figma */
@@ -204,7 +199,7 @@ ${markup(s, '', false)}
         { type: 'check', key: 'swap', label: 'Тап по мініатюрі робить її головною' },
         { type: 'check', key: 'hint', label: 'Бейдж-підказка на мініатюрі', when: s => s.swap },
         { type: 'range', key: 'duration', label: 'Тривалість свапу', min: 200, max: 1500, step: 50, unit: 'ms' },
-        { type: 'select', key: 'easing', label: 'Easing (той, що зменшується)', options: EASINGS },
+        { type: 'easing', key: 'easing', label: 'Easing (той, що зменшується)' },
         { type: 'range', key: 'overshoot', label: 'Перельот того, що росте', min: 0, max: 0.5, step: 0.05, fmt: v => v === 0 ? 'нема' : v.toFixed(2) },
         { type: 'range', key: 'tilt', label: 'Нахил у польоті', min: 0, max: 8, step: 0.5, unit: '°' },
         { type: 'check', key: 'lift', label: 'Тінь-підйом під телефоном' },

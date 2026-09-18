@@ -91,8 +91,9 @@ playback?, onShow?, onHide? })`
 - `defaults` — full state, plain JSON; usually `<Module>.defaults` minus
   functions/DOM refs and minus what the shell owns (`paused`).
 - `controls` — groups of items: `range | select | seg | check | color | swatch
-  | buttons | status | note`; `key` may be dotted (`enter.x`); `when(state)`
-  hides; select/seg values coerced to the default's type.
+  | easing | buttons | status | note`; `key` may be dotted (`enter.x`); `when(state)`
+  hides; select/seg values coerced to the default's type. `easing` edits a CSS
+  timing-function string in a bezier popover (presets, drag, text input).
 - `mount(ctx)` builds into `ctx.frame`; `apply(ctx, patch)` → usually
   `inst.setOptions(patch)`; `derive(patch, state)` returns implied keys,
   deep-merged *under* the patch (return a fresh object).

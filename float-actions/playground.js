@@ -301,7 +301,7 @@ ${Object.entries(dict).map(([k, v]) => `    //   '${k}': '${v}',`).join('\n')}
       { title: 'Поява', items: [
         { type: 'range', key: 'showAfter', label: 'Показати після скролу (0 = одразу)', min: 0, max: 1200, step: 50, unit: 'px' },
         { type: 'range', key: 'enterDelay', label: 'Затримка появи', min: 0, max: 3000, step: 100, unit: 'ms' },
-        { type: 'select', key: 'easing', label: 'Easing появи і розкладання', options: [['cubic-bezier(.22, 1, .36, 1)', 'out-quint'], ['cubic-bezier(.34, 1.56, .64, 1)', 'back-out (overshoot)'], ['cubic-bezier(.16, 1, .3, 1)', 'out-expo'], ['cubic-bezier(.4, 0, .2, 1)', 'standard']] },
+        { type: 'easing', key: 'easing', label: 'Easing появи і розкладання' },
       ] },
       { title: 'Скрол', items: [
         { type: 'check', key: 'fold', label: 'Складати при скролі вниз, розкладати при скролі вгору' },

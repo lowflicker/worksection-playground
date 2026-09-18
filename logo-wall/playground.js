@@ -25,11 +25,6 @@
     rows: 2, columns: { desktop: 5, tablet: 4, mobile: 3, small: 2 }, layoutDuration: 600, layoutEasing: 'cubic-bezier(.22, 1, .36, 1)', color: '#8a8a8a', pauseOnHover: true,
   });
 
-  const EASINGS = [
-    ['cubic-bezier(.65, 0, .35, 1)', 'in-out-cubic'], ['cubic-bezier(.4, 0, .2, 1)', 'standard'], ['cubic-bezier(.22, 1, .36, 1)', 'out-quint'],
-    ['cubic-bezier(.16, 1, .3, 1)', 'out-expo'], ['ease-in-out', 'ease-in-out'], ['linear', 'linear'],
-  ];
-
   let wall = null, root = null;
 
   const snippet = o => `<link rel="stylesheet" href="logo-wall.css">
@@ -102,7 +97,7 @@ ${NAMES.map(n => `      'logos/${n}.svg',`).join('\n')}
         { type: 'range', key: 'enter.y', label: 'Зсув Y (вхід)', min: -30, max: 30, step: 1, unit: 'px' },
         { type: 'range', key: 'exit.y', label: 'Зсув Y (вихід)', min: -30, max: 30, step: 1, unit: 'px' },
         { type: 'range', key: 'overlap', label: 'Перекриття вхід/вихід', min: 0, max: 1, step: 0.05, fmt: v => Math.round(v * 100) + ' %' },
-        { type: 'select', key: 'easing', label: 'Easing', options: EASINGS },
+        { type: 'easing', key: 'easing', label: 'Easing' },
       ] },
       { title: 'Адаптив', items: [
         { type: 'select', key: 'rows', label: 'Рядів', options: [[1, '1'], [2, '2'], [3, '3']] },
@@ -111,7 +106,7 @@ ${NAMES.map(n => `      'logos/${n}.svg',`).join('\n')}
         { type: 'select', key: 'columns.mobile', label: 'Колонок, mobile (360–599)', options: [[2, '2'], [3, '3'], [4, '4']] },
         { type: 'select', key: 'columns.small', label: 'Колонок, small (< 360)', options: [[2, '2'], [3, '3']] },
         { type: 'range', key: 'layoutDuration', label: 'Перехід між брейкпоінтами', min: 0, max: 1500, step: 50, unit: 'ms' },
-        { type: 'select', key: 'layoutEasing', label: 'Easing адаптиву', options: EASINGS.slice(0, 4) },
+        { type: 'easing', key: 'layoutEasing', label: 'Easing адаптиву' },
         { type: 'status', render: () => {
           const w = root.clientWidth;
           const bp = w >= 960 ? 'desktop' : w >= 600 ? 'tablet' : w >= 360 ? 'mobile' : 'small';

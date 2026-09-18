@@ -95,9 +95,7 @@ ${opts}
         { type: 'range', key: 'pulseGlow', label: 'Світіння голови', min: 0, max: 20, step: 1, unit: 'px', when: pulseOn },
         { type: 'range', key: 'sideReach', label: 'Куди доходить нейтральна гілка', min: 0.1, max: 1, step: 0.05, fmt: v => Math.round(v * 100) + ' %', when: pulseOn },
         { type: 'range', key: 'charge', label: 'Підсвітка картки після приходу', min: 100, max: 2000, step: 50, unit: 'ms', when: pulseOn },
-        { type: 'select', key: 'pulseEasing', label: 'Easing імпульсу', when: pulseOn, options: [
-          ['cubic-bezier(.45, 0, .2, 1)', 'soft in-out'], ['cubic-bezier(.65, 0, .35, 1)', 'in-out-cubic'], ['cubic-bezier(.22, 1, .36, 1)', 'out-quint'], ['cubic-bezier(.7, 0, .84, 0)', 'in-expo'], ['linear', 'linear'],
-        ] },
+        { type: 'easing', key: 'pulseEasing', label: 'Easing імпульсу', when: pulseOn },
         { type: 'check', key: 'hover', label: 'Наведення на картку пускає імпульс по її лінії' },
         { type: 'buttons', items: [{ label: 'Імпульс зараз', primary: true, run: () => sa.pulse() }] },
       ] },
@@ -105,9 +103,7 @@ ${opts}
         { type: 'check', key: 'reveal', label: 'Малювати блок при вході на екран' },
         { type: 'range', key: 'revealDuration', label: 'Тривалість кроку', min: 200, max: 2500, step: 50, unit: 'ms', when: revealOn },
         { type: 'range', key: 'revealStagger', label: 'Затримка між лініями', min: 0, max: 800, step: 10, unit: 'ms', when: revealOn },
-        { type: 'select', key: 'revealEasing', label: 'Easing появи', when: revealOn, options: [
-          ['cubic-bezier(.22, 1, .36, 1)', 'out-quint'], ['cubic-bezier(.16, 1, .3, 1)', 'out-expo'], ['cubic-bezier(.4, 0, .2, 1)', 'standard'], ['cubic-bezier(.65, 0, .35, 1)', 'in-out-cubic'],
-        ] },
+        { type: 'easing', key: 'revealEasing', label: 'Easing появи', when: revealOn },
         { type: 'buttons', items: [{ label: 'Програти появу', primary: true, run: () => sa.replay() }] },
       ] },
       { title: 'Лінії', items: [

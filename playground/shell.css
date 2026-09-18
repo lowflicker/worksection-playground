@@ -269,6 +269,38 @@ pre.code .ln { display: block; padding: 0 20px; white-space: pre; min-height: 1.
 pre.code .ln--changed { background: var(--code-hi); }
 pre.code .ln--muted { color: var(--muted); }
 
+/* --- easing control: the field shows the curve, the popover edits it --- */
+.easing { justify-content: flex-start; gap: 8px; height: 30px; padding: 0 8px; font-family: ui-monospace, Menlo, monospace; font-size: 11px; font-weight: 400; color: var(--text); }
+.easing.is-open { border-color: var(--line-2); background: var(--panel-3); }
+.easing__icon { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; overflow: visible; }
+.easing code { font: inherit; }
+.pop {
+  position: fixed; z-index: 60; width: 232px; padding: 8px; display: flex; flex-direction: column; gap: 8px;
+  background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 16px 40px -16px rgba(0,0,0,.45);
+}
+.ease-ed { display: block; width: 100%; height: auto; overflow: visible; touch-action: none; }
+.ease-ed__box { fill: var(--panel-2); stroke: var(--line); }
+.ease-ed__grid line { stroke: var(--line); }
+.ease-ed__diag { stroke: var(--line-2); stroke-dasharray: 2 3; }
+.ease-ed__arm { stroke: var(--accent); stroke-width: 1; opacity: .8; }
+.ease-ed__curve { fill: none; stroke: var(--text); stroke-width: 2; stroke-linecap: round; }
+.ease-ed__end { fill: var(--text); }
+.ease-ed__pt { fill: var(--accent); stroke: var(--panel); stroke-width: 2; cursor: grab; }
+.ease-ed__pt:active { cursor: grabbing; }
+.ease-preview { position: relative; height: 10px; margin: 0 4px; border-top: 1px solid var(--line); }
+.ease-preview i { position: absolute; top: -5px; left: 0; width: 9px; height: 9px; border-radius: 2px; background: var(--text); animation: ease-preview 1.4s infinite alternate; }
+@keyframes ease-preview { to { transform: translateX(206px); } }
+.ease-input { width: 100%; font-family: ui-monospace, Menlo, monospace; font-size: 11px; }
+.ease-input.is-bad { border-color: var(--bad); }
+.ease-presets { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; scrollbar-width: thin; }
+.ease-presets__cat { margin-top: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--faint); }
+.ease-presets__row { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.ease-presets__row button { justify-content: flex-start; gap: 6px; height: 26px; padding: 0 6px; border-color: transparent; background: transparent; font-weight: 400; font-size: 11px; }
+.ease-presets__row button:hover { background: var(--panel-2); }
+.ease-presets__row button.is-active { background: var(--panel-3); border-color: var(--line); }
+.ease-presets__row .easing__icon { width: 18px; height: 18px; color: var(--muted); }
+
 /* --- mobile: the panel becomes a bottom sheet over the stage --- */
 @media (max-width: 980px) {
   :root { --sheet-peek: 60px; --sheet-h: 50vh; --vh: 100vh; --topbar-h: 48px; }

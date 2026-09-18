@@ -26,12 +26,13 @@
      presets   [{ label, patch }]
      random    (ctx) => patch    adds a "Випадково" button
      controls  [{ title, when(state), items: [item] }]   panel groups
-       item.type  range | select | seg | check | color | swatch | buttons | status | note
+       item.type  range | select | seg | check | color | swatch | easing | buttons | status | note
        item.key   state key, may be a dotted path ('enter.x')
        item.when  (state) => boolean, hides the item
        range:   min, max, step, unit | fmt(v)
        select / seg: options [[value, label], …]
        swatch:  options [{ id, label, css }]
+       easing:  value is a CSS timing function string; a bezier editor with presets
        buttons: items [{ label, primary, run(ctx) }]
        status:  render(ctx) => html
        note:    text
@@ -133,6 +134,7 @@
     stage.append(body);
     const panel = h('aside', 'panel');
     const scroll = h('div', 'panel__scroll');
+    scroll.addEventListener('scroll', () => closeEasing(), { passive: true });
     panel.append(scroll);
     app.append(stage, panel);
     els.views.append(app);
@@ -358,6 +360,19 @@
       btns.forEach(b => b.addEventListener('click', () => setState(m, setPath({}, it.key, b.dataset.v))));
       return { el, item: it, sync: s => { const v = getPath(s, it.key); btns.forEach(b => b.classList.toggle('is-active', b.dataset.v === v)); const o = it.options.find(x => x.id === v); out.textContent = o ? o.label : ''; } };
     }
+    if (t === 'easing') {
+      const el = h('div', 'field', `<label>${label}</label><output></output><button type="button" class="easing" style="grid-column: 1 / -1">${curveIcon([0, 0, 1, 1])}<code></code></button>`);
+      const btn = $('button', el), out = $('output', el), code = $('code', el);
+      const get = () => parseEasing(getPath(m.state, it.key)) || [0.25, 0.1, 0.25, 1];
+      btn.addEventListener('click', () => (popOn && popOn.anchor === btn ? closeEasing() : openEasing(btn, get, p => setState(m, setPath({}, it.key, fmtEasing(p))))));
+      return { el, item: it, sync: s => {
+        const raw = getPath(s, it.key), p = parseEasing(raw);
+        if (!p) { out.textContent = '?'; code.textContent = String(raw); return; }
+        out.textContent = easingName(p) || 'своя';
+        code.textContent = fmtEasing(p);
+        btn.firstElementChild.outerHTML = curveIcon(p);
+      } };
+    }
     if (t === 'buttons') {
       const el = h('div', 'row-btns');
       for (const b of it.items) {
@@ -374,6 +389,114 @@
     if (t === 'note') return { el: h('p', 'note', it.text), item: it };
     return null;
   }
+
+  /* ===== Easing control: a cubic-bezier editor with presets, after Toolcraft's timeline easing editor ===== */
+  // the value in the state is the CSS string the module gets: a keyword or cubic-bezier(x1, y1, x2, y2)
+  const EASING_KEYWORDS = { linear: [0, 0, 1, 1], ease: [0.25, 0.1, 0.25, 1], 'ease-in': [0.42, 0, 1, 1], 'ease-out': [0, 0, 0.58, 1], 'ease-in-out': [0.42, 0, 0.58, 1] };
+  const EASING_PRESETS = [
+    { cat: 'Основні', items: [['Linear', [0, 0, 1, 1]], ['Ease', [0.25, 0.1, 0.25, 1]], ['Standard', [0.4, 0, 0.2, 1]], ['Smooth', [0.65, 0, 0.35, 1]], ['Soft in-out', [0.45, 0, 0.2, 1]]] },
+    { cat: 'Out', items: [['Ease out', [0, 0, 0.58, 1]], ['Quick out', [0, 0, 0.2, 1]], ['Out cubic', [0.215, 0.61, 0.355, 1]], ['Out quint', [0.22, 1, 0.36, 1]], ['Out expo', [0.16, 1, 0.3, 1]], ['Snappy out', [0.19, 1, 0.22, 1]]] },
+    { cat: 'In', items: [['Ease in', [0.42, 0, 1, 1]], ['In circ', [0.6, 0.04, 0.98, 0.335]], ['In quint', [0.755, 0.05, 0.855, 0.06]], ['In expo', [0.7, 0, 0.84, 0]]] },
+    { cat: 'In out', items: [['Ease in-out', [0.42, 0, 0.58, 1]], ['In-out cubic', [0.65, 0, 0.35, 1]], ['In-out quart', [0.77, 0, 0.175, 1]], ['In-out quint', [0.86, 0, 0.07, 1]], ['In-out expo', [1, 0, 0, 1]]] },
+    { cat: 'Виразні', items: [['Back out', [0.34, 1.56, 0.64, 1]], ['Swift out', [0.175, 0.885, 0.32, 1.1]], ['Back in', [0.36, 0, 0.66, -0.56]], ['Anticipate', [1, -0.4, 0.35, 0.95]]] },
+  ];
+  const num = n => String(Math.round(n * 1000) / 1000).replace(/^(-?)0\./, '$1.');
+  const fmtEasing = p => `cubic-bezier(${p.map(num).join(', ')})`;
+  function parseEasing(v) {
+    if (Array.isArray(v) && v.length === 4) return v.map(Number);
+    if (typeof v !== 'string') return null;
+    const s = v.trim().toLowerCase();
+    if (EASING_KEYWORDS[s]) return EASING_KEYWORDS[s].slice();
+    const m = s.match(/cubic-bezier\(([^)]+)\)/);
+    if (!m) return null;
+    const p = m[1].split(',').map(x => parseFloat(x.trim()));
+    if (p.length !== 4 || p.some(x => !Number.isFinite(x))) return null;
+    return [Math.min(1, Math.max(0, p[0])), p[1], Math.min(1, Math.max(0, p[2])), p[3]];
+  }
+  const easingName = p => { for (const g of EASING_PRESETS) for (const [label, q] of g.items) if (q.every((x, i) => Math.abs(x - p[i]) < 0.006)) return label; return null; };
+  // curve path inside a box: size px, pad px of margin (overshoot draws outside the box)
+  const curvePath = (p, size, pad) => {
+    const X = x => pad + x * size, Y = y => pad + (1 - y) * size;
+    return `M ${X(0)} ${Y(0)} C ${X(p[0])} ${Y(p[1])}, ${X(p[2])} ${Y(p[3])}, ${X(1)} ${Y(1)}`;
+  };
+  const curveIcon = p => `<svg class="easing__icon" viewBox="0 0 22 22" aria-hidden="true"><path d="${curvePath(p, 14, 4)}"/></svg>`;
+
+  // one popover for the whole page, moved under whichever easing field opened it
+  let pop = null, popOn = null;
+  function easingPopover() {
+    if (pop) return pop;
+    pop = h('div', 'pop pop--easing');
+    pop.hidden = true;
+    pop.innerHTML = `
+      <svg class="ease-ed" viewBox="0 0 200 200" width="200" height="200">
+        <rect class="ease-ed__box" x="40" y="40" width="120" height="120"/>
+        <g class="ease-ed__grid">${[0.25, 0.5, 0.75].map(t => `<line x1="${40 + t * 120}" y1="40" x2="${40 + t * 120}" y2="160"/><line x1="40" y1="${40 + t * 120}" x2="160" y2="${40 + t * 120}"/>`).join('')}</g>
+        <line class="ease-ed__diag" x1="40" y1="160" x2="160" y2="40"/>
+        <line class="ease-ed__arm" data-arm="1"/><line class="ease-ed__arm" data-arm="2"/>
+        <path class="ease-ed__curve"/>
+        <circle class="ease-ed__end" cx="40" cy="160" r="3"/><circle class="ease-ed__end" cx="160" cy="40" r="3"/>
+        <circle class="ease-ed__pt" data-pt="1" r="6"/><circle class="ease-ed__pt" data-pt="2" r="6"/>
+      </svg>
+      <div class="ease-preview"><i></i></div>
+      <input type="text" class="ease-input" spellcheck="false" aria-label="cubic-bezier">
+      <div class="ease-presets">${EASING_PRESETS.map(g => `<div class="ease-presets__cat">${esc(g.cat)}</div><div class="ease-presets__row">${g.items.map(([label, p]) => `<button type="button" data-ease="${fmtEasing(p)}" title="${esc(label)}">${curveIcon(p)}<span>${esc(label)}</span></button>`).join('')}</div>`).join('')}</div>`;
+    document.body.append(pop);
+
+    const svg = $('.ease-ed', pop), input = $('.ease-input', pop), preview = $('.ease-preview i', pop);
+    const X = x => 40 + x * 120, Y = y => 40 + (1 - y) * 120;
+    const paint = p => {
+      $('.ease-ed__curve', pop).setAttribute('d', curvePath(p, 120, 40));
+      const a1 = $('[data-arm="1"]', pop), a2 = $('[data-arm="2"]', pop);
+      a1.setAttribute('x1', X(0)); a1.setAttribute('y1', Y(0)); a1.setAttribute('x2', X(p[0])); a1.setAttribute('y2', Y(p[1]));
+      a2.setAttribute('x1', X(1)); a2.setAttribute('y1', Y(1)); a2.setAttribute('x2', X(p[2])); a2.setAttribute('y2', Y(p[3]));
+      $('[data-pt="1"]', pop).setAttribute('cx', X(p[0])); $('[data-pt="1"]', pop).setAttribute('cy', Y(p[1]));
+      $('[data-pt="2"]', pop).setAttribute('cx', X(p[2])); $('[data-pt="2"]', pop).setAttribute('cy', Y(p[3]));
+      if (document.activeElement !== input) input.value = fmtEasing(p);
+      input.classList.remove('is-bad');
+      const cur = fmtEasing(p);
+      $$('[data-ease]', pop).forEach(b => b.classList.toggle('is-active', b.dataset.ease === cur));
+      preview.style.animationTimingFunction = cur;
+      preview.style.animation = 'none'; void preview.offsetWidth; preview.style.animation = '';
+    };
+    pop.paint = paint;
+
+    // drag a control point: x stays in 0..1 (CSS demands it), y may overshoot
+    let drag = 0;
+    const toPt = e => { const r = svg.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * 200, (e.clientY - r.top) / r.height * 200]; };
+    svg.addEventListener('pointerdown', e => {
+      const pt = e.target.closest('[data-pt]'); if (!pt) return;
+      drag = +pt.dataset.pt; svg.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    svg.addEventListener('pointermove', e => {
+      if (!drag || !popOn) return;
+      const [px, py] = toPt(e);
+      const p = popOn.get();
+      const x = Math.min(1, Math.max(0, (px - 40) / 120)), y = Math.round(Math.min(2, Math.max(-1, 1 - (py - 40) / 120)) * 100) / 100;
+      if (drag === 1) { p[0] = x; p[1] = y; } else { p[2] = x; p[3] = y; }
+      popOn.set(p);
+    });
+    svg.addEventListener('pointerup', () => { drag = 0; });
+    svg.addEventListener('pointercancel', () => { drag = 0; });
+    input.addEventListener('input', () => { const p = parseEasing(input.value); input.classList.toggle('is-bad', !p); if (p && popOn) popOn.set(p, true); });
+    input.addEventListener('blur', () => { if (popOn) paint(popOn.get()); });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+    pop.addEventListener('click', e => { const b = e.target.closest('[data-ease]'); if (b && popOn) popOn.set(parseEasing(b.dataset.ease)); });
+    document.addEventListener('pointerdown', e => { if (!pop.hidden && !e.target.closest('.pop--easing, .easing')) closeEasing(); }, true);
+    return pop;
+  }
+  function openEasing(anchor, get, set) {
+    const el = easingPopover();
+    popOn = { anchor, get, set: (p, quiet) => { set(p); if (!quiet) el.paint(get()); else { const cur = fmtEasing(get()); $$('[data-ease]', el).forEach(b => b.classList.toggle('is-active', b.dataset.ease === cur)); } } };
+    el.hidden = false;
+    el.paint(get());
+    // under the field, kept inside the viewport
+    const r = anchor.getBoundingClientRect(), w = el.offsetWidth, hgt = el.offsetHeight;
+    let left = Math.min(r.right - w, window.innerWidth - w - 8); left = Math.max(8, left);
+    let top = r.bottom + 6; if (top + hgt > window.innerHeight - 8) top = Math.max(8, r.top - hgt - 6);
+    el.style.left = left + 'px'; el.style.top = top + 'px';
+    anchor.classList.add('is-open');
+  }
+  function closeEasing() { if (pop) pop.hidden = true; if (popOn) popOn.anchor.classList.remove('is-open'); popOn = null; }
 
   /* ===== Save / share: the browser keeps the state, links carry it ===== */
   const snapshot = m => ({ state: clone(m.state), ui: { frame: m.ui.frame, bg: m.ui.bg } });
@@ -636,7 +759,7 @@
 
     document.addEventListener('keydown', e => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === 'Escape') { closeDrawer(); els.help.hidden = true; return; }
+      if (e.key === 'Escape') { closeDrawer(); closeEasing(); els.help.hidden = true; return; }
       if (e.target && e.target.closest && e.target.closest('input, textarea, select, [contenteditable]')) return;
       // e.code is layout-independent (works on the Ukrainian layout too); fall back to the key for synthetic events
       const k = e.key || '';
@@ -706,6 +829,7 @@
       if (active.def.onHide) active.def.onHide(active.ctx);
       active.els.app.hidden = true;
     }
+    closeEasing();
     active = m;
     m.els.app.hidden = false;
     m.els.stage.prepend(els.toolbar);
