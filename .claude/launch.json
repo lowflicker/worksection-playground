@@ -6,7 +6,7 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": [
         "-c",
-        "import os, functools, http.server; port = int(os.environ.get('PORT', '5174')); handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=os.getcwd()); http.server.ThreadingHTTPServer.allow_reuse_address = True; print('serving', os.getcwd(), 'on', port, flush=True); http.server.ThreadingHTTPServer(('', port), handler).serve_forever()"
+        "import functools, http.server, os\n# a playground with no build step: never let the browser hold on to a stale module\nclass H(http.server.SimpleHTTPRequestHandler):\n    def end_headers(self):\n        self.send_header('Cache-Control', 'no-store')\n        super().end_headers()\nport = int(os.environ.get('PORT', '5174'))\nroot = os.environ.get('ROOT') or os.getcwd()\nprint('serving', root, 'on', port, flush=True)\nhttp.server.ThreadingHTTPServer(('', port), functools.partial(H, directory=root)).serve_forever()"
       ],
       "port": 5174,
       "autoPort": true
