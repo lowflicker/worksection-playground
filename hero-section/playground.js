@@ -1,9 +1,10 @@
 /* Playground definition for Hero (S : Hero).
    Not part of the module: a site needs only hero.css + hero.js, its own
    markup and screenshots.
-   The stage is a window of its own, the first screen of the site: the real
-   header on top (pulled from site-header/demo.html over HTTP, the adapters
-   never see each other) and the hero under it, scrolling as a page would.
+   The stage is a window of its own, the first screen of the site: the site
+   header on top (the component the S : Header tab provides through the
+   shell; it follows that tab's settings) and the hero under it, scrolling
+   as a page would.
    Everything else is what the playground shell (playground/shell.js) asks
    for: the state, the controls, the presets and the generated snippet. */
 (function () {
@@ -172,20 +173,6 @@ ${markup(s, '', false)}
     .hero-browser__page { container-type: inline-size; }
   `);
 
-  // the site header above the hero, as on the site. It comes from the header's own demo page
-  // over HTTP; without it (no server, no module) the hero simply stands at the top of the window
-  async function placeHeader(scroll) {
-    const html = await fetch('site-header/demo.html').then(r => r.ok ? r.text() : '').catch(() => '');
-    const m = html.match(/<header class="site-header"[\s\S]*?<\/header>/);
-    // the module script may load after this adapter; by the time the fetch resolves every script has run
-    if (!m || !window.SiteHeader) return;
-    const tpl = document.createElement('template');
-    tpl.innerHTML = m[0];
-    const bar = tpl.content.firstElementChild;
-    bar.removeAttribute('id');
-    scroll.firstElementChild.prepend(bar);
-    new SiteHeader(bar);
-  }
 
   Playground.register({
     id: 'hero',
@@ -267,7 +254,8 @@ ${markup(s, '', false)}
       </div></div></div>`);
       root = ctx.frame.querySelector('.hero');
       hero = new Hero(root);
-      placeHeader(ctx.frame.querySelector('.hero-browser__scroll'));
+      // the site header above the hero: the S : Header tab is the master, this copy follows its settings
+      Playground.consume('site-header', ctx.frame.querySelector('.hero-browser__page'));
       ctx.instance = hero;
       // taps in the demo flow back into the panel
       root.addEventListener('hero:main', e => { if (ctx.state.main !== e.detail.main) ctx.set({ main: e.detail.main }); });

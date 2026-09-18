@@ -40,11 +40,17 @@ Globals / ids: `LogoWall`→`logos`, `ShortAnswer`→`answer`, `FloatActions`→
 `hero-section/` is markup-first: the adapter builds the HTML, `hero.js` only
 enhances it; its breakpoints are container queries, so the frame width
 presets (390 / 320) show the narrow composition. Its stage is the site's
-first screen: a scroller window (`stage--fill`) with the real header on top,
-pulled from `site-header/demo.html` over HTTP (the adapters never reference
-each other), and the hero under it. `site-header/` is the same kind
-(markup-first, container queries) and shows the bar alone: no page, the
-compact state is a toggle button, the mobile sheet is sized to the stage.
+first screen: a scroller window (`stage--fill`) with the site header on top
+and the hero under it. `site-header/` is the same kind (markup-first,
+container queries) and shows the bar alone: no page, the compact state is a
+toggle button, the mobile sheet is sized to the stage.
+
+The header is a **shared component**: `site-header/playground.js` is the
+master (`Playground.provide('site-header', …)`, markup in its `markup()`,
+every `apply` publishes the state), `hero-section/playground.js` consumes it
+(`Playground.consume('site-header', host)`). Edit the header in the master
+only; every copy follows. `site-header/demo.html` carries a static copy of
+the markup for developers — keep it in sync when the menu changes.
 
 ## Token discipline
 
@@ -91,6 +97,10 @@ playback?, onShow?, onHide? })`
 - `playback` hooks only for motion outside `getAnimations()` (timers, canvas).
 - `ctx` = `{ id, state, defaults, ui, frame, stage, instance, set, reset, refresh, paused, rate }`.
   Call `ctx.refresh()` from module events. Playground-only CSS → `Playground.css()`.
+- Shared components: `Playground.provide(name, { create(host) → { el, update(state) }, state() })`
+  in the master, `Playground.consume(name, host)` in the consumer (copy is
+  prepended into `host`), `Playground.publish(name, state)` from the master's
+  `apply`. Never import another adapter's markup by hand.
 
 Shell owns (never reimplement in an adapter): pause / speed, frame width,
 zoom, grid, guides, fps, code drawer + copy, save / share link

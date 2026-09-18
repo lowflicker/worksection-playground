@@ -82,9 +82,30 @@ ${vars.join('\n')}
 </style>` : ''}`;
   };
 
-  let root = null, bar = null;
+  let root = null, bar = null, state = null;
   const layout = () => root.clientWidth >= 1240 ? 'широка' : root.clientWidth >= 620 ? 'планшет' : 'телефон';
   const compacted = () => root.classList.contains('site-header--compact');
+
+  // one place that pushes the state into a bar: the master here and every copy other modules consume
+  function applyTo(el, inst, s, patch) {
+    const opt = {};
+    for (const k of Object.keys(SiteHeader.defaults)) if (k in patch) opt[k] = s[k];
+    if (Object.keys(opt).length) inst.setOptions(opt);
+    for (const [k, [prop, unit]] of Object.entries(VARS)) el.style.setProperty(prop, s[k] + unit);
+    el.style.setProperty('--sh-surface', `rgba(255, 255, 255, ${(s.alpha / 100).toFixed(2)})`);
+  }
+
+  // the header as a component: other modules (the hero) get the same markup and follow this tab's settings
+  Playground.provide('site-header', {
+    create(host) {
+      host.insertAdjacentHTML('afterbegin', markup());
+      const el = host.querySelector(':scope > .site-header');
+      el.removeAttribute('id');
+      const inst = new SiteHeader(el);
+      return { el, inst, update: s => applyTo(el, inst, s, s) };
+    },
+    state: () => state || defaults,
+  });
 
   Playground.register({
     id: 'header',
@@ -126,6 +147,7 @@ ${vars.join('\n')}
     ],
 
     mount(ctx) {
+      state = ctx.state;
       ctx.frame.insertAdjacentHTML('beforeend', markup());
       root = ctx.frame.querySelector('.site-header');
       bar = new SiteHeader(root);
@@ -142,12 +164,8 @@ ${vars.join('\n')}
       new ResizeObserver(() => requestAnimationFrame(ctx.refresh)).observe(root);
     },
     apply(ctx, patch) {
-      const s = ctx.state;
-      const opt = {};
-      for (const k of Object.keys(SiteHeader.defaults)) if (k in patch) opt[k] = s[k];
-      if (Object.keys(opt).length) bar.setOptions(opt);
-      for (const [k, [prop, unit]] of Object.entries(VARS)) root.style.setProperty(prop, s[k] + unit);
-      root.style.setProperty('--sh-surface', `rgba(255, 255, 255, ${(s.alpha / 100).toFixed(2)})`);
+      applyTo(root, bar, ctx.state, patch);
+      Playground.publish('site-header', ctx.state);
     },
     onHide() { if (bar) bar.close(); },
     hint() {

@@ -48,6 +48,13 @@
 
    ctx: { id, state, defaults, ui, frame, stage, instance, set(patch),
           reset(), refresh(), paused, rate }
+
+   Shared components. When one module's demo needs another module inside it
+   (the header above the hero), the master adapter provides it by name and
+   the other consumes it; they never reference each other's files:
+     Playground.provide(name, { create(host) -> { el, update(state) }, state() })
+     Playground.consume(name, host, onMount?)   a copy, prepended into host
+     Playground.publish(name, state)            master's apply() pushes changes
    ========================================================================== */
 (function () {
   'use strict';
@@ -740,6 +747,33 @@
     return report;
   }
 
+  /* ---------- shared components: one adapter provides, others consume, the master's state flows to every copy ---------- */
+  // Adapters never reference each other; a component travels by name through the shell.
+  // provide(name, { create(host) -> { el, update(state) }, state() })   the master registers a factory and its current state
+  // consume(name, host, onMount?)                                      a copy is created in host as soon as the provider exists
+  // publish(name, state)                                               the master pushes a change to every copy
+  const provided = {};
+  const consumers = {};
+  function mountConsumer(name, c) {
+    if (c.handle) return;
+    c.handle = provided[name].create(c.host);
+    if (c.handle.update) c.handle.update(provided[name].state());
+    if (c.onMount) c.onMount(c.handle);
+  }
+  function provide(name, def) {
+    provided[name] = def;
+    (consumers[name] || []).forEach(c => mountConsumer(name, c));
+  }
+  function consume(name, host, onMount) {
+    const c = { host, onMount, handle: null };
+    (consumers[name] = consumers[name] || []).push(c);
+    if (provided[name]) mountConsumer(name, c);
+    return c;
+  }
+  function publish(name, state) {
+    (consumers[name] || []).forEach(c => { if (c.handle && c.handle.update) c.handle.update(state); });
+  }
+
   /* ---------- public ---------- */
   const styles = [];
   window.Playground = {
@@ -748,6 +782,7 @@
     css(text) { const s = document.createElement('style'); s.textContent = text; document.head.append(s); styles.push(s); },
     show,
     get active() { return active && active.ctx; },
+    provide, consume, publish,
     describe, check,
     esc, fmt: fmtNum,
   };
