@@ -61,8 +61,9 @@ toggle button, the mobile sheet is sized to the stage.
 **Shared components** (masters publish, copies follow; edit only the master):
 - header: `site-header/playground.js` provides `site-header`; the hero consumes it.
 - button: `site-button/playground.js` provides `site-button` (opts `{ variant, size,
-  rounded, label, href, tag, icon, status, invert, beam }`; `variant` is a look id:
-  `primary`, `secondary-invert`, `primary-white`…); the hero consumes two for its
+  rounded, label, href, tag, icon, iconPos, status, invert, beam }`; `variant` is a look id:
+  `primary`, `secondary-invert`, `primary-white`…; `icon` an id of the site's icons
+  or `none`); the hero consumes two for its
   CTAs and takes their snippet markup from `Playground.component('site-button').markup()`.
   The `.btn` system is the site's own `site-css/buttons.css`, verbatim — the source
   of truth: the panel lists exactly its classes, the sheet shows every look × size.
@@ -108,7 +109,7 @@ playback?, onShow?, onHide? })`
 
 - `defaults` — full state, plain JSON; usually `<Module>.defaults` minus
   functions/DOM refs and minus what the shell owns (`paused`).
-- `controls` — groups of items: `range | select | seg | check | color | swatch
+- `controls` — groups of items: `range | select | seg | check | color | text | swatch
   | chips | easing | buttons | status | note`; `key` may be dotted (`enter.x`); `when(state)`
   hides; select/seg values coerced to the default's type. `easing` edits a CSS
   timing-function string in a bezier popover (presets, drag, text input).

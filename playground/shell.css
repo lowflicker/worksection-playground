@@ -318,6 +318,7 @@ body.is-paused #tb-play [data-icon="pause"] { display: none; }
 .field select, .field input[type=color] { max-width: 168px; }
 .field.inline select { justify-self: end; }
 .field input[type=color] { width: 44px; height: 28px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); cursor: pointer; }
+.field input[type=text] { grid-column: 1 / -1; width: 100%; }
 .field .seg { grid-column: 1 / -1; }
 .field .swatches { grid-column: 1 / -1; }
 /* range: 1 px track, filled part in the foreground, 9 px square thumb */

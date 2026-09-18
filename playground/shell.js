@@ -29,11 +29,12 @@
      presets   [{ label, patch }]
      random    (ctx) => patch    adds a "Випадково" button
      controls  [{ title, when(state), items: [item] }]   panel groups
-       item.type  range | select | seg | check | color | swatch | chips | easing | buttons | status | note
+       item.type  range | select | seg | check | color | text | swatch | chips | easing | buttons | status | note
        item.key   state key, may be a dotted path ('enter.x')
        item.when  (state) => boolean, hides the item
        range:   min, max, step, unit | fmt(v)
        select / seg: options [[value, label], …]
+       text:    a string; placeholder, maxlength
        swatch:  options [{ id, label, css }]
        chips:   value is an array of ids; options [{ id, label, icon? }] toggle, values outside
                 the options show as removable chips; add { placeholder, parse(text) => id | null }
@@ -404,6 +405,14 @@
       const input = $('input', el);
       input.addEventListener('input', () => setState(m, setPath({}, it.key, input.value)));
       return { el, item: it, sync: s => { input.value = getPath(s, it.key); } };
+    }
+    if (t === 'text') {
+      const el = h('div', 'field', `<label for="${id}">${label}</label><input type="text" id="${id}"${it.placeholder ? ` placeholder="${esc(it.placeholder)}"` : ''}${it.maxlength ? ` maxlength="${it.maxlength}"` : ''} autocomplete="off" spellcheck="false">`);
+      const input = $('input', el);
+      // every keystroke lands in the state, so the stage follows the typing
+      input.addEventListener('input', () => setState(m, setPath({}, it.key, input.value)));
+      // only a real change is written back, so the caret survives the sync
+      return { el, item: it, sync: s => { const v = String(getPath(s, it.key) ?? ''); if (input.value !== v) input.value = v; } };
     }
     if (t === 'swatch') {
       const el = h('div', 'field', `<label>${label}</label><output></output><div class="swatches">${it.options.map(o => `<button type="button" class="swatch" data-v="${esc(o.id)}" title="${esc(o.label)}" style="background:${o.css}"></button>`).join('')}</div>`);
@@ -1081,6 +1090,7 @@
     seg: (it, v) => { const o = it.options.find(o => String(o[0]) !== String(v)); return o ? o[0] : v; },
     check: (it, v) => !v,
     color: (it, v) => (String(v).toLowerCase() === '#123456' ? '#654321' : '#123456'),
+    text: (it, v) => (v === 'Інший текст' ? 'Текст' : 'Інший текст'),
     swatch: (it, v) => { const o = it.options.find(o => o.id !== v); return o ? o.id : v; },
     chips: (it, v) => { const a = (v || []).slice(); const id = it.options[0] && it.options[0].id; if (id == null) return a; const i = a.indexOf(id); i < 0 ? a.push(id) : a.splice(i, 1); return a; },
     easing: (it, v) => (v === 'cubic-bezier(.19, 1, .22, 1)' ? 'linear' : 'cubic-bezier(.19, 1, .22, 1)'),
