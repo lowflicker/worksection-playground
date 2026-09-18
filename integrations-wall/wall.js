@@ -17,6 +17,7 @@
      </div>
      const w = IntegrationsWall.create(document.getElementById('wall'), { pan: 0.35 });
      w.setOptions({ pan: 0.5 });
+     w.refresh();                 // after adding or removing tiles in the markup
      w.pause(); w.resume(); w.destroy();
 
    Or drop `data-iwall` on the box and the script inits it on load with the
@@ -99,23 +100,36 @@
       var shift = o.stagger * step;
       var n = src.length;
       this.n = n ? cells : 0;
+      // which logo a cell shows: rows walk the list with a golden-ratio stride, so a short list
+      // scatters instead of repeating in stripes; each authored tile sits in the first cell that asks for it
+      var stride = Math.max(1, Math.round(n * 0.618)) | 1;
+      var placed = [];
       for (var i = 0; i < cells && n; i++) {
-        var t = i < n ? src[i] : null;
-        if (!t) {
-          t = src[i % n].cloneNode(true);
+        var r = Math.floor(i / cols), c = i % cols;
+        var k = (c + r * stride) % n;
+        var t;
+        if (!placed[k]) { t = src[k]; placed[k] = true; }
+        else {
+          t = src[k].cloneNode(true);
           t.setAttribute('data-iwall-clone', '');
           t.setAttribute('aria-hidden', 'true');
           sheet.appendChild(t);
         }
-        var r = Math.floor(i / this.cols), c = i % this.cols;
         t.hidden = false;
         t.style.setProperty('--x', (c * step + (r % 2 ? shift : 0)) + 'px');
         t.style.setProperty('--y', (r * step) + 'px');
       }
-      // more tiles than cells: the extra authored ones stay out of the way
-      for (var j = cells; j < n; j++) src[j].hidden = true;
+      // more tiles than cells: the authored ones that got no cell stay out of the way
+      for (var j = 0; j < n; j++) if (!placed[j]) src[j].hidden = true;
       sheet.style.width = (this.cols * step - o.gap + (this.rowsN > 1 ? shift : 0)) + 'px';
       sheet.style.height = (this.rowsN * step - o.gap) + 'px';
+    },
+
+    // the authored tiles changed (added, removed, replaced): read them again and rebuild
+    refresh: function () {
+      toArray(this.sheet.querySelectorAll('[data-iwall-clone]')).forEach(function (c) { c.parentNode.removeChild(c); });
+      this.source = toArray(this.sheet.querySelectorAll('.iwall__tile'));
+      this.layout(true);
     },
 
     applyVars: function () {

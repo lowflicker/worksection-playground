@@ -27,12 +27,15 @@
      presets   [{ label, patch }]
      random    (ctx) => patch    adds a "Випадково" button
      controls  [{ title, when(state), items: [item] }]   panel groups
-       item.type  range | select | seg | check | color | swatch | easing | buttons | status | note
+       item.type  range | select | seg | check | color | swatch | chips | easing | buttons | status | note
        item.key   state key, may be a dotted path ('enter.x')
        item.when  (state) => boolean, hides the item
        range:   min, max, step, unit | fmt(v)
        select / seg: options [[value, label], …]
        swatch:  options [{ id, label, css }]
+       chips:   value is an array of ids; options [{ id, label, icon? }] toggle, values outside
+                the options show as removable chips; add { placeholder, parse(text) => id | null }
+                lets the user type a new one
        easing:  value is a CSS timing function string; a bezier editor with presets
        buttons: items [{ label, primary, run(ctx) }]
        status:  render(ctx) => html
@@ -370,6 +373,31 @@
       const btns = $$('button', el), out = $('output', el);
       btns.forEach(b => b.addEventListener('click', () => setState(m, setPath({}, it.key, b.dataset.v))));
       return { el, item: it, sync: s => { const v = getPath(s, it.key); btns.forEach(b => b.classList.toggle('is-active', b.dataset.v === v)); const o = it.options.find(x => x.id === v); out.textContent = o ? o.label : ''; } };
+    }
+    if (t === 'chips') {
+      const el = h('div', 'field', `<label>${label}</label><output></output><div class="chips"></div>${it.add ? `<div class="chips__add"><input type="text" placeholder="${esc(it.add.placeholder || '')}" aria-label="${esc(it.add.placeholder || 'Додати')}"></div>` : ''}`);
+      const box = $('.chips', el), out = $('output', el), inp = $('input', el);
+      const get = () => (getPath(m.state, it.key) || []).slice();
+      const put = v => setState(m, setPath({}, it.key, v));
+      const toggle = id => { const v = get(); const i = v.indexOf(id); i < 0 ? v.push(id) : v.splice(i, 1); put(v); };
+      if (inp) inp.addEventListener('keydown', e => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const id = it.add.parse ? it.add.parse(inp.value.trim()) : inp.value.trim();
+        if (!id) return;
+        const v = get(); if (!v.includes(id)) v.push(id); put(v);
+        inp.value = '';
+      });
+      return { el, item: it, sync: s => {
+        const v = getPath(s, it.key) || [];
+        const known = it.options.map(o => o.id);
+        const extra = v.filter(x => !known.includes(x));
+        const chip = (id, label, icon, on, x) => `<button type="button" class="chip${on ? ' is-active' : ''}" data-v="${esc(id)}" title="${esc(label)}">${icon ? `<img src="${esc(icon)}" alt="">` : ''}<span>${esc(label)}</span>${x ? '<i>×</i>' : ''}</button>`;
+        const html = it.options.map(o => chip(o.id, o.label, o.icon, v.includes(o.id))).join('')
+          + extra.map(id => chip(id, it.add && it.add.label ? it.add.label(id) : id, it.add && it.add.icon ? it.add.icon(id) : '', true, true)).join('');
+        if (box.dataset.html !== html) { box.dataset.html = html; box.innerHTML = html; $$('.chip', box).forEach(b => b.addEventListener('click', () => toggle(b.dataset.v))); }
+        out.textContent = v.length + ' з ' + (known.length + extra.length);
+      } };
     }
     if (t === 'easing') {
       const el = h('div', 'field', `<label>${label}</label><output></output><button type="button" class="easing" style="grid-column: 1 / -1">${curveIcon([0, 0, 1, 1])}<code></code></button>`);
@@ -951,6 +979,7 @@
     check: (it, v) => !v,
     color: (it, v) => (String(v).toLowerCase() === '#123456' ? '#654321' : '#123456'),
     swatch: (it, v) => { const o = it.options.find(o => o.id !== v); return o ? o.id : v; },
+    chips: (it, v) => { const a = (v || []).slice(); const id = it.options[0] && it.options[0].id; if (id == null) return a; const i = a.indexOf(id); i < 0 ? a.push(id) : a.splice(i, 1); return a; },
     easing: (it, v) => (v === 'cubic-bezier(.19, 1, .22, 1)' ? 'linear' : 'cubic-bezier(.19, 1, .22, 1)'),
   };
   async function proveControls(m) {

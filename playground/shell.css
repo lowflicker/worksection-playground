@@ -283,6 +283,14 @@ body.is-paused #tb-play [data-icon="pause"] { display: none; }
 .swatch { width: 26px; height: 26px; padding: 0; border-radius: 7px; border: 1px solid var(--line); cursor: pointer; }
 .swatch:hover { transform: scale(1.08); }
 .swatch.is-active { box-shadow: 0 0 0 2px var(--panel), 0 0 0 3.5px var(--text); }
+.chips { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { height: 22px; padding: 0 7px; gap: 5px; border-radius: 6px; font-size: 11px; font-weight: 500; color: var(--muted); background: var(--panel-2); border-color: transparent; }
+.chip img { width: 12px; height: 12px; object-fit: contain; opacity: .55; }
+.chip.is-active { color: var(--primary-fg, var(--on-text)); background: var(--primary, var(--text)); border-color: var(--primary-line, transparent); }
+.chip.is-active img { opacity: 1; }
+.chip i { font-style: normal; color: currentColor; opacity: .6; margin: 0 -2px 0 0; }
+.chips__add { grid-column: 1 / -1; }
+.chips__add input { width: 100%; }
 .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
 .tabs button.is-active { background: var(--text); color: var(--on-text); border-color: transparent; }
 
