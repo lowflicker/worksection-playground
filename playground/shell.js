@@ -914,12 +914,16 @@
     async save(n) { const item = Object.assign({ id: Math.random().toString(36).slice(2, 10), created_at: new Date().toISOString(), done: false }, n); store.set(NOTES_KEY, localNotes.all().concat([item])); return item; },
     async update(id, patch) { store.set(NOTES_KEY, localNotes.all().map(n => n.id === id ? Object.assign({}, n, patch) : n)); },
     async remove(id) { store.set(NOTES_KEY, localNotes.all().filter(n => n.id !== id)); },
+    async reply(noteId, r) { const item = Object.assign({ id: Math.random().toString(36).slice(2, 10), note_id: noteId, created_at: new Date().toISOString() }, r); store.set(NOTES_KEY, localNotes.all().map(n => n.id === noteId ? Object.assign({}, n, { note_replies: (n.note_replies || []).concat([item]) }) : n)); return item; },
+    async unreply(noteId, id) { store.set(NOTES_KEY, localNotes.all().map(n => n.id === noteId ? Object.assign({}, n, { note_replies: (n.note_replies || []).filter(r => r.id !== id) }) : n)); },
   };
   const remoteNotes = {
-    list: module => rest('notes', `?module=eq.${encodeURIComponent(module)}&select=*&order=created_at.asc`),
+    list: module => rest('notes', `?module=eq.${encodeURIComponent(module)}&select=*,note_replies(*)&order=created_at.asc&note_replies.order=created_at.asc`),
     save: async n => (await rest('notes', '', { method: 'POST', body: JSON.stringify(n) }))[0],
     update: async (id, patch) => touched(await rest('notes', `?id=eq.${encodeURIComponent(id)}&select=id`, { method: 'PATCH', body: JSON.stringify(patch) })),
     remove: async id => touched(await rest('notes', `?id=eq.${encodeURIComponent(id)}&select=id`, { method: 'DELETE' })),
+    reply: async (noteId, r) => (await rest('note_replies', '', { method: 'POST', body: JSON.stringify(Object.assign({ note_id: noteId }, r)) }))[0],
+    unreply: async (noteId, id) => touched(await rest('note_replies', `?id=eq.${encodeURIComponent(id)}&select=id`, { method: 'DELETE' })),
   };
   const notesDb = REMOTE.url && REMOTE.anonKey ? remoteNotes : localNotes;
   const noteLink = (m, id) => `${location.origin}${location.pathname}#${m.id}?n=${id}`;
@@ -958,12 +962,12 @@
   // one pin + one outline per row; the card is built when the pin opens
   function buildPins(m) {
     const n = m.notes, layer = m.els.notes;
-    for (const p of n.pins) { p.el.remove(); p.box.remove(); if (p.card) p.card.remove(); }
+    for (const p of n.pins) { p.el.remove(); p.box.remove(); if (p.card) p.card.remove(); if (p.peek) p.peek.remove(); }
     n.pins = n.rows.map((row, i) => {
-      const el = h('button', 'note-pin', String(i + 1)); el.type = 'button'; el.title = row.text;
+      const el = h('button', 'note-pin', String(i + 1)); el.type = 'button';
       const box = h('div', 'note-box');
-      el.addEventListener('pointerenter', () => { p.hover = true; });
-      el.addEventListener('pointerleave', () => { p.hover = false; });
+      el.addEventListener('pointerenter', () => { p.hover = true; if (!p.card && !p.peek) { p.peek = notePeek(m, p); layer.append(p.peek); } });
+      el.addEventListener('pointerleave', () => { p.hover = false; if (p.peek) { p.peek.remove(); p.peek = null; } });
       el.addEventListener('click', e => { e.stopPropagation(); toggleNote(m, row.id); });
       const p = { row, el, box, card: null, hover: false };
       layer.append(box, el);
@@ -980,6 +984,7 @@
     const p = pinOf(m, id); if (!p) return;
     n.open = id;
     p.el.classList.add('is-open');
+    if (p.peek) { p.peek.remove(); p.peek = null; }
     p.card = noteCard(m, p);
     m.els.notes.append(p.card);
     if (m === active) syncNotebar();
@@ -999,27 +1004,93 @@
     if (t) t.scrollIntoView({ block: 'center', inline: 'center' });
     if (m.notes.open !== id) toggleNote(m, id);
   }
+  // a person on the card: initials in a tinted circle, the name, the time
+  const initials = name => (name || '?').split(/[.\s_-]+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || '?';
+  const person = (name, iso) => `<span class="note-card__avatar">${esc(initials(name))}</span><span class="note-card__who"><b>${esc(name || 'хтось')}</b><small>${esc(when(iso))}</small></span>`;
+  const NOTE_ICON = {
+    check: '<svg class="i" viewBox="0 0 16 16"><path d="m3.5 8.5 3 3 6-7"/></svg>',
+    more: '<svg class="i" viewBox="0 0 16 16"><circle cx="3.5" cy="8" r="1.1" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r="1.1" fill="currentColor" stroke="none"/><circle cx="12.5" cy="8" r="1.1" fill="currentColor" stroke="none"/></svg>',
+    send: '<svg class="i" viewBox="0 0 16 16"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5"/></svg>',
+    trash: '<svg class="i" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5v-1h3v1M4.5 4.5l.6 8h5.8l.6-8"/></svg>',
+    pen: '<svg class="i" viewBox="0 0 16 16"><path d="m10.5 3 2.5 2.5-7 7H3.5V10z"/></svg>',
+  };
+  // the card is a thread, after Figma's comments: who and when, the text, what it is pinned to, the
+  // replies, a field to answer in; resolve and a menu (link, edit and delete for the author) up top
   function noteCard(m, p) {
     const row = p.row;
-    const card = h('div', 'note-card');
+    const card = h('div', 'note-card' + (row.done ? ' is-done' : ''));
     card.addEventListener('pointerenter', () => { p.cardHover = true; });
-    card.addEventListener('pointerleave', () => { p.cardHover = false; });
-    card.innerHTML = `<div class="note-card__text">${esc(row.text)}</div>
-      <div class="note-card__meta"><span>${esc([row.author, when(row.created_at)].filter(Boolean).join(' · '))}</span><code title="${esc(row.selector)}">${esc(row.label || noteLabel(row.selector))}</code></div>
-      <div class="note-card__row"><label class="note-card__done"><input type="checkbox"${row.done ? ' checked' : ''}> Зроблено</label><span class="note-card__tools"><button type="button" class="icon" data-do="link" title="Скопіювати посилання на нотатку">${ICON.link}</button>${noteMine(row) ? `<button type="button" class="icon" data-do="del" title="Видалити">${ICON.close}</button>` : ''}<button type="button" class="icon" data-do="close" title="Закрити">${ICON.close}</button></span></div>`;
-    $('input', card).addEventListener('change', async e => {
-      const done = e.target.checked;
-      if (REMOTE.url && !auth.user) { e.target.checked = !done; openSignIn(m); return; }
-      try { await notesDb.update(row.id, { done }); row.done = done; p.el.classList.toggle('is-done', done); renderNotesList(m); }
-      catch (err) { e.target.checked = !done; notesStatus(m, 'Не вдалося позначити: ' + err.message, true); }
-    });
+    card.addEventListener('pointerleave', () => { p.cardHover = false; const menu = $('.note-card__menu', card); if (menu) menu.hidden = true; });
+    const render = () => {
+      const mine = noteMine(row);
+      card.classList.toggle('is-done', !!row.done);
+      card.innerHTML = `<div class="note-card__head">${person(row.author, row.created_at)}<span class="note-card__tools">
+          <button type="button" class="icon${row.done ? ' is-on' : ''}" data-do="done" title="${row.done ? 'Знову відкрити' : 'Вирішено'}">${NOTE_ICON.check}</button>
+          <button type="button" class="icon" data-do="menu" title="Ще" aria-haspopup="menu">${NOTE_ICON.more}</button>
+          <button type="button" class="icon" data-do="close" title="Закрити (Esc)">${ICON.close}</button></span></div>
+        <div class="note-card__menu" hidden><button type="button" data-do="link">${ICON.link}Скопіювати посилання</button>${mine ? `<button type="button" data-do="edit">${NOTE_ICON.pen}Редагувати</button><button type="button" class="is-bad" data-do="del">${NOTE_ICON.trash}Видалити</button>` : ''}</div>
+        <div class="note-card__text">${esc(row.text)}</div>
+        <code class="note-card__sel" title="${esc(row.selector)}">${esc(row.label || noteLabel(row.selector))}</code>
+        ${(row.note_replies || []).length ? `<div class="note-card__thread">${row.note_replies.map(r => `<div class="note-card__reply" data-reply="${esc(r.id)}"><div class="note-card__head">${person(r.author, r.created_at)}${!REMOTE.url || (auth.user && r.owner === auth.user.id) ? `<button type="button" class="icon" data-do="unreply" title="Видалити відповідь">${ICON.close}</button>` : ''}</div><div class="note-card__text">${esc(r.text)}</div></div>`).join('')}</div>` : ''}
+        <form class="note-card__answer"><input type="text" placeholder="Відповісти…" maxlength="600" autocomplete="off"><button type="submit" class="icon" title="Надіслати (Enter)">${NOTE_ICON.send}</button></form>`;
+      $('form', card).addEventListener('submit', async e => {
+        e.preventDefault();
+        const input = $('input', card), text = input.value.trim();
+        if (!text) return;
+        if (REMOTE.url && !auth.user) { openSignIn(m); return; }
+        try {
+          const r = await notesDb.reply(row.id, { text, author: auth.user ? auth.user.name : store.get(STORE + 'author', '') || null });
+          row.note_replies = (row.note_replies || []).concat([r]);
+          render(); renderNotesList(m); $('input', card).focus();
+        } catch (err) { notesStatus(m, 'Не вдалося відповісти: ' + err.message, true); }
+      });
+    };
+    const edit = () => {
+      const t = $('.note-card__text', card);
+      const ta = h('textarea', 'note-card__edit'); ta.value = row.text; ta.rows = 3; ta.maxLength = 600;
+      const rowEl = h('div', 'note-card__row'); rowEl.innerHTML = `<span></span><span class="note-card__tools"><button type="button" data-do="cancel-edit">Скасувати</button><button type="button" class="primary" data-do="save-edit">Зберегти</button></span>`;
+      t.replaceWith(ta); ta.after(rowEl); ta.focus();
+      ta.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) $('[data-do="save-edit"]', card).click(); if (e.key === 'Escape') { e.stopPropagation(); render(); } });
+    };
     card.addEventListener('click', async e => {
       const b = e.target.closest('[data-do]'); if (!b) return;
-      if (b.dataset.do === 'close') closeNote(m);
-      else if (b.dataset.do === 'link') { const url = noteLink(m, row.id); try { await navigator.clipboard.writeText(url); notesStatus(m, 'Посилання скопійовано'); } catch (err) { prompt('Скопіюй посилання', url); } }
-      else if (b.dataset.do === 'del') { if (!confirm('Видалити цю нотатку для всіх?')) return; try { await notesDb.remove(row.id); closeNote(m); m.notes.rows = m.notes.rows.filter(r => r.id !== row.id); buildPins(m); renderNotesList(m); syncToolbar(); } catch (err) { notesStatus(m, 'Не вдалося видалити: ' + err.message, true); } }
+      const act = b.dataset.do, menu = $('.note-card__menu', card);
+      if (act !== 'menu' && menu) menu.hidden = true;
+      if (act === 'close') closeNote(m);
+      else if (act === 'menu') menu.hidden = !menu.hidden;
+      else if (act === 'done') {
+        if (REMOTE.url && !auth.user) { openSignIn(m); return; }
+        const done = !row.done;
+        try { await notesDb.update(row.id, { done }); row.done = done; p.el.classList.toggle('is-done', done); render(); renderNotesList(m); syncNotebar(); }
+        catch (err) { notesStatus(m, 'Не вдалося позначити: ' + err.message, true); }
+      }
+      else if (act === 'link') { const url = noteLink(m, row.id); try { await navigator.clipboard.writeText(url); notesStatus(m, 'Посилання скопійовано'); } catch (err) { prompt('Скопіюй посилання', url); } }
+      else if (act === 'edit') edit();
+      else if (act === 'cancel-edit') render();
+      else if (act === 'save-edit') {
+        const text = $('textarea', card).value.trim(); if (!text) return;
+        try { await notesDb.update(row.id, { text }); row.text = text; render(); renderNotesList(m); }
+        catch (err) { notesStatus(m, 'Не вдалося зберегти: ' + err.message, true); }
+      }
+      else if (act === 'del') {
+        if (!confirm('Видалити цю нотатку для всіх?')) return;
+        try { await notesDb.remove(row.id); closeNote(m); m.notes.rows = m.notes.rows.filter(r => r.id !== row.id); buildPins(m); renderNotesList(m); syncToolbar(); }
+        catch (err) { notesStatus(m, 'Не вдалося видалити: ' + err.message, true); }
+      }
+      else if (act === 'unreply') {
+        const id = b.closest('[data-reply]').dataset.reply;
+        try { await notesDb.unreply(row.id, id); row.note_replies = row.note_replies.filter(r => r.id !== id); render(); renderNotesList(m); }
+        catch (err) { notesStatus(m, 'Не вдалося видалити: ' + err.message, true); }
+      }
     });
+    render();
     return card;
+  }
+  // a glance at a pin: the text, without opening the thread
+  function notePeek(m, p) {
+    const el = h('div', 'note-peek');
+    el.innerHTML = `<b>${esc(p.row.author || '')}</b>${esc(p.row.text)}${(p.row.note_replies || []).length ? `<small>${p.row.note_replies.length} відп.</small>` : ''}`;
+    return el;
   }
 
   // a new note: pick an element under the pointer, then say what about it
@@ -1066,8 +1137,9 @@
     cancelPick(m);
     m.els.notes.classList.add('is-picking'); // still a modal moment on the stage
     const card = h('div', 'note-card note-card--compose');
-    card.innerHTML = `<textarea rows="3" placeholder="Що тут не так, як на сайті, або на що звернути увагу" maxlength="600"></textarea>
-      <div class="note-card__meta"><code></code></div>
+    card.innerHTML = `<div class="note-card__head">${auth.user ? person(auth.user.name, new Date().toISOString()) : '<span class="note-card__avatar">?</span><span class="note-card__who"><b>Нова нотатка</b><small>до елемента</small></span>'}</div>
+      <textarea rows="3" placeholder="Що тут не так, як на сайті, або на що звернути увагу" maxlength="600"></textarea>
+      <code class="note-card__sel"></code>
       <div class="note-card__row"><button type="button" data-do="up" title="Взяти батьківський елемент">Ширше</button><span class="note-card__tools"><button type="button" data-do="cancel">Скасувати</button><button type="button" class="primary" data-do="save">Зберегти</button></span></div>`;
     n.compose = { el, card, box: h('div', 'note-box note-box--pick'), hover: false, last: null };
     card.addEventListener('pointerenter', () => { n.compose.hover = true; });
@@ -1144,6 +1216,7 @@
       put(p.el, r, 0, -22); // bottom-left corner of the pin on the element's top-left corner
       if (live) fit(p.box, live);
       if (p.card) beside(p.card, r);
+      if (p.peek) beside(p.peek, r);
     }
     if (n.pick) {
       const r = n.pick.el && n.pick.el.getBoundingClientRect();
@@ -1169,7 +1242,7 @@
     const rows = m.notes.rows || [];
     box.innerHTML = rows.length ? rows.map((r, i) => {
       const lost = !noteTarget(m, r.selector);
-      return `<div class="notes__row${r.done ? ' is-done' : ''}${lost ? ' is-lost' : ''}" data-id="${esc(r.id)}"><button type="button" class="notes__item" data-do="open" title="${esc(lost ? 'Елемент не знайдено: ' + r.selector : r.selector)}"><b>${i + 1}</b><span>${esc(r.text)}</span><small>${esc([r.label || noteLabel(r.selector), r.author, lost ? 'елемента вже нема' : ''].filter(Boolean).join(' · '))}</small></button>${noteMine(r) ? `<button type="button" class="icon" data-do="del" title="Видалити">${ICON.close}</button>` : ''}</div>`;
+      return `<div class="notes__row${r.done ? ' is-done' : ''}${lost ? ' is-lost' : ''}" data-id="${esc(r.id)}"><button type="button" class="notes__item" data-do="open" title="${esc(lost ? 'Елемент не знайдено: ' + r.selector : r.selector)}"><b>${i + 1}</b><span>${esc(r.text)}</span><small>${esc([r.label || noteLabel(r.selector), r.author, (r.note_replies || []).length ? r.note_replies.length + ' відп.' : '', lost ? 'елемента вже нема' : ''].filter(Boolean).join(' · '))}</small></button>${noteMine(r) ? `<button type="button" class="icon" data-do="del" title="Видалити">${ICON.close}</button>` : ''}</div>`;
     }).join('') : '<p class="shared__empty">Ще нема нотаток: «Нотатка» внизу сцени — і клацни елемент</p>';
     if (m === active) syncNotebar();
   }

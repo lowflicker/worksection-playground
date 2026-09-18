@@ -82,3 +82,23 @@ create policy "notes: update" on public.notes for update to authenticated
   with check (lower(auth.jwt() ->> 'email') like '%@worksection.ua');
 create policy "notes: delete" on public.notes for delete to authenticated
   using (owner = auth.uid());
+
+-- Replies under a note: the thread a developer answers in. Same access as notes.
+create table if not exists public.note_replies (
+  id          text primary key default substr(replace(gen_random_uuid()::text, '-', ''), 1, 8),
+  note_id     text not null references public.notes (id) on delete cascade,
+  text        text not null,
+  author      text,
+  owner       uuid default auth.uid() references auth.users (id) on delete set null,
+  created_at  timestamptz not null default now()
+);
+create index if not exists note_replies_note on public.note_replies (note_id, created_at);
+alter table public.note_replies enable row level security;
+drop policy if exists "note_replies: read"   on public.note_replies;
+drop policy if exists "note_replies: insert" on public.note_replies;
+drop policy if exists "note_replies: delete" on public.note_replies;
+create policy "note_replies: read"   on public.note_replies for select using (true);
+create policy "note_replies: insert" on public.note_replies for insert to authenticated
+  with check (owner = auth.uid() and lower(auth.jwt() ->> 'email') like '%@worksection.ua');
+create policy "note_replies: delete" on public.note_replies for delete to authenticated
+  using (owner = auth.uid());

@@ -240,27 +240,56 @@ body.no-panel .panel { display: none; }
 .note-box--pick { box-shadow: 0 0 0 1.5px var(--accent), 0 0 0 3px oklab(1 0 0 / .8); background: oklab(from var(--accent) l a b / .08); }
 .note-tag { pointer-events: none; padding: 2px 7px; border-radius: 6px; background: var(--note-bg); color: var(--note-fg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); font: 500 10px/16px ui-monospace, "SF Mono", Menlo, Consolas, monospace; white-space: nowrap; box-shadow: 0 8px 20px -8px rgba(0,0,0,.6); }
 .note-card {
-  pointer-events: auto; width: 260px; padding: 10px 12px; border-radius: var(--radius);
+  pointer-events: auto; width: 288px; padding: 12px 12px 10px; border-radius: 14px;
   background: var(--note-bg); color: var(--note-fg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
-  box-shadow: var(--note-shadow); font-size: 12px; line-height: 1.45; display: flex; flex-direction: column; gap: 8px;
+  box-shadow: var(--note-shadow); font-size: 12.5px; line-height: 1.45; display: flex; flex-direction: column; gap: 8px;
 }
+/* who and when: a tinted circle with initials, the name over the time; the tools sit at the right */
+.note-card__head { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.note-card__avatar { width: 24px; height: 24px; border-radius: 12px; background: var(--note-pin); color: #fff; font-size: 9.5px; font-weight: 600; letter-spacing: .02em; display: grid; place-items: center; }
+.note-card__who { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.note-card__who b { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.note-card__who small { font-size: 10.5px; color: var(--note-faint); }
+.note-card__tools { display: flex; gap: 1px; }
 .note-card__text { white-space: pre-wrap; overflow-wrap: anywhere; }
-.note-card__meta { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 10.5px; color: var(--note-muted); }
-.note-card__meta code { color: var(--note-faint); font: 500 10px/16px ui-monospace, "SF Mono", Menlo, Consolas, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 55%; }
-.note-card__row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-top: 6px; border-top: 1px solid var(--note-line); }
-.note-card__done { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--note-muted); cursor: pointer; }
-.note-card__done input { margin: 0; accent-color: var(--note-fg); }
-.note-card__tools { display: flex; gap: 2px; }
+.note-card__sel { align-self: flex-start; max-width: 100%; padding: 1px 6px; border-radius: 5px; background: oklab(1 0 0 / .07); color: var(--note-faint); font: 500 10px/16px ui-monospace, "SF Mono", Menlo, Consolas, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.note-card.is-done .note-card__text { color: var(--note-muted); }
+.note-card.is-done .note-card__avatar { background: oklab(0.5 0 0); }
+/* the ⋯ menu, hanging under the tools */
+.note-card__menu { position: absolute; top: 30px; right: 0; z-index: 1; min-width: 176px; padding: 4px; border-radius: 10px; background: oklab(0.16 0 0 / .96); box-shadow: 0 12px 32px -8px rgba(0,0,0,.7), 0 0 0 1px var(--note-line) inset; display: flex; flex-direction: column; }
+.note-card__menu button { justify-content: flex-start; gap: 8px; height: 28px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: var(--note-fg); font-size: 12px; font-weight: 400; }
+.note-card__menu button:hover { background: oklab(1 0 0 / .1); border: 0; }
+.note-card__menu button.is-bad { color: #ffb4b4; }
+.note-card__menu button .i { color: var(--note-muted); }
+/* the thread: replies with a thin line at the left, then the field */
+.note-card__thread { display: flex; flex-direction: column; gap: 8px; margin: 2px 0 0; padding: 8px 0 0; border-top: 1px solid var(--note-line); }
+.note-card__reply { display: flex; flex-direction: column; gap: 4px; }
+.note-card__reply .note-card__avatar { width: 20px; height: 20px; font-size: 8.5px; background: oklab(1 0 0 / .16); }
+.note-card__reply .note-card__text { padding-left: 28px; font-size: 12px; }
+.note-card__reply .icon { opacity: 0; }
+.note-card__reply:hover .icon { opacity: 1; }
+.note-card__answer { display: flex; align-items: center; gap: 4px; margin-top: 2px; padding: 2px 2px 2px 10px; border-radius: 10px; background: oklab(1 0 0 / .06); box-shadow: 0 0 0 1px var(--note-line) inset; transition: background .12s, box-shadow .12s; }
+.note-card__answer:focus-within { background: oklab(1 0 0 / .09); box-shadow: 0 0 0 1px oklab(1 0 0 / .3) inset; }
+.note-card__answer input { flex: 1 1 auto; min-width: 0; height: 26px; padding: 0; border: 0; background: transparent; color: var(--note-fg); font: inherit; font-size: 12px; }
+.note-card__answer input:focus { outline: 0; }
+.note-card__answer input::placeholder { color: var(--note-faint); }
 /* the card's own buttons: light on the black glass, the shell's shapes */
 .note-card button { height: 24px; padding: 0 8px; border: 1px solid var(--note-line); background: oklab(1 0 0 / .06); color: var(--note-fg); font-size: 11px; }
-.note-card button:hover { background: oklab(1 0 0 / .14); border-color: oklab(1 0 0 / .2); }
+.note-card button:hover { background: oklab(1 0 0 / .14); border-color: oklab(1 0 0 / .2); color: var(--note-fg); }
 .note-card button.icon { width: 24px; padding: 0; border-color: transparent; background: transparent; color: var(--note-muted); }
-.note-card button.icon:hover { color: var(--note-fg); background: oklab(1 0 0 / .1); }
+.note-card button.icon:hover { color: var(--note-fg); background: oklab(1 0 0 / .1); border-color: transparent; }
+.note-card button.icon.is-on { color: #7ad38e; }
+.note-card button.icon.is-on:hover { color: #9ee6ad; }
 .note-card button.primary { background: var(--note-fg); color: oklch(0.145 0 0); border-color: transparent; }
-.note-card button.primary:hover { background: oklab(1 0 0 / .86); }
+.note-card button.primary:hover { background: oklab(1 0 0 / .86); border-color: transparent; color: oklch(0.145 0 0); }
+.note-card__row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .note-card textarea { width: 100%; min-height: 60px; padding: 6px 8px; border: 1px solid var(--note-line); border-radius: 8px; background: oklab(1 0 0 / .06); color: var(--note-fg); font: inherit; font-size: 12px; line-height: 1.45; resize: vertical; }
 .note-card textarea:focus { outline: 0; border-color: oklab(1 0 0 / .3); background: oklab(1 0 0 / .09); }
 .note-card textarea::placeholder { color: var(--note-faint); }
+/* a glance at a pin: a small dark chip with the text */
+.note-peek { pointer-events: none; max-width: 240px; padding: 7px 10px; border-radius: 10px; background: var(--note-bg); color: var(--note-fg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); box-shadow: 0 12px 32px -12px rgba(0,0,0,.6); font-size: 12px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.note-peek b { display: block; font-size: 10.5px; font-weight: 600; color: var(--note-muted); margin-bottom: 1px; }
+.note-peek small { display: block; margin-top: 2px; font-size: 10.5px; color: var(--note-faint); }
 /* the panel's list */
 .notes__list { display: flex; flex-direction: column; gap: 2px; }
 .notes__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px; align-items: center; }
