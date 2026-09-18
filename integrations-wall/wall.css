@@ -1,0 +1,66 @@
+/* Integrations wall: the box, the moving sheet and the tiles.
+   wall.js writes --iw-* on the box and --x/--y on every tile; everything
+   visual lives here, so a site restyles the tiles without touching the JS. */
+.iwall {
+  --iw-tile: 64px;
+  --iw-radius: 12px;
+  --iw-logo: 28px;
+  --iw-hover: 1.1;
+  --iw-surface: #fff;                       /* tile */
+  --iw-shadow: 0 1px 2px rgba(20, 20, 20, .04), 0 0 0 1px rgba(20, 20, 20, .04);
+  --iw-mx: 50%; --iw-my: 53%;               /* mask centre */
+  --iw-rx: 60%; --iw-ry: 55%;               /* mask radii */
+  --iw-solid: 50%;                          /* mask: fully visible up to here, then the fade */
+
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  /* an ellipse of full visibility, a soft fade, nothing at the edges — as a mask, so it works over any background */
+  -webkit-mask-image: radial-gradient(ellipse var(--iw-rx) var(--iw-ry) at var(--iw-mx) var(--iw-my), #000 var(--iw-solid), rgba(0, 0, 0, .12) 82%, transparent 100%);
+  mask-image: radial-gradient(ellipse var(--iw-rx) var(--iw-ry) at var(--iw-mx) var(--iw-my), #000 var(--iw-solid), rgba(0, 0, 0, .12) 82%, transparent 100%);
+}
+.iwall--no-mask { -webkit-mask-image: none; mask-image: none; }
+
+/* the sheet is centred in the box; wall.js adds the pan on top of the centring */
+.iwall__sheet {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  will-change: transform;
+}
+
+.iwall__tile {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--iw-tile);
+  height: var(--iw-tile);
+  margin: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--iw-radius);
+  background: var(--iw-surface);
+  box-shadow: var(--iw-shadow);
+  translate: var(--x, 0px) var(--y, 0px);
+  transition: scale .25s cubic-bezier(.22, 1, .36, 1), box-shadow .25s;
+}
+.iwall__tile:hover {
+  scale: var(--iw-hover);
+  box-shadow: 0 6px 16px -6px rgba(20, 20, 20, .18), 0 0 0 1px rgba(20, 20, 20, .05);
+  z-index: 1;
+}
+.iwall__tile > img,
+.iwall__tile > svg {
+  width: var(--iw-logo);
+  height: var(--iw-logo);
+  object-fit: contain;
+  pointer-events: none;
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iwall__tile { transition: none; }
+}

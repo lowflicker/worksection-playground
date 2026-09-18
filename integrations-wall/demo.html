@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Integrations wall demo</title>
+<link rel="stylesheet" href="wall.css">
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #e9e9e7; font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  /* the promo card the wall sits in; not part of the module */
+  .card { position: relative; width: min(92vw, 460px); aspect-ratio: 421 / 526; overflow: hidden; border-radius: 12px; border: 1px solid rgba(0,0,0,.08); background: #f4f2f0; }
+  .card__head { position: relative; z-index: 2; display: flex; justify-content: space-between; gap: 12px; padding: 28px 24px 0 28px; pointer-events: none; }
+  .card__head h3 { margin: 0; max-width: 300px; font-size: 22px; line-height: 26px; font-weight: 500; color: #1e201f; }
+  .card__head h3 span { color: rgba(30, 32, 31, .5); }
+  .card .iwall { position: absolute; inset: 0; }
+  p { position: fixed; bottom: 16px; left: 0; right: 0; margin: 0; text-align: center; font-size: 12px; color: #7a7a7a; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="card__head"><h3>200+ інтеграцій <span>з інструментами, якими ви вже користуєтесь</span></h3></div>
+  <!-- the tiles are yours; wall.js clones them round-robin to fill the grid. Marks from Simple Icons (CC0) / Devicon (MIT) for the demo -->
+  <div class="iwall" id="wall">
+    <div class="iwall__sheet">
+      <figure class="iwall__tile"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/slack/slack-original.svg" alt="Slack"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/telegram" alt="Telegram"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/gmail" alt="Gmail"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/googlecalendar" alt="Google Calendar"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/googledrive" alt="Google Drive"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/zapier" alt="Zapier"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/jira" alt="Jira"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/trello" alt="Trello"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/github" alt="GitHub"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/gitlab" alt="GitLab"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/figma" alt="Figma"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/viber" alt="Viber"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/hubspot" alt="HubSpot"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/notion" alt="Notion"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/asana" alt="Asana"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/zoom" alt="Zoom"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/dropbox" alt="Dropbox"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/bitbucket" alt="Bitbucket"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/intercom" alt="Intercom"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/mailchimp" alt="Mailchimp"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/stripe" alt="Stripe"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/shopify" alt="Shopify"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/miro" alt="Miro"></figure>
+      <figure class="iwall__tile"><img src="https://cdn.simpleicons.org/airtable" alt="Airtable"></figure>
+    </div>
+  </div>
+</div>
+<p>Веди курсором по картці. Пробіл — пауза.</p>
+
+<script src="wall.js"></script>
+<script>
+  const wall = IntegrationsWall.create(document.getElementById('wall'), { columns: 7, rows: 9 });
+  document.addEventListener('keydown', e => { if (e.key === ' ') { e.preventDefault(); wall.o.paused ? wall.resume() : wall.pause(); } });
+</script>
+</body>
+</html>

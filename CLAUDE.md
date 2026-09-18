@@ -10,7 +10,7 @@ effects here with an AI; the **audience is the developers** in his company,
 who copy a module's files into the site. Two strictly separate parts:
 
 1. **Modules** (`logo-wall/`, `short-answer/`, `float-actions/`, `border-beam/`,
-   `dot-sphere/`, `hero-section/`, `site-header/`, `site-button/`) — the product. Plain HTML + CSS + vanilla JS, no deps, no
+   `dot-sphere/`, `hero-section/`, `site-header/`, `site-button/`, `integrations-wall/`) — the product. Plain HTML + CSS + vanilla JS, no deps, no
    build, no frameworks, ever. These files are what gets exported.
 2. **Shell** (`playground/`) — the chrome around them. Never exported, knows
    nothing about any specific module, currently vanilla with no deps.
@@ -36,7 +36,7 @@ README.md               developer overview + how to add a module.
 ```
 
 Globals / ids: `LogoWall`→`logos`, `ShortAnswer`→`answer`, `FloatActions`→`fab`,
-`BorderBeam`→`beam`, `DotSphere`→`sphere`, `Hero`→`hero`, `SiteHeader`→`header`, button (no JS, `button.css`)→`button`.
+`BorderBeam`→`beam`, `DotSphere`→`sphere`, `Hero`→`hero`, `SiteHeader`→`header`, button (no JS, `button.css`)→`button`, `IntegrationsWall`→`integrations`.
 `tab` prefixes: `S :` = section of the site, `C :` = component reused inside sections, none = effect; the home page (`index.html` with no hash) is a catalogue grouped by these; a module opens at `#<id>`. Each module exposes `.defaults`.
 `hero-section/` is markup-first: the adapter builds the HTML, `hero.js` only
 enhances it; its breakpoints are container queries, so the frame width
@@ -160,5 +160,6 @@ sheet, collapsible groups, the catalogue (`Playground.home()`, key `H`) and the 
 - 2026-09-18: header shows only the bar, hero = first screen (header + hero); `site-button/` (site's .btn mirror + mono beam), hero CTAs are its copies.
 - 2026-09-18: shell redesigned after Toolcraft (glass panel, tool pill, section reset); `easing` control (bezier editor); `check()` = acceptance, all green.
 - 2026-09-18: no topbar: home catalogue + crumb pill; shell primitives are `:where(:not(.frame *))` so they never restyle module markup.
+- 2026-09-18: `integrations-wall/` (Ramp-like logo sheet: stagger, pointer pan, drift, ellipse mask; demo marks from Simple Icons / Devicon CDN).
 - Old folder `Desktop/vis-effects-for-ui` is superseded; work from this repo.
 - `.claude/launch.json` runs `python3` (no bare `python` on this Mac).
