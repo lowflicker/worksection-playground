@@ -1,8 +1,10 @@
 /* ==========================================================================
    Worksection button: a mirror of the site's .btn system, with the class
-   names, the nesting and the tokens exactly as in worksection.com's CSS
-   (values resolved from the live site), so the playground and the demos
-   render buttons the way the site does.
+   names, the nesting and the tokens exactly as in worksection.com's CSS, so
+   the playground and the demos render buttons the way the site does. The
+   tokens (--text-base-*, --base-*, --button-accent-*, --font-body-*) come
+   from site-css/tokens.css, loaded before this file; the original is
+   site-css/buttons.css.
 
    On the site none of this is needed: the classes already exist there.
    What is new is the beam variant at the bottom, .btn-beam, which puts the
@@ -21,44 +23,6 @@
    ========================================================================== */
 
 .btn {
-  /* tokens, named as on the site */
-  --font-body-semi-xs: 600 13px/18px "Inter", sans-serif;
-  --font-body-med-md: 500 16px/20px "Inter", sans-serif;
-  --font-body-med-lg: 500 18px/24px "Inter", sans-serif;
-  --text-base-primary: #000000ed;
-  --text-base-secondary: #000000a8;
-  --text-base-invert-primary: #ffffff;
-  --text-base-ghost: #0a0a0a33;
-  --base-white-solid: #ffffff;
-  --base-white-a-0: #ffffff00;
-  --base-white-a-20: #ffffff33;
-  --base-white-a-30: #ffffff4d;
-  --base-white-a-40: #ffffff66;
-  --base-white-a-50: #ffffff80;
-  --base-white-a-60: #ffffff99;
-  --base-greengrey-100: #eaebeb;
-  --base-greengrey-150: #dddfde;
-  --base-greengrey-800: #636967;
-  --base-greengrey-900: #4f5452;
-  --base-greengrey-950: #2d2f2e;
-  --base-greengrey-990: #1e201f;
-  --base-greengrey-a-100: #16222217;
-  --base-greengrey-a-150: #0d1c1424;
-  --base-greengrey-a-200: #05140f33;
-  --base-slate-a-100: #2636360f;
-  --base-slate-a-150: #0f1c2926;
-  --base-slate-a-200: #080c1c30;
-  --base-neutral-a-300: #0d0d0d1f;
-  --base-neutral-a-400: #0a0a0a33;
-  --border-mid-high: #0d1c1424;
-  --border-invert-midhigh: #ffffff26;
-  --border-invert-mid: #ffffff33;
-  --button-accent-text: #323702;
-  --button-accent-surf-default: #eef95a;
-  --button-accent-surf-hover: #e6f33c;
-  --button-accent-surf-press: #d4e121;
-  --button-accent-outline: #b1c00c;
-
   box-sizing: border-box;
   display: inline-flex;            /* the site has flex; inline keeps a lone button in text flow */
   justify-content: center;

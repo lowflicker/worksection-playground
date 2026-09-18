@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Button demo</title>
-<!-- beam.css before button.css: .btn-beam overrides the effect's variables -->
+<!-- the site's tokens first (button.css reads them), beam.css before button.css: .btn-beam overrides the effect's variables -->
+<link rel="stylesheet" href="../site-css/tokens.css">
 <link rel="stylesheet" href="../border-beam/beam.css">
 <link rel="stylesheet" href="button.css">
 <style>

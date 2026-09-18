@@ -1,0 +1,19 @@
+/* Semantic pallete  */
+:root {
+	--accent-primary-high: var(--color-emerald-400);
+	--accent-primary-mid-high: var(--color-emerald-500);
+	--accent-primary-mid: var(--color-emerald-600);
+	--accent-secondary-high: var(--color-lime-400);
+	--accent-secondary-mid-high: var(--color-lime-500);
+	--accent-secondary-mid: var(--color-lime-600);
+	--accent-secondary-low: var(--color-lime-700);
+	--accent-secondary-lower: var(--color-lime-800);
+	--accent-secondary-lowest: var(--color-lime-950);
+	--accent-primary-low: var(--color-emerald-700);
+	--accent-primary-lower: var(--color-emerald-800);
+	--accent-primary-lowest: var(--color-emerald-950);
+	--danger-default: var(--color-rose-600);
+	--danger-hover: #B5414EFF;
+	--warning-default: var(--color-orange-500);
+	--warning-hover: var(--color-orange-600);
+}

@@ -1,0 +1,174 @@
+/* worksection.com/assets/css/fonts.css, the typography tokens only.
+   The site's @font-face block (Inter, Fixel Display, Work Sans, Ubuntu Sans
+   Mono, self-hosted under /assets/fonts/) is left out: the files are not
+   served cross-origin, and a failing @font-face would shadow the installed
+   Inter. The playground gets Work Sans from Google Fonts and Inter from the
+   system, as it always did. Everything below is verbatim. */
+
+
+/* typography foundation - desktop */
+:root {
+	/* Families */
+	--font-family-primary: "Fixel Display", sans-serif;
+	--font-family-secondary: "Inter", sans-serif;
+	--font-family-mono: "SF Mono", ui-monospace, monospace;
+	--font-family-brand-logo: "Work Sans", sans-serif;
+
+	/* Sizes */
+	--font-size-display-xl: 96px;
+	--font-size-display-lg: 72px;
+	--font-size-display-md: 56px;
+	--font-size-display-sm: 48px;
+	--font-size-heading-lg: 32px;
+	--font-size-heading-md: 28px;
+	--font-size-heading-sm: 24px;
+	--font-size-heading-xs: 20px;
+	--font-size-body-xl: 20px;
+	--font-size-body-lg: 18px;
+	--font-size-body-md: 16px;
+	--font-size-body-sm: 15px;
+	--font-size-body-xs: 13px;
+
+	/* Line-heights */
+	--line-height-4xl: 128px;
+	--line-height-3xl: 96px;
+	--line-height-2xl: 72px;
+	--line-height-xl: 56px;
+	--line-height-l: 40px;
+	--line-height-ml: 36px;
+	--line-height-md: 32px;
+	--line-height-m: 28px;
+	--line-height-sm: 24px;
+	--line-height-s: 20px;
+	--line-height-xs: 18px;
+	--line-height-xxs: 16px;
+
+	/* Weights */
+	--font-weight-bold: 700;
+	--font-weight-semibold: 600;
+	--font-weight-medium: 500;
+	--font-weight-regular: 400;
+	--font-weight-light: 300;
+
+	/* Tracking */
+	--letter-spacing-loose: 2px;
+	--letter-spacing-regular: 0px;
+	--letter-spacing-narrow: -0.3px;
+	--letter-spacing-tight: -1.3px;
+
+	/* ================================
+       Display
+       ================================ */
+	--font-display-bold-xl:  normal normal 700 var(--font-size-display-xl)/var(--line-height-3xl) var(--font-family-primary);
+	--font-display-semi-xl:  normal normal 600 var(--font-size-display-xl)/var(--line-height-3xl) var(--font-family-primary);
+	--font-display-med-xl:   normal normal 500 var(--font-size-display-xl)/var(--line-height-3xl) var(--font-family-primary);
+	--font-display-reg-xl:   normal normal 400 var(--font-size-display-xl)/var(--line-height-3xl) var(--font-family-primary);
+
+	--font-display-bold-lg:  normal normal 700 var(--font-size-display-lg)/var(--line-height-2xl) var(--font-family-primary);
+	--font-display-semi-lg:  normal normal 600 var(--font-size-display-lg)/var(--line-height-2xl) var(--font-family-primary);
+	--font-display-med-lg:   normal normal 500 var(--font-size-display-lg)/var(--line-height-2xl) var(--font-family-primary);
+	--font-display-reg-lg:   normal normal 400 var(--font-size-display-lg)/var(--line-height-2xl) var(--font-family-primary);
+
+	--font-display-bold-md:  normal normal 700 var(--font-size-display-md)/var(--line-height-xl) var(--font-family-primary);
+	--font-display-semi-md:  normal normal 600 var(--font-size-display-md)/var(--line-height-xl) var(--font-family-primary);
+	--font-display-med-md:   normal normal 500 var(--font-size-display-md)/var(--line-height-xl) var(--font-family-primary);
+	--font-display-reg-md:   normal normal 400 var(--font-size-display-md)/var(--line-height-xl) var(--font-family-primary);
+
+	--font-display-bold-sm:  normal normal 700 var(--font-size-display-sm)/var(--line-height-xl) var(--font-family-primary);
+	--font-display-semi-sm:  normal normal 600 var(--font-size-display-sm)/var(--line-height-xl) var(--font-family-primary);
+	--font-display-med-sm:   normal normal 500 var(--font-size-display-sm)/var(--line-height-xl) var(--font-family-primary);
+	--font-display-reg-sm:   normal normal 400 var(--font-size-display-sm)/var(--line-height-xl) var(--font-family-primary);
+
+	--font-display-bold-xs:  normal normal 700 var(--font-size-heading-lg)/var(--line-height-ml) var(--font-family-primary);
+	--font-display-semi-xs:  normal normal 600 var(--font-size-heading-lg)/var(--line-height-ml) var(--font-family-primary);
+	--font-display-med-xs:   normal normal 500 var(--font-size-heading-lg)/var(--line-height-ml) var(--font-family-primary);
+	--font-display-reg-xs:   normal normal 400 var(--font-size-heading-lg)/var(--line-height-ml) var(--font-family-primary);
+
+
+	/* ================================
+	   Headings
+	   ================================ */
+
+	--font-heading-bold-xl:  normal normal 700 var(--font-size-display-sm)/var(--line-height-xl) var(--font-family-secondary);
+	--font-heading-semi-xl:  normal normal 600 var(--font-size-display-sm)/var(--line-height-xl) var(--font-family-secondary);
+	--font-heading-med-xl:   normal normal 500 var(--font-size-display-sm)/var(--line-height-xl) var(--font-family-secondary);
+	--font-heading-reg-xl:   normal normal 400 var(--font-size-display-sm)/var(--line-height-xl) var(--font-family-secondary);
+
+	--font-heading-bold-lg:  normal normal 700 var(--font-size-heading-lg)/var(--line-height-l) var(--font-family-secondary);
+	--font-heading-semi-lg:  normal normal 600 var(--font-size-heading-lg)/var(--line-height-l) var(--font-family-secondary);
+	--font-heading-med-lg:   normal normal 500 var(--font-size-heading-lg)/var(--line-height-l) var(--font-family-secondary);
+	--font-heading-reg-lg:   normal normal 400 var(--font-size-heading-lg)/var(--line-height-l) var(--font-family-secondary);
+
+	--font-heading-bold-md:  normal normal 700 var(--font-size-heading-md)/var(--line-height-l) var(--font-family-secondary);
+	--font-heading-semi-md:  normal normal 600 var(--font-size-heading-md)/var(--line-height-l) var(--font-family-secondary);
+	--font-heading-med-md:   normal normal 500 var(--font-size-heading-md)/var(--line-height-l) var(--font-family-secondary);
+	--font-heading-reg-md:   normal normal 400 var(--font-size-heading-md)/var(--line-height-l) var(--font-family-secondary);
+
+	--font-heading-bold-sm:  normal normal 700 var(--font-size-heading-sm)/var(--line-height-ml) var(--font-family-secondary);
+	--font-heading-semi-sm:  normal normal 600 var(--font-size-heading-sm)/var(--line-height-ml) var(--font-family-secondary);
+	--font-heading-med-sm:   normal normal 500 var(--font-size-heading-sm)/var(--line-height-ml) var(--font-family-secondary);
+	--font-heading-reg-sm:   normal normal 400 var(--font-size-heading-sm)/var(--line-height-ml) var(--font-family-secondary);
+
+	--font-heading-bold-xs:  normal normal 700 var(--font-size-heading-xs)/var(--line-height-m) var(--font-family-secondary);
+	--font-heading-semi-xs:  normal normal 600 var(--font-size-heading-xs)/var(--line-height-m) var(--font-family-secondary);
+	--font-heading-med-xs:   normal normal 500 var(--font-size-heading-xs)/var(--line-height-m) var(--font-family-secondary);
+	--font-heading-reg-xs:   normal normal 400 var(--font-size-heading-xs)/var(--line-height-m) var(--font-family-secondary);
+
+	/* ================================
+	   Body
+	   ================================ */
+	--font-body-bold-xl:     normal normal 700 var(--font-size-body-xl)/var(--line-height-m) var(--font-family-secondary);
+	--font-body-semi-xl:     normal normal 600 var(--font-size-body-xl)/var(--line-height-m) var(--font-family-secondary);
+	--font-body-med-xl:      normal normal 500 var(--font-size-body-xl)/var(--line-height-m) var(--font-family-secondary);
+	--font-body-reg-xl:      normal normal 400 var(--font-size-body-xl)/var(--line-height-m) var(--font-family-secondary);
+
+	--font-body-bold-lg:     normal normal 700 var(--font-size-body-lg)/var(--line-height-sm) var(--font-family-secondary);
+	--font-body-semi-lg:     normal normal 600 var(--font-size-body-lg)/var(--line-height-sm) var(--font-family-secondary);
+	--font-body-med-lg:      normal normal 500 var(--font-size-body-lg)/var(--line-height-sm) var(--font-family-secondary);
+	--font-body-reg-lg:      normal normal 400 var(--font-size-body-lg)/var(--line-height-sm) var(--font-family-secondary);
+
+	--font-body-bold-md:     normal normal 700 var(--font-size-body-md)/var(--line-height-s) var(--font-family-secondary);
+	--font-body-semi-md:     normal normal 600 var(--font-size-body-md)/var(--line-height-s) var(--font-family-secondary);
+	--font-body-med-md:      normal normal 500 var(--font-size-body-md)/var(--line-height-s) var(--font-family-secondary);
+	--font-body-reg-md:      normal normal 400 var(--font-size-body-md)/var(--line-height-s) var(--font-family-secondary);
+
+	--font-body-bold-sm:     normal normal 700 var(--font-size-body-sm)/var(--line-height-s) var(--font-family-secondary);
+	--font-body-semi-sm:     normal normal 600 var(--font-size-body-sm)/var(--line-height-s) var(--font-family-secondary);
+	--font-body-med-sm:      normal normal 500 var(--font-size-body-sm)/var(--line-height-s) var(--font-family-secondary);
+	--font-body-reg-sm:      normal normal 400 var(--font-size-body-sm)/var(--line-height-s) var(--font-family-secondary);
+
+	--font-body-bold-xs:     normal normal 700 var(--font-size-body-xs)/var(--line-height-xs) var(--font-family-secondary);
+	--font-body-semi-xs:     normal normal 600 var(--font-size-body-xs)/var(--line-height-xs) var(--font-family-secondary);
+	--font-body-med-xs:      normal normal 500 var(--font-size-body-xs)/var(--line-height-xs) var(--font-family-secondary);
+	--font-body-reg-xs:      normal normal 400 var(--font-size-body-xs)/var(--line-height-xs) var(--font-family-secondary);
+}
+
+/* typography foundation - mobile */
+body.mobile {
+	/* Sizes */
+	--font-size-display-xl:  44px;
+	--font-size-display-lg:  40px;
+	--font-size-display-md:  36px;
+	--font-size-display-sm:  36px;
+	--font-size-heading-lg:  28px;
+	--font-size-heading-md:  24px;
+	--font-size-heading-sm:  20px;
+	--font-size-heading-xs:  18px;
+	--font-size-body-lg:     16px;
+	--font-size-body-md:     15px;
+	--font-size-body-sm:     14px;
+
+	/* Line-heights */
+	--line-height-4xl: 52px;
+	--line-height-3xl: 48px;
+	--line-height-2xl: 44px;
+	--line-height-xl:  40px;
+	--line-height-l:   36px;
+	--line-height-ml:  32px;
+	--line-height-md:  28px;
+	--line-height-m:   24px;
+	--line-height-sm:  22px;
+
+	/* Tracking */
+	--letter-spacing-tight: -0.66px;
+}

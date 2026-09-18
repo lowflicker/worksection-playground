@@ -17,7 +17,8 @@
   catch (e) { document.documentElement.dataset.theme = 'light'; }
 </script>
 
-<!-- the modules: exactly the files a site would load -->
+<!-- the site's tokens (:root only, the shell never reads them), then the modules: exactly the files a site would load -->
+<link rel="stylesheet" href="site-css/tokens.css">
 <link rel="stylesheet" href="logo-wall/logo-wall.css">
 <link rel="stylesheet" href="short-answer/short-answer.css">
 <link rel="stylesheet" href="float-actions/float-actions.css">

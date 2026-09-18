@@ -1,0 +1,88 @@
+:root {
+	/* ================================
+	   Shadows (inset)
+	   ================================ */
+
+	--shadow-small: 0 1px 1px -0.5px var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+	0 4px 4px -2px var(--base-slate-a-100, rgba(38, 54, 54, 0.06));
+
+	--shadow-regular: 0 1px 1px -0.5px var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+	0 3px 3px -1.5px var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+	0 8px 8px -4px var(--base-slate-a-100, rgba(38, 54, 54, 0.06));
+
+	--shadow-middle: 0 2px 2px -1px var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+	0 6px 6px -3px var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+	0 12px 12px -6px var(--base-slate-a-50, rgba(5, 5, 5, 0.02));
+
+	--shadow-large: 0 4px 4px -2px var(--base-slate-a-150, rgba(15, 28, 41, 0.15)),
+	0 12px 12px -6px var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+	0 24px 24px -12px var(--base-slate-a-100, rgba(38, 54, 54, 0.06));
+
+	--shadow-x-large: 0 8px 8px -4px var(--base-slate-a-150, rgba(15, 28, 41, 0.15)),
+	0 16px 16px -6px var(--base-slate-a-150, rgba(15, 28, 41, 0.15)),
+	0 32px 24px -12px var(--base-slate-a-100, rgba(38, 54, 54, 0.06));
+
+	/* ================================
+	   Shadows (with outline)
+	   ================================ */
+
+	--shadow-small-out: 0 0 0 1px var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+	0 1px 1px -0.5px var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+	0 4px 4px -2px var(--base-slate-a-100, rgba(38, 54, 54, 0.06));
+
+	--shadow-regular-out: 0 0 0 1px var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+	0 1px 1px -0.5px var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+	0 3px 3px -1.5px var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+	0 8px 8px -4px var(--base-slate-a-50, rgba(5, 5, 5, 0.02));
+
+	--shadow-middle-out: 0 0 0 1px var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+	0 2px 2px -1px var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+	0 6px 6px -3px var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+	0 12px 12px -6px var(--base-slate-a-50, rgba(5, 5, 5, 0.02));
+
+	--shadow-large-out:
+			0 0 0 1px 			var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+			0 4px 4px -2px		var(--base-slate-a-150, rgba(15, 28, 41, 0.15)),
+			0 12px 12px -6px 	var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+			0 24px 24px -12px 	var(--base-slate-a-100, rgba(38, 54, 54, 0.06));
+
+	--shadow-x-large-out:
+			0 0 0 1px			var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+			0 8px 8px -4px 		var(--base-slate-a-150, rgba(15, 28, 41, 0.15)),
+			0 16px 16px -6px	var(--base-slate-a-150, rgba(15, 28, 41, 0.15)),
+			0 32px 24px -12px	var(--base-slate-a-100, rgba(38, 54, 54, 0.06));
+
+	/* ================================
+	   Special Shadows
+	   ================================ */
+	--shadow-menu-mid:
+			0 0 0 1px			var(--base-greengrey-a-150),
+			0 2px 4px -2px		var(--base-greengrey-a-150),
+			0 4px 12px -4px		var(--base-greengrey-a-100),
+			0 6px 16px -4px		var(--base-greengrey-a-100),
+			0 8px 28px -4px		var(--base-greengrey-a-100),
+			0 8px 32px -4px		var(--base-greengrey-a-100);
+
+
+	--special-header-shadow:
+			0 0 0 1px			var(--base-greengrey-a-150),
+			0 2px 4px -2px		var(--base-greengrey-a-150),
+			0 6px 12px -2px		var(--base-greengrey-a-100),
+			0 12px 24px -2px	var(--base-greengrey-a-100);
+
+	/* ================================
+	   Form input Shadows
+	   ================================ */
+	--shadow-input-form-default:
+			0 0 0 1px 			var(--input-form-border-default, rgba(13, 28, 20, 0.14)),
+			0 2px 2px -1px 		var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+			0 2px 8px 0 		var(--base-slate-a-100, rgba(38, 54, 54, 0.06));
+
+	--shadow-input-form-hover:
+			0 0 0 1px 			var(--input-form-border-hover, rgba(1, 19, 10, 0.26)),
+			0 1px 1px -0.5px 	var(--base-slate-a-100, rgba(38, 54, 54, 0.06)),
+			0 4px 4px -2px 		var(--base-slate-a-100, rgba(38, 54, 54, 0.06));
+	--shadow-input-form-error:
+			0 0 0 2px			var(--input-form-border-error, #E34F5E);
+
+}

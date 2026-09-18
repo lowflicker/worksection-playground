@@ -1,0 +1,14 @@
+/* The site's design tokens, verbatim from worksection.com (assets/css, build
+   cache3729, taken 2026-09-18), in the order the site loads them. Only :root
+   custom properties live here, so the file is safe next to the shell: the
+   shell never reads a site token and the site never sets a shell name.
+
+   Modules use these names where the site has a token for the thing; the
+   shell and the canvas never do. The other files in this folder (buttons,
+   menu, common, main, adaptive) are reference copies of the site's CSS for
+   building modules against, not for loading here. */
+@import url("palette.css");
+@import url("named.colors.css");
+@import url("colors.css");
+@import url("shadows.css");
+@import url("fonts.css");

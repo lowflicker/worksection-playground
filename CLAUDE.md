@@ -15,6 +15,17 @@ who copy a module's files into the site. Two strictly separate parts:
 2. **Shell** (`playground/`) — the chrome around them. Never exported, knows
    nothing about any specific module, currently vanilla with no deps.
 
+**Site CSS** (`site-css/`): verbatim copies of worksection.com's stylesheets.
+`tokens.css` (palette, semantic colours, shadows, typography — `:root` only)
+is loaded in `index.html` and every `demo.html` before the module CSS. Modules
+use the site's token names wherever the site has one for the thing
+(`--text-base-primary`, `--bg-surf-10`, `--font-body-med-md`, `--shadow-regular`…),
+a bare value only where it has none; the shell and the canvas never touch
+them and the site never sets a shell name. `buttons.css`, `menu.css`,
+`main.css` (page frame + every section of the home page), `adaptive.css`
+(breakpoints) and `common.css` (global reset — never load it here) are
+reference only: read the site's own version of a section before building it.
+
 They talk only through `Playground.register(def)` from a module's
 `playground.js`. No playground-only code in module files; no module-specific
 code in the shell.
@@ -31,6 +42,7 @@ playground/shell.css    shell styles; tokens on :root / :root[data-theme="dark"]
 <module>/playground.js  adapter: Playground.register({...}), declarative, 150–380 lines.
 <module>/demo.html      standalone page with the module (works from file://).
 <module>/README.md      for developers, Ukrainian.
+site-css/               the site's CSS: tokens.css (loaded) + reference copies (not loaded). README lists what is where.
 README.md               developer overview + how to add a module.
 .claude/launch.json     `playground` config: python http.server on 5174.
 ```
@@ -170,5 +182,6 @@ the shell, never from its own CSS.
 - 2026-09-18: shell redesigned after Toolcraft (glass panel, tool pill, section reset); `easing` control (bezier editor); `check()` = acceptance, all green.
 - 2026-09-18: no topbar: home catalogue + crumb pill; shell primitives are `:where(:not(.frame *))` so they never restyle module markup.
 - 2026-09-18: `integrations-wall/` (Ramp-like logo sheet: stagger, pointer pan, drift, ellipse mask; demo marks from Simple Icons / Devicon CDN).
+- 2026-09-18: `site-css/` — the site's tokens (loaded) + reference stylesheets; `button.css` reads the tokens instead of its own copy.
 - Old folder `Desktop/vis-effects-for-ui` is superseded; work from this repo.
 - `.claude/launch.json` runs `python3` (no bare `python` on this Mac).
